@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { AlertCircle, Eye, EyeOff, LogIn } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, LoaderCircle, LogIn } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
@@ -76,7 +76,7 @@ export function LoginForm() {
       // cookie เพิ่งเปลี่ยน — สั่งดึงหน้าใหม่เพื่อให้ฝั่ง server เห็น session
       router.refresh()
     } catch (error) {
-      console.error("[login]", error)
+      if (!(error instanceof ApiError)) console.error("[login]", error)
       setState({ errors: { form: errorKey(error) }, values: { username, remember } })
       setIsPending(false)
     }
@@ -94,6 +94,9 @@ export function LoginForm() {
         </p>
       ) : null}
 
+      {/* ไม่ต้องใส่ defaultValue คืนค่าที่พิมพ์ — ฟอร์มไม่ได้ remount ตอนล็อกอินไม่ผ่าน
+          ค่าที่พิมพ์ไว้ยังอยู่ใน DOM เอง และการเปลี่ยน defaultValue ทีหลังจะทำให้
+          Base UI เตือน "changing the default value state of an uncontrolled FieldControl" */}
       <div className="space-y-2">
         <Label htmlFor="username">{t("username")}</Label>
         <Input
@@ -101,7 +104,6 @@ export function LoginForm() {
           name="username"
           autoComplete="username"
           placeholder={t("usernamePlaceholder")}
-          defaultValue={state.values?.username}
           aria-invalid={Boolean(state.errors?.username)}
           aria-describedby={
             state.errors?.username ? "username-error" : undefined
@@ -168,8 +170,9 @@ export function LoginForm() {
         </Label>
       </div> */}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        <LogIn />
+      <Button type="submit" className="w-full cursor-pointer" disabled={isPending}>
+        {/* API ตอบช้าได้หลายวินาที — ต้องมีอะไรหมุนให้เห็นว่ายังทำงานอยู่ */}
+        {isPending ? <LoaderCircle className="animate-spin" /> : <LogIn />}
         {isPending ? t("submitting") : t("submit")}
       </Button>
     </form>

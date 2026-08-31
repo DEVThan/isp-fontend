@@ -44,8 +44,6 @@ export async function login( username: string, password: string ): Promise<Login
     )
   }
 
-  console.log("[login] response", res.status, res.statusText, res.headers.get("content-type"))
-
   // API ควรตอบ JSON เสมอ แต่ถ้าเจอหน้า HTML ของ proxy/error page ก็ต้องไม่ระเบิดตรง .json()
   const envelope = (await res .json() .catch(() => null)) as ApiEnvelope<LoginUser> | null
   if (!envelope) { throw new ApiError(res.status, res.statusText || "Invalid response") }
