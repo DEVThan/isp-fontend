@@ -78,6 +78,17 @@ export function saveSession(session: Session, remember: boolean) {
   document.cookie = `${SESSION_COOKIE}=${encodeSession(session)}; path=/; samesite=lax${maxAge}`
 }
 
+/**
+ * ออกจากระบบ — ลบ cookie ด้วยการตั้งวันหมดอายุเป็นอดีต
+ * path ต้องตรงกับตอนเขียน ไม่งั้นเบราว์เซอร์จะมองว่าเป็นคนละ cookie แล้วลบไม่ออก
+ *
+ * ยังไม่ได้เรียก POST /api/web/logout เพราะฝั่ง API ตอบ 501 (ยังไม่มีระบบ token)
+ * เมื่อไหร่ที่ API ออก token แล้ว ต้องยิงไปบอกให้ยกเลิก token ที่นี่ด้วย
+ */
+export function clearSession() {
+  document.cookie = `${SESSION_COOKIE}=; path=/; samesite=lax; max-age=0`
+}
+
 /** ตรวจฟอร์มฝั่งเซิร์ฟเวอร์ คืนคีย์ข้อความ ไม่ใช่ข้อความจริง
  * เช็กแค่ "กรอกครบไหม" — ถูก/ผิดเป็นเรื่องของ API ไม่ใช่ของฟอร์ม */
 export function validateCredentials(username: string, password: string) {

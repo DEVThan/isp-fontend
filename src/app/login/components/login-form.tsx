@@ -22,6 +22,15 @@ import {
   type SignInState,
 } from "@/app/login/components/auth"
 
+/**
+ * หน้าที่จะไปหลังล็อกอิน — proxy.ts ใส่ ?next= ไว้ตอนเด้งคนที่ยังไม่ได้ล็อกอินมาที่นี่
+ * รับเฉพาะ path ในเว็บเรา (ขึ้นต้น / แต่ไม่ใช่ //) กันการถูกพาไปเว็บอื่น
+ */
+function nextPath() {
+  const next = new URLSearchParams(window.location.search).get("next")
+  return next?.startsWith("/") && !next.startsWith("//") ? next : "/"
+}
+
 /** แปลง code จาก API เป็น key ใต้ "login.errors" ให้ฟอร์มเอาไปแปล */
 function errorKey(error: unknown): LoginErrorKey {
   if (!(error instanceof ApiError)) return "serverError"
@@ -72,7 +81,7 @@ export function LoginForm() {
     try {
       const user = await login(username, password)
       saveSession(toSession(user), remember)
-      router.replace("/")
+      router.replace(nextPath())
       // cookie เพิ่งเปลี่ยน — สั่งดึงหน้าใหม่เพื่อให้ฝั่ง server เห็น session
       router.refresh()
     } catch (error) {

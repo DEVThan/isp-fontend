@@ -1,9 +1,10 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { ChevronsUpDown, CreditCard, LogOut, UserRound } from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { signOut } from "@/app/login/components/auth-actions"
+import { clearSession } from "@/app/login/components/auth"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -30,6 +31,14 @@ const user = {
 export function NavUser() {
   const { isMobile } = useSidebar()
   const t = useTranslations("user")
+  const router = useRouter()
+
+  function handleSignOut() {
+    clearSession()
+    router.replace("/login")
+    // cookie เพิ่งถูกลบ — สั่งดึงหน้าใหม่เพื่อให้ฝั่ง server เห็นว่าไม่มี session แล้ว
+    router.refresh()
+  }
 
   return (
     <SidebarMenu>
@@ -77,9 +86,7 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => {
-                void signOut()
-              }}
+              onClick={handleSignOut}
             >
               <LogOut />
               {t("signOut")}
