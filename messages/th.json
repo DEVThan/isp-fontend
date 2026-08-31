@@ -1,0 +1,234 @@
+{
+  "common": {
+    "appName": "ISP Admin",
+    "appSubtitle": "Softtech Network",
+    "search": "ค้นหาลูกค้า, ใบแจ้งหนี้...",
+    "notifications": "การแจ้งเตือน",
+    "toggleTheme": "สลับธีมสว่าง/มืด",
+    "language": "ภาษา",
+    "viewAll": "ดูทั้งหมด",
+    "save": "บันทึก",
+    "all": "ทั้งหมด"
+  },
+  "user": {
+    "name": "ผู้ดูแลระบบ",
+    "profile": "โปรไฟล์",
+    "billing": "การเรียกเก็บเงิน",
+    "signOut": "ออกจากระบบ"
+  },
+  "nav": {
+    "overview": "ภาพรวม",
+    "management": "การจัดการ",
+    "system": "ระบบ",
+    "dashboard": "แดชบอร์ด",
+    "customers": "ลูกค้า",
+    "customersList": "รายชื่อลูกค้า",
+    "packages": "แพ็กเกจ",
+    "areas": "พื้นที่ให้บริการ",
+    "invoices": "ใบแจ้งหนี้",
+    "invoicesAll": "ใบแจ้งหนี้ทั้งหมด",
+    "payments": "การชำระเงิน",
+    "tickets": "แจ้งปัญหา",
+    "settings": "ตั้งค่า",
+    "settingsGeneral": "ทั่วไป",
+    "settingsUsers": "ผู้ใช้และสิทธิ์"
+  },
+  "dashboard": {
+    "title": "แดชบอร์ด",
+    "description": "ภาพรวมลูกค้า รายได้ และสถานะเครือข่ายวันนี้",
+    "exportReport": "ส่งออกรายงาน",
+    "addCustomer": "เพิ่มลูกค้า",
+    "stats": {
+      "customers": "ลูกค้าทั้งหมด",
+      "revenue": "รายได้เดือนนี้",
+      "outstanding": "ค้างชำระ",
+      "openTickets": "งานแจ้งซ่อมค้าง",
+      "vsLastMonth": "เทียบกับเดือนก่อน",
+      "downFromLastMonth": "ลดลงจากเดือนก่อน",
+      "openOver24h": "เปิดค้างเกิน 24 ชม."
+    },
+    "traffic": {
+      "title": "ปริมาณทราฟฟิกวันนี้",
+      "description": "หน่วย Gbps · พีคสูงสุด {peak} Gbps เวลา {hour}:00"
+    },
+    "packageMix": {
+      "title": "สัดส่วนลูกค้าตามแพ็กเกจ",
+      "description": "รวม {total} ราย",
+      "other": "อื่น ๆ"
+    },
+    "latestInvoices": {
+      "title": "ใบแจ้งหนี้ล่าสุด",
+      "description": "รอบบิลเดือนปัจจุบัน"
+    },
+    "latestTickets": {
+      "title": "งานแจ้งปัญหาล่าสุด",
+      "description": "อัปเดตล่าสุดจากทีมซัพพอร์ต"
+    }
+  },
+  "customers": {
+    "title": "ลูกค้า",
+    "description": "ทั้งหมด {count} รายในระบบ",
+    "add": "เพิ่มลูกค้า",
+    "search": "ค้นหาชื่อหรือรหัสลูกค้า",
+    "filterAll": "ทุกสถานะ",
+    "columns": {
+      "id": "รหัส",
+      "name": "ชื่อลูกค้า",
+      "package": "แพ็กเกจ",
+      "area": "พื้นที่",
+      "monthlyFee": "ค่าบริการ/เดือน",
+      "installedAt": "วันติดตั้ง",
+      "status": "สถานะ"
+    }
+  },
+  "packages": {
+    "title": "แพ็กเกจ",
+    "description": "แพ็กเกจที่เปิดขายอยู่ {count} รายการ",
+    "add": "เพิ่มแพ็กเกจ",
+    "columns": {
+      "name": "ชื่อแพ็กเกจ",
+      "speed": "ความเร็ว (ดาวน์/อัป)",
+      "price": "ราคา/เดือน",
+      "subscribers": "ผู้ใช้บริการ"
+    }
+  },
+  "areas": {
+    "title": "พื้นที่ให้บริการ",
+    "description": "ครอบคลุม {count} พื้นที่",
+    "columns": {
+      "name": "พื้นที่",
+      "customers": "ลูกค้า",
+      "coverage": "ความครอบคลุม",
+      "status": "สถานะ"
+    }
+  },
+  "invoices": {
+    "title": "ใบแจ้งหนี้",
+    "description": "ยอดรวมรอบนี้ {total}",
+    "downloadCsv": "ดาวน์โหลด CSV",
+    "create": "สร้างใบแจ้งหนี้",
+    "empty": "ไม่มีรายการในสถานะนี้",
+    "columns": {
+      "id": "เลขที่",
+      "customer": "ลูกค้า",
+      "period": "รอบบิล",
+      "amount": "ยอดเงิน",
+      "dueDate": "ครบกำหนด",
+      "status": "สถานะ"
+    }
+  },
+  "payments": {
+    "title": "การชำระเงิน",
+    "description": "รับชำระแล้ว {total} ในรอบนี้",
+    "columns": {
+      "id": "เลขที่",
+      "customer": "ลูกค้า",
+      "method": "ช่องทาง",
+      "amount": "ยอดเงิน",
+      "paidAt": "วันที่ชำระ"
+    },
+    "methods": {
+      "transfer": "โอนผ่านธนาคาร",
+      "promptpay": "พร้อมเพย์",
+      "card": "บัตรเครดิต",
+      "cash": "เงินสด"
+    }
+  },
+  "tickets": {
+    "title": "แจ้งปัญหา",
+    "description": "เปิดค้างอยู่ {count} รายการ",
+    "create": "เปิดงานใหม่",
+    "columns": {
+      "id": "เลขที่",
+      "customer": "ลูกค้า",
+      "subject": "เรื่อง",
+      "priority": "ความสำคัญ",
+      "status": "สถานะ",
+      "updatedAt": "อัปเดตล่าสุด"
+    }
+  },
+  "settings": {
+    "title": "ตั้งค่า",
+    "description": "ข้อมูลองค์กรและค่าเริ่มต้นของระบบ",
+    "org": {
+      "title": "ข้อมูลองค์กร",
+      "description": "แสดงบนใบแจ้งหนี้และอีเมลที่ส่งถึงลูกค้า",
+      "company": "ชื่อบริษัท",
+      "taxId": "เลขประจำตัวผู้เสียภาษี",
+      "supportEmail": "อีเมลฝ่ายสนับสนุน"
+    },
+    "billing": {
+      "title": "ค่าเริ่มต้นการเรียกเก็บเงิน",
+      "description": "ใช้กับใบแจ้งหนี้ที่สร้างใหม่",
+      "cycle": "รอบบิล",
+      "monthly": "รายเดือน",
+      "quarterly": "ราย 3 เดือน",
+      "yearly": "รายปี",
+      "dueDays": "ครบกำหนดชำระภายใน (วัน)",
+      "vat": "ภาษีมูลค่าเพิ่ม (%)"
+    }
+  },
+  "users": {
+    "title": "ผู้ใช้และสิทธิ์",
+    "description": "ผู้ใช้ที่เข้าถึงระบบหลังบ้านได้ {count} คน",
+    "invite": "เชิญผู้ใช้",
+    "columns": {
+      "name": "ชื่อ",
+      "email": "อีเมล",
+      "role": "สิทธิ์",
+      "lastActive": "ใช้งานล่าสุด"
+    },
+    "roles": {
+      "owner": "เจ้าของระบบ",
+      "admin": "ผู้ดูแล",
+      "support": "ฝ่ายสนับสนุน",
+      "billing": "ฝ่ายการเงิน"
+    }
+  },
+  "status": {
+    "active": "ใช้งาน",
+    "suspended": "ระงับ",
+    "pending": "รอติดตั้ง",
+    "paid": "ชำระแล้ว",
+    "unpaid": "ค้างชำระ",
+    "overdue": "เกินกำหนด",
+    "open": "เปิด",
+    "in_progress": "กำลังดำเนินการ",
+    "closed": "ปิดแล้ว",
+    "low": "ต่ำ",
+    "medium": "ปานกลาง",
+    "high": "สูง",
+    "planned": "มีแผนขยาย"
+  },
+  "login": {
+    "title": "เข้าสู่ระบบ",
+    "heading": "เข้าสู่ระบบ",
+    "subheading": "กรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าใช้งานระบบหลังบ้าน",
+    "username": "ชื่อผู้ใช้",
+    "usernamePlaceholder": "เช่น admin1",
+    "password": "รหัสผ่าน",
+    "passwordPlaceholder": "รหัสผ่านของคุณ",
+    "showPassword": "แสดงรหัสผ่าน",
+    "hidePassword": "ซ่อนรหัสผ่าน",
+    "remember": "จดจำฉันไว้",
+    "forgot": "ลืมรหัสผ่าน?",
+    "submit": "เข้าสู่ระบบ",
+    "submitting": "กำลังเข้าสู่ระบบ...",
+    "needHelp": "ติดปัญหาการเข้าใช้งาน?",
+    "contactSupport": "ติดต่อฝ่ายสนับสนุน",
+    "brandTagline": "ระบบจัดการลูกค้า ใบแจ้งหนี้ และเครือข่ายในที่เดียว",
+    "highlights": {
+      "customers": "จัดการลูกค้าและแพ็กเกจ",
+      "billing": "ออกใบแจ้งหนี้และติดตามการชำระเงิน",
+      "network": "เฝ้าดูทราฟฟิกและงานแจ้งซ่อม"
+    },
+    "errors": {
+      "usernameRequired": "กรุณากรอกชื่อผู้ใช้",
+      "passwordRequired": "กรุณากรอกรหัสผ่าน",
+      "invalidCredentials": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
+      "accountDisabled": "บัญชีนี้ถูกปิดการใช้งาน กรุณาติดต่อผู้ดูแลระบบ",
+      "serverUnavailable": "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่อีกครั้ง",
+      "serverError": "ระบบขัดข้อง กรุณาลองใหม่ภายหลัง"
+    }
+  }
+}

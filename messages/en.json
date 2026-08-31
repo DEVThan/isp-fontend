@@ -1,0 +1,234 @@
+{
+  "common": {
+    "appName": "ISP Admin",
+    "appSubtitle": "Softtech Network",
+    "search": "Search customers, invoices…",
+    "notifications": "Notifications",
+    "toggleTheme": "Toggle light/dark theme",
+    "language": "Language",
+    "viewAll": "View all",
+    "save": "Save",
+    "all": "All"
+  },
+  "user": {
+    "name": "Administrator",
+    "profile": "Profile",
+    "billing": "Billing",
+    "signOut": "Sign out"
+  },
+  "nav": {
+    "overview": "Overview",
+    "management": "Management",
+    "system": "System",
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "customersList": "All customers",
+    "packages": "Packages",
+    "areas": "Service areas",
+    "invoices": "Invoices",
+    "invoicesAll": "All invoices",
+    "payments": "Payments",
+    "tickets": "Tickets",
+    "settings": "Settings",
+    "settingsGeneral": "General",
+    "settingsUsers": "Users & roles"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Customers, revenue and network health at a glance",
+    "exportReport": "Export report",
+    "addCustomer": "Add customer",
+    "stats": {
+      "customers": "Total customers",
+      "revenue": "Revenue this month",
+      "outstanding": "Outstanding",
+      "openTickets": "Open tickets",
+      "vsLastMonth": "vs. last month",
+      "downFromLastMonth": "down from last month",
+      "openOver24h": "open for over 24h"
+    },
+    "traffic": {
+      "title": "Traffic today",
+      "description": "In Gbps · peak {peak} Gbps at {hour}:00"
+    },
+    "packageMix": {
+      "title": "Customers by package",
+      "description": "{total} total",
+      "other": "Other"
+    },
+    "latestInvoices": {
+      "title": "Latest invoices",
+      "description": "Current billing cycle"
+    },
+    "latestTickets": {
+      "title": "Latest tickets",
+      "description": "Most recent updates from support"
+    }
+  },
+  "customers": {
+    "title": "Customers",
+    "description": "{count} customers in the system",
+    "add": "Add customer",
+    "search": "Search by name or customer ID",
+    "filterAll": "All statuses",
+    "columns": {
+      "id": "ID",
+      "name": "Customer",
+      "package": "Package",
+      "area": "Area",
+      "monthlyFee": "Monthly fee",
+      "installedAt": "Installed",
+      "status": "Status"
+    }
+  },
+  "packages": {
+    "title": "Packages",
+    "description": "{count} packages currently offered",
+    "add": "Add package",
+    "columns": {
+      "name": "Package",
+      "speed": "Speed (down/up)",
+      "price": "Price / month",
+      "subscribers": "Subscribers"
+    }
+  },
+  "areas": {
+    "title": "Service areas",
+    "description": "Covering {count} areas",
+    "columns": {
+      "name": "Area",
+      "customers": "Customers",
+      "coverage": "Coverage",
+      "status": "Status"
+    }
+  },
+  "invoices": {
+    "title": "Invoices",
+    "description": "{total} billed this cycle",
+    "downloadCsv": "Download CSV",
+    "create": "Create invoice",
+    "empty": "Nothing in this status",
+    "columns": {
+      "id": "Number",
+      "customer": "Customer",
+      "period": "Period",
+      "amount": "Amount",
+      "dueDate": "Due",
+      "status": "Status"
+    }
+  },
+  "payments": {
+    "title": "Payments",
+    "description": "{total} received this cycle",
+    "columns": {
+      "id": "Number",
+      "customer": "Customer",
+      "method": "Method",
+      "amount": "Amount",
+      "paidAt": "Paid on"
+    },
+    "methods": {
+      "transfer": "Bank transfer",
+      "promptpay": "PromptPay",
+      "card": "Credit card",
+      "cash": "Cash"
+    }
+  },
+  "tickets": {
+    "title": "Tickets",
+    "description": "{count} still open",
+    "create": "New ticket",
+    "columns": {
+      "id": "Number",
+      "customer": "Customer",
+      "subject": "Subject",
+      "priority": "Priority",
+      "status": "Status",
+      "updatedAt": "Last updated"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Organisation details and system defaults",
+    "org": {
+      "title": "Organisation",
+      "description": "Shown on invoices and customer emails",
+      "company": "Company name",
+      "taxId": "Tax ID",
+      "supportEmail": "Support email"
+    },
+    "billing": {
+      "title": "Billing defaults",
+      "description": "Applied to newly created invoices",
+      "cycle": "Billing cycle",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "yearly": "Yearly",
+      "dueDays": "Payment due within (days)",
+      "vat": "VAT (%)"
+    }
+  },
+  "users": {
+    "title": "Users & roles",
+    "description": "{count} people can access the admin",
+    "invite": "Invite user",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "lastActive": "Last active"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "support": "Support",
+      "billing": "Billing"
+    }
+  },
+  "status": {
+    "active": "Active",
+    "suspended": "Suspended",
+    "pending": "Pending install",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "overdue": "Overdue",
+    "open": "Open",
+    "in_progress": "In progress",
+    "closed": "Closed",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "planned": "Planned"
+  },
+  "login": {
+    "title": "Sign in",
+    "heading": "Sign in",
+    "subheading": "Enter your username and password to access the admin",
+    "username": "Username",
+    "usernamePlaceholder": "e.g. admin1",
+    "password": "Password",
+    "passwordPlaceholder": "Your password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "remember": "Remember me",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "needHelp": "Trouble signing in?",
+    "contactSupport": "Contact support",
+    "brandTagline": "Customers, invoices and network — in one place",
+    "highlights": {
+      "customers": "Manage customers and packages",
+      "billing": "Issue invoices and track payments",
+      "network": "Watch traffic and support tickets"
+    },
+    "errors": {
+      "usernameRequired": "Username is required",
+      "passwordRequired": "Password is required",
+      "invalidCredentials": "Wrong username or password",
+      "accountDisabled": "This account is disabled — contact an administrator",
+      "serverUnavailable": "Cannot reach the server. Please try again.",
+      "serverError": "Something went wrong. Please try again later."
+    }
+  }
+}

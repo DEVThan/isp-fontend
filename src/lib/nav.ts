@@ -1,0 +1,103 @@
+import {
+  CreditCard,
+  LayoutDashboard,
+  LifeBuoy,
+  Router,
+  Settings,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
+
+/** ทุก key อ้างถึง messages/<locale>.json ใต้ namespace "nav" */
+export type NavChild = {
+  key: string
+  url: string
+}
+
+export type NavItem = {
+  key: string
+  url: string
+  icon: LucideIcon
+  badge?: string
+  children?: NavChild[]
+}
+
+export type NavGroup = {
+  key: string
+  items: NavItem[]
+}
+
+export const navGroups: NavGroup[] = [
+  {
+    key: "overview",
+    items: [{ key: "dashboard", url: "/", icon: LayoutDashboard }],
+  },
+  {
+    key: "management",
+    items: [
+      {
+        key: "customers",
+        url: "/customers",
+        icon: Users,
+        children: [
+          { key: "customersList", url: "/customers" },
+          { key: "packages", url: "/customers/packages" },
+          { key: "areas", url: "/customers/areas" },
+        ],
+      },
+      {
+        key: "invoices",
+        url: "/invoices",
+        icon: CreditCard,
+        badge: "8",
+        children: [
+          { key: "invoicesAll", url: "/invoices" },
+          { key: "payments", url: "/invoices/payments" },
+        ],
+      },
+      { key: "tickets", url: "/tickets", icon: LifeBuoy, badge: "3" },
+    ],
+  },
+  {
+    key: "system",
+    items: [
+      {
+        key: "settings",
+        url: "/settings",
+        icon: Settings,
+        children: [
+          { key: "settingsGeneral", url: "/settings" },
+          { key: "settingsUsers", url: "/settings/users" },
+        ],
+      },
+    ],
+  },
+]
+
+export const brand = {
+  icon: Router,
+}
+
+/** เมนูหลักถือว่า active เมื่ออยู่ที่ตัวมันเองหรือหน้าลูก */
+export function isItemActive(item: NavItem, pathname: string) {
+  if (item.url === "/") return pathname === "/"
+  return pathname === item.url || pathname.startsWith(`${item.url}/`)
+}
+
+/**
+ * หา breadcrumb ของ pathname ปัจจุบัน คืนค่าเป็น key ของเมนู
+ * (แปลเป็นข้อความจริงตอน render)
+ */
+export function breadcrumbKeys(pathname: string): string[] {
+  for (const group of navGroups) {
+    for (const item of group.items) {
+      const child = item.children?.find((c) => c.url === pathname)
+      if (child) {
+        // หน้าแรกของกลุ่มใช้ชื่อเมนูหลักอยู่แล้ว ไม่ต้องซ้ำ
+        return child.url === item.url ? [item.key] : [item.key, child.key]
+      }
+      if (item.url === pathname) return [item.key]
+    }
+  }
+  return []
+}

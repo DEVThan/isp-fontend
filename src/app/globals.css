@@ -1,0 +1,173 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
+  --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
+  --color-danger: var(--danger);
+  --color-danger-ink: var(--danger-ink);
+  --color-info: var(--info);
+  --color-info-ink: var(--info-ink);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* พื้นผิวและตัวอักษร — พื้นหน้าเป็นฟ้าเทา ให้การ์ดสีขาวลอยเด่นขึ้น */
+  --background: #e3e8f2;
+  --foreground: #0b1220;
+  --card: #ffffff;
+  --card-foreground: #0b1220;
+  --popover: #ffffff;
+  --popover-foreground: #0b1220;
+
+  /* สีแบรนด์ */
+  --primary: #2a78d6;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf0f9;
+  --secondary-foreground: #1c2b42;
+  --muted: #eef2f8;
+  --muted-foreground: #54637a;
+  --accent: #e3edfc;
+  --accent-foreground: #1c5cab;
+  --destructive: #d03b3b;
+  --border: #d5dded;
+  --input: #ccd7e9;
+  --ring: #2a78d6;
+
+  /* สีกราฟ — ลำดับคงที่ ห้ามสลับ (ผ่านการตรวจ CVD แล้ว) */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+
+  /* สีสถานะ — สงวนไว้สำหรับความหมาย ห้ามใช้แทนสีชุดกราฟ
+     ตัว *-ink คือเวอร์ชันที่ผ่าน 4.5:1 สำหรับตัวอักษร */
+  --success: #0ca30c;
+  --success-ink: #006300;
+  --warning: #fab219;
+  --warning-ink: #8a5300;
+  --danger: #d03b3b;
+  --danger-ink: #b32424;
+  --info: #2a78d6;
+  --info-ink: #1c5cab;
+
+  --radius: 0.625rem;
+
+  /* เมนูข้างเป็นน้ำเงินเข้มทั้งสองโหมด */
+  --sidebar: #101b2e;
+  --sidebar-foreground: #c3d0e3;
+  --sidebar-primary: #2a78d6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1c2b45;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #22314c;
+  --sidebar-ring: #3987e5;
+  --sidebar-active: #86b6ef;
+}
+
+.dark {
+  --background: #0b0f17;
+  --foreground: #e8edf5;
+  --card: #131926;
+  --card-foreground: #e8edf5;
+  --popover: #131926;
+  --popover-foreground: #e8edf5;
+
+  --primary: #3987e5;
+  --primary-foreground: #06101d;
+  --secondary: #1b2434;
+  --secondary-foreground: #e8edf5;
+  --muted: #1b2434;
+  --muted-foreground: #94a3b8;
+  --accent: #1e2c44;
+  --accent-foreground: #cfe0f7;
+  --destructive: #e66767;
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: #3987e5;
+
+  /* สีชุดเดียวกัน แต่ปรับ step ให้อ่านออกบนพื้นเข้ม ไม่ใช่การกลับสีอัตโนมัติ */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+
+  --success: #0ca30c;
+  --success-ink: #3ec46f;
+  --warning: #fab219;
+  --warning-ink: #f0b53c;
+  --danger: #e66767;
+  --danger-ink: #f08a8a;
+  --info: #3987e5;
+  --info-ink: #7fb2f0;
+
+  --sidebar: #0c1220;
+  --sidebar-foreground: #c3d0e3;
+  --sidebar-primary: #3987e5;
+  --sidebar-primary-foreground: #06101d;
+  --sidebar-accent: #18233a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: #3987e5;
+  --sidebar-active: #86b6ef;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
