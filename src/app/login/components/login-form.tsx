@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useActionState } from "react"
+import { useRouter } from "next/navigation"
 import { AlertCircle, Eye, EyeOff, LogIn } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -9,20 +9,81 @@ import { Button } from "@/components/ui/button"
 // import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { signIn } from "@/app/login/components/auth-actions"
-import type { SignInState } from "@/app/login/components/auth"
+import {
+  ApiError,
+  API_NETWORK_ERROR,
+  login,
+} from "@/app/login/components/api"
+import {
+  saveSession,
+  toSession,
+  validateCredentials,
+  type LoginErrorKey,
+  type SignInState,
+} from "@/app/login/components/auth"
+
+/** แปลง code จาก API เป็น key ใต้ "login.errors" ให้ฟอร์มเอาไปแปล */
+function errorKey(error: unknown): LoginErrorKey {
+  if (!(error instanceof ApiError)) return "serverError"
+  switch (error.code) {
+    case 401:
+      return "invalidCredentials"
+    case 403:
+      return "accountDisabled"
+    // 0 = ยิงไม่ถึง Next เลย · 502/503/504 = Next ต่อ Flask ไม่ได้ (proxy ใน next.config.ts)
+    case API_NETWORK_ERROR:
+    case 502:
+    case 503:
+    case 504:
+      return "serverUnavailable"
+    default:
+      return "serverError"
+  }
+}
 
 export function LoginForm() {
   const t = useTranslations("login")
   const te = useTranslations("login.errors")
-  const [state, formAction, isPending] = useActionState<SignInState, FormData>(
-    signIn,
-    {}
-  )
+  const router = useRouter()
+  const [state, setState] = React.useState<SignInState>({})
+  const [isPending, setIsPending] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
 
+  /**
+   * ส่งฟอร์ม — ทำงานทั้งหมดบน browser
+   * ตรวจว่ากรอกครบ -> ยิง API -> เก็บ session ลง cookie -> เข้าหน้าแรก
+   * ถูก/ผิดเป็นคำตอบของ API ฟอร์มแค่เอา code มาแปลงเป็นข้อความ
+   */
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const username = String(formData.get("username") ?? "").trim()
+    const password = String(formData.get("password") ?? "")
+    const remember = formData.get("remember") === "on"
+
+    const errors = validateCredentials(username, password)
+    if (Object.keys(errors).length > 0) {
+      setState({ errors, values: { username, remember } })
+      return
+    }
+
+    setIsPending(true)
+    try {
+      const user = await login(username, password)
+      saveSession(toSession(user), remember)
+      router.replace("/")
+      // cookie เพิ่งเปลี่ยน — สั่งดึงหน้าใหม่เพื่อให้ฝั่ง server เห็น session
+      router.refresh()
+    } catch (error) {
+      console.error("[login]", error)
+      setState({ errors: { form: errorKey(error) }, values: { username, remember } })
+      setIsPending(false)
+    }
+  }
+
   return (
-    <form action={formAction} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       {state.errors?.form ? (
         <p
           role="alert"
