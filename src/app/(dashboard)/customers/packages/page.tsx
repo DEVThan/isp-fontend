@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatTHB, servicePackages } from "@/lib/mock-data"
+import { intlLocale } from "@/i18n/config"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("packages")
@@ -24,7 +25,7 @@ export default async function PackagesPage() {
   const t = await getTranslations("packages")
   const tcol = await getTranslations("packages.columns")
   const locale = await getLocale()
-  const nf = new Intl.NumberFormat(locale)
+  const nf = new Intl.NumberFormat(intlLocale(locale))
 
   return (
     <>

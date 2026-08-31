@@ -24,13 +24,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { formatTHB, invoices, stats, tickets, traffic } from "@/lib/mock-data"
+import { intlLocale } from "@/i18n/config"
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard")
   const ti = await getTranslations("invoices.columns")
   const tc = await getTranslations("common")
   const locale = await getLocale()
-  const nf = new Intl.NumberFormat(locale)
+  const nf = new Intl.NumberFormat(intlLocale(locale))
 
   return (
     <>

@@ -1,10 +1,19 @@
+import type { Messages } from "next-intl"
+
 import type { LoginUser } from "@/app/login/components/api"
 
 export const SESSION_COOKIE = "isp_session"
 
+/** key ใต้ namespace "login.errors" — พิมพ์ผิดแล้วไม่ compile */
+export type LoginErrorKey = keyof Messages["login"]["errors"]
+
 export type SignInState = {
-  /** key ใต้ namespace "login.errors" — แปลตอน render ฝั่ง client */
-  errors?: { username?: string; password?: string; form?: string }
+  /** เก็บเป็น key ไม่ใช่ข้อความจริง — แปลตอน render ฝั่ง client */
+  errors?: {
+    username?: LoginErrorKey
+    password?: LoginErrorKey
+    form?: LoginErrorKey
+  }
   values?: { username?: string; remember?: boolean }
 }
 

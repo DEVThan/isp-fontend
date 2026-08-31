@@ -1,11 +1,16 @@
 import { CheckCircle2, CircleDot, Clock, PauseCircle, XCircle } from "lucide-react"
+import type { Messages } from "next-intl"
 import { getTranslations } from "next-intl/server"
 
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
-/** สีสถานะมาคู่กับไอคอน+ข้อความเสมอ สีจึงไม่ใช่ช่องทางสื่อความหมายเดียว */
-const meta: Record<string, { className: string; icon: typeof CheckCircle2 }> = {
+/** คีย์ใต้ namespace "status" — ต้องมีคำแปลครบทุกค่า */
+export type StatusKey = keyof Messages["status"]
+
+/** สีสถานะมาคู่กับไอคอน+ข้อความเสมอ สีจึงไม่ใช่ช่องทางสื่อความหมายเดียว
+ *  Record ครบทุกคีย์ เพิ่มสถานะใหม่ใน messages แล้วลืมใส่สีที่นี่ = ไม่ compile */
+const meta: Record<StatusKey, { className: string; icon: typeof CheckCircle2 }> = {
   active: { className: "bg-success/12 text-success-ink", icon: CheckCircle2 },
   paid: { className: "bg-success/12 text-success-ink", icon: CheckCircle2 },
   closed: { className: "bg-success/12 text-success-ink", icon: CheckCircle2 },
@@ -24,8 +29,9 @@ const meta: Record<string, { className: string; icon: typeof CheckCircle2 }> = {
   low: { className: "bg-muted text-muted-foreground", icon: CircleDot },
 }
 
-export async function StatusBadge({ status }: { status: string }) {
+export async function StatusBadge({ status }: { status: StatusKey }) {
   const t = await getTranslations("status")
+  // กันข้อมูลจาก API ที่ยังไม่รู้จัก — ตอนนี้ type คุมไว้แล้วแต่ปล่อยไว้ให้ปลอดภัย
   const entry = meta[status]
   if (!entry) return <Badge variant="secondary">{status}</Badge>
 

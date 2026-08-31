@@ -6,7 +6,7 @@ import { AlertCircle, Eye, EyeOff, LogIn } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+// import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { signIn } from "@/app/login/components/auth-actions"
@@ -54,7 +54,7 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <Label htmlFor="password">{t("password")}</Label>
           <a
             href="#"
@@ -62,7 +62,7 @@ export function LoginForm() {
           >
             {t("forgot")}
           </a>
-        </div>
+        </div> */}
         <div className="relative">
           <Input
             id="password"
@@ -96,7 +96,7 @@ export function LoginForm() {
         ) : null}
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <Checkbox
           id="remember"
           name="remember"
@@ -105,7 +105,7 @@ export function LoginForm() {
         <Label htmlFor="remember" className="text-sm font-normal">
           {t("remember")}
         </Label>
-      </div>
+      </div> */}
 
       <Button type="submit" className="w-full" disabled={isPending}>
         <LogIn />

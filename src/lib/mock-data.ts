@@ -1,3 +1,7 @@
+import type { Messages } from "next-intl"
+
+import { intlLocale } from "@/i18n/config"
+
 /**
  * ข้อมูลตัวอย่างสำหรับเทมเพลต — เปลี่ยนไปเรียก API จริงได้เลย
  * โดยแทนที่ฟังก์ชันเหล่านี้ด้วย fetch() ใน Server Component
@@ -56,13 +60,16 @@ export const tickets: Ticket[] = [
 
 export type StatTone = "info" | "success" | "warning" | "danger"
 
+/** คีย์ใต้ "dashboard.stats" — พิมพ์ผิดแล้วไม่ compile */
+type StatKey = keyof Messages["dashboard"]["stats"]
+
 export const stats: {
-  labelKey: string
+  labelKey: StatKey
   value: number
   format: "number" | "currency"
   delta: string
   trend: "up" | "down"
-  hintKey: string
+  hintKey: StatKey
   tone: StatTone
 }[] = [
   { labelKey: "customers", value: 1284, format: "number", delta: "+4.2%", trend: "up", hintKey: "vsLastMonth", tone: "info" },
@@ -74,7 +81,8 @@ export const stats: {
 /** สัดส่วนลูกค้าตามแพ็กเกจ — ใช้สีชุดกราฟตามลำดับสล็อต */
 export const packageMix: {
   name?: string
-  labelKey?: string
+  /** ใช้เมื่อชื่อแถวเป็นข้อความที่ต้องแปล เช่น "อื่น ๆ" */
+  labelKey?: keyof Messages["dashboard"]["packageMix"]
   customers: number
   slot: number
 }[] = [
@@ -91,7 +99,7 @@ export const traffic = [
 
 /** สกุลเงินคงเป็นบาทเสมอ แต่รูปแบบตัวเลขเปลี่ยนตามภาษาที่เลือก */
 export const formatTHB = (value: number, locale = "th-TH") =>
-  new Intl.NumberFormat(locale, {
+  new Intl.NumberFormat(intlLocale(locale), {
     style: "currency",
     currency: "THB",
     maximumFractionDigits: 0,

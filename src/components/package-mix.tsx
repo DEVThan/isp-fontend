@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { packageMix } from "@/lib/mock-data"
+import { intlLocale } from "@/i18n/config"
 
 /** สีตามสล็อตคงที่ — สล็อต 0 คือ "อื่น ๆ" ใช้สีกลาง ไม่ใช่ฮิวใหม่ */
 const slotColor = [
@@ -20,7 +21,7 @@ const slotColor = [
 export async function PackageMix() {
   const t = await getTranslations("dashboard.packageMix")
   const locale = await getLocale()
-  const nf = new Intl.NumberFormat(locale)
+  const nf = new Intl.NumberFormat(intlLocale(locale))
   const total = packageMix.reduce((sum, row) => sum + row.customers, 0)
 
   return (

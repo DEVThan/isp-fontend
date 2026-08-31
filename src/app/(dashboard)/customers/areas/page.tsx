@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { serviceAreas } from "@/lib/mock-data"
+import { intlLocale } from "@/i18n/config"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("areas")
@@ -23,7 +24,7 @@ export default async function AreasPage() {
   const t = await getTranslations("areas")
   const tcol = await getTranslations("areas.columns")
   const locale = await getLocale()
-  const nf = new Intl.NumberFormat(locale)
+  const nf = new Intl.NumberFormat(intlLocale(locale))
 
   return (
     <>

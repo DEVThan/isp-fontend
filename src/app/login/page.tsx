@@ -103,7 +103,7 @@ export default async function LoginPage() {
             </CardContent>
           </Card>
 
-          <p className="text-muted-foreground text-center text-xs">
+          {/* <p className="text-muted-foreground text-center text-xs">
             {t("needHelp")}{" "}
             <a
               href="mailto:support@softtechnw.com"
@@ -111,7 +111,7 @@ export default async function LoginPage() {
             >
               {t("contactSupport")}
             </a>
-          </p>
+          </p> */}
         </div>
       </main>
     </div>

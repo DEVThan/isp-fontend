@@ -7,15 +7,18 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react"
+import type { Messages } from "next-intl"
 
-/** ทุก key อ้างถึง messages/<locale>.json ใต้ namespace "nav" */
+/** ทุก key อ้างถึง messages/<locale>.json ใต้ namespace "nav" — พิมพ์ผิดแล้วไม่ compile */
+export type NavKey = keyof Messages["nav"]
+
 export type NavChild = {
-  key: string
+  key: NavKey
   url: string
 }
 
 export type NavItem = {
-  key: string
+  key: NavKey
   url: string
   icon: LucideIcon
   badge?: string
@@ -23,7 +26,7 @@ export type NavItem = {
 }
 
 export type NavGroup = {
-  key: string
+  key: NavKey
   items: NavItem[]
 }
 
@@ -88,7 +91,7 @@ export function isItemActive(item: NavItem, pathname: string) {
  * หา breadcrumb ของ pathname ปัจจุบัน คืนค่าเป็น key ของเมนู
  * (แปลเป็นข้อความจริงตอน render)
  */
-export function breadcrumbKeys(pathname: string): string[] {
+export function breadcrumbKeys(pathname: string): NavKey[] {
   for (const group of navGroups) {
     for (const item of group.items) {
       const child = item.children?.find((c) => c.url === pathname)
