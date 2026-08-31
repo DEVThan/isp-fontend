@@ -9,6 +9,9 @@ import {
 } from "lucide-react"
 import type { Messages } from "next-intl"
 
+/** หน้าแรกหลังล็อกอิน — ส่วนอื่น ๆ เป็นโฟลเดอร์แยกที่ระดับเดียวกัน (/customers, /invoices, …) */
+export const DASHBOARD_ROOT = "/dashboard"
+
 /** ทุก key อ้างถึง messages/<locale>.json ใต้ namespace "nav" — พิมพ์ผิดแล้วไม่ compile */
 export type NavKey = keyof Messages["nav"]
 
@@ -33,7 +36,7 @@ export type NavGroup = {
 export const navGroups: NavGroup[] = [
   {
     key: "overview",
-    items: [{ key: "dashboard", url: "/", icon: LayoutDashboard }],
+    items: [{ key: "dashboard", url: DASHBOARD_ROOT, icon: LayoutDashboard }],
   },
   {
     key: "management",
@@ -83,7 +86,8 @@ export const brand = {
 
 /** เมนูหลักถือว่า active เมื่ออยู่ที่ตัวมันเองหรือหน้าลูก */
 export function isItemActive(item: NavItem, pathname: string) {
-  if (item.url === "/") return pathname === "/"
+  // แดชบอร์ดไม่มีหน้าลูก เทียบตรง ๆ พอ
+  if (item.url === DASHBOARD_ROOT) return pathname === DASHBOARD_ROOT
   return pathname === item.url || pathname.startsWith(`${item.url}/`)
 }
 

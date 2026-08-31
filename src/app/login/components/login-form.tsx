@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { AlertCircle, Eye, EyeOff, LoaderCircle, LogIn } from "lucide-react"
 import { useTranslations } from "next-intl"
 
+import { DASHBOARD_ROOT } from "@/lib/nav"
 import { Button } from "@/components/ui/button"
 // import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -28,7 +29,7 @@ import {
  */
 function nextPath() {
   const next = new URLSearchParams(window.location.search).get("next")
-  return next?.startsWith("/") && !next.startsWith("//") ? next : "/"
+  return next?.startsWith("/") && !next.startsWith("//") ? next : DASHBOARD_ROOT
 }
 
 /** แปลง code จาก API เป็น key ใต้ "login.errors" ให้ฟอร์มเอาไปแปล */

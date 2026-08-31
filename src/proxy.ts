@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { SESSION_COOKIE } from "@/app/login/components/auth"
+import { DASHBOARD_ROOT } from "@/lib/nav"
 
 /**
  * proxy.ts — ด่านหน้าของทุก request (Next 16 เปลี่ยนชื่อมาจาก middleware.ts)
  *
- * ไม่มี session = เข้าได้แค่ /login · มี session แล้วเข้า /login = เด้งกลับหน้าแรก
+ * ไม่มี session = เข้าได้แค่ /login · มี session แล้วเข้า /login หรือ / = เด้งไป /dashboard
  *
  * ตรวจแค่ว่า "มี cookie ไหม" เท่านั้น ยังไม่ได้ตรวจว่า cookie จริงหรือเปล่า
  * เพราะ API ยังไม่ออก token ให้เอาไปตรวจ — cookie ปลอมขึ้นมาเองได้
@@ -27,8 +28,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (hasSession && isPublic) {
-    return NextResponse.redirect(new URL("/", request.url))
+  // "/" ไม่มีหน้าเป็นของตัวเองแล้ว (ย้ายไป /dashboard) ส่วน /login ก็ไม่ต้องเข้าซ้ำ
+  if (hasSession && (isPublic || pathname === "/")) {
+    return NextResponse.redirect(new URL(DASHBOARD_ROOT, request.url))
   }
 
   return NextResponse.next()

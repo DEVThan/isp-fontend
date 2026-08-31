@@ -29,7 +29,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { brand, isItemActive, navGroups, type NavItem } from "@/lib/nav"
+import { DASHBOARD_ROOT, brand, isItemActive, navGroups, type NavItem } from "@/lib/nav"
 
 /**
  * เมนูที่เลือกอยู่: ไล่เฉดจากสีแบรนด์จาง ๆ + เส้นบอกตำแหน่งด้านซ้าย + ไอคอนสีฟ้าสว่าง
@@ -161,7 +161,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/" />}>
+            <SidebarMenuButton size="lg" render={<Link href={DASHBOARD_ROOT} />}>
               <div className="from-chart-1 to-chart-5 flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white">
                 <BrandIcon className="size-4" />
               </div>
