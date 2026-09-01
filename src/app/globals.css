@@ -55,6 +55,20 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* แถบวิ่งตอนรอข้อมูลจาก API (ดู .animate-loading-sweep ที่ตารางหน้าจัดการเมนู) */
+  --animate-loading-sweep: loading-sweep 1.15s ease-in-out infinite;
+}
+
+/* วิ่งด้วย left ไม่ใช่ transform — % ของ translateX คิดจากความกว้างของตัวเอง
+   แถบกว้าง 25% จึงวิ่งไม่สุดโต๊ะ ส่วน left คิดจากความกว้างของตัวครอบ */
+@keyframes loading-sweep {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 :root {

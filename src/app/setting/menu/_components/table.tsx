@@ -206,11 +206,22 @@ export function Tables({
             // เกาะไว้ด้านบน ไม่ใช่กึ่งกลาง — ตารางยาว ๆ ตัวหมุนจะได้ไม่ไปอยู่นอกจอ
             <div
               role="status"
-              className="bg-card/65 absolute inset-0 z-10 flex items-start justify-center pt-16 backdrop-blur-[1px]"
+              aria-live="polite"
+              className="from-card/85 via-card/70 to-card/85 animate-in fade-in absolute inset-0 z-10 flex items-start justify-center bg-gradient-to-b pt-14 backdrop-blur-[2px] duration-200"
             >
-              <span className="bg-card border-border/60 text-muted-foreground flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm shadow-sm">
-                <LoaderCircle className="text-primary size-4 animate-spin" />
-                {t("loading")}
+              {/* แถบวิ่งบนขอบตาราง ไล่เฉดชุดเดียวกับปุ่มหลักและโลโก้ */}
+              <span
+                aria-hidden
+                className="absolute inset-x-0 top-0 h-[3px] overflow-hidden"
+              >
+                <span className="from-chart-1 via-chart-5 to-chart-1 animate-loading-sweep absolute top-0 h-full w-[30%] rounded-full bg-gradient-to-r" />
+              </span>
+
+              <span className="bg-card/95 ring-border/60 animate-in fade-in zoom-in-95 flex items-center gap-2.5 rounded-full py-2 pr-4 pl-2.5 text-sm font-medium shadow-lg ring-1 duration-200">
+                <span className="bg-primary/10 flex size-6 items-center justify-center rounded-full">
+                  <LoaderCircle className="text-primary size-4 animate-spin" />
+                </span>
+                <span className="text-muted-foreground">{t("loading")}</span>
               </span>
             </div>
           ) : null}
