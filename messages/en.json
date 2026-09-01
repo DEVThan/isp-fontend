@@ -8,7 +8,17 @@
     "language": "Language",
     "viewAll": "View all",
     "save": "Save",
-    "all": "All"
+    "all": "All",
+    "table": {
+      "search": "Search…",
+      "add": "Add",
+      "edit": "Edit",
+      "empty": "No matching records",
+      "rowsPerPage": "Rows per page",
+      "summary": "{from}–{to} of {total}",
+      "previous": "Previous",
+      "next": "Next"
+    }
   },
   "user": {
     "name": "Administrator",
@@ -34,7 +44,8 @@
     "settingsUsers": "Users & roles",
     "user": "Users",
     "userrole": "User roles",
-    "menu": "Menus"
+    "menu": "Menus",
+    "setting": "Setting"
   },
   "dashboard": {
     "title": "Dashboard",
