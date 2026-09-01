@@ -29,7 +29,19 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { DASHBOARD_ROOT, brand, isItemActive, navGroups, type NavItem } from "@/lib/nav"
+import {
+  DASHBOARD_ROOT,
+  brand,
+  fallbackIcon,
+  iconByName,
+  isItemActive,
+  navId,
+  type IconName,
+  type NavGroup,
+  type NavItem,
+  type NavKey,
+  type NavLabel,
+} from "@/lib/nav"
 
 /**
  * เมนูที่เลือกอยู่: ไล่เฉดจากสีแบรนด์จาง ๆ + เส้นบอกตำแหน่งด้านซ้าย + ไอคอนสีฟ้าสว่าง
@@ -65,22 +77,34 @@ function ActiveMarker({ thin = false }: { thin?: boolean }) {
   )
 }
 
+/**
+ * ไอคอนของเมนู — เมนูพกมาแค่ "ชื่อ" ไอคอน (ข้ามจาก server มาเป็นข้อมูลธรรมดา)
+ * ฐานข้อมูลเขียนได้ทั้ง "Package" และ "PackageOpenIcon" — lucide ใช้ชื่อที่ไม่มี Icon ต่อท้าย
+ *
+ * ต้องหยิบจากตารางตรง ๆ ห้ามผ่านฟังก์ชันช่วย: กฎ react-hooks/static-components ถือว่า
+ * ค่าที่ได้จากการ "เรียกฟังก์ชัน" แล้วเอาไปใช้เป็น <Tag /> คือคอมโพเนนต์ที่สร้างใหม่ทุกรอบ
+ * (ที่จริงเป็นตัวเดิมจากตาราง แต่กฎมองไม่เห็น) — เขียนแบบนี้จึงไม่ต้องปิดกฎทิ้ง
+ */
+function NavIcon({ name }: { name?: IconName }) {
+  const Icon = (name && iconByName[name.replace(/Icon$/, "")]) || fallbackIcon
+  return <Icon />
+}
+
 function NavLeaf({ item, pathname }: { item: NavItem; pathname: string }) {
-  const t = useTranslations("nav")
-  const Icon = item.icon
+  const label = useNavLabel()
   const isActive = isItemActive(item, pathname)
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={isActive}
-        tooltip={t(item.key)}
+        tooltip={label(item)}
         className={activeClasses}
         render={<Link href={item.url} />}
       >
         {isActive ? <ActiveMarker /> : null}
-        <Icon />
-        <span>{t(item.key)}</span>
+        <NavIcon name={item.icon} />
+        <span>{label(item)}</span>
       </SidebarMenuButton>
       {item.badge ? (
         <SidebarMenuBadge className="bg-sidebar-primary/25 text-sidebar-accent-foreground rounded-full px-1.5">
@@ -91,9 +115,22 @@ function NavLeaf({ item, pathname }: { item: NavItem; pathname: string }) {
   )
 }
 
-function NavBranch({ item, pathname }: { item: NavItem; pathname: string }) {
+/**
+ * ป้ายชื่อเมนู: ถ้ามีคำแปลของ code นั้นก็ใช้ ไม่มีก็ใช้ name จากฐานข้อมูล
+ * (cast เพราะ code จาก API เป็นสตริงอิสระ ไม่ใช่คีย์ที่ TypeScript รู้จัก)
+ * export ให้ site-header ใช้กับ breadcrumb ด้วย จะได้เรียกชื่อเมนูเหมือนกันทั้งหน้า
+ */
+export function useNavLabel() {
   const t = useTranslations("nav")
-  const Icon = item.icon
+  return (label: NavLabel) => {
+    if ("key" in label) return t(label.key)
+    const code = label.code as NavKey
+    return t.has(code) ? t(code) : label.name
+  }
+}
+
+function NavBranch({ item, pathname }: { item: NavItem; pathname: string }) {
+  const label = useNavLabel()
   const isActive = isItemActive(item, pathname)
 
   // controlled: กางเองเมื่อเข้าหน้าในกลุ่มนี้ แต่ผู้ใช้ยังพับ/กางเองได้
@@ -111,14 +148,14 @@ function NavBranch({ item, pathname }: { item: NavItem; pathname: string }) {
         render={
           <SidebarMenuButton
             isActive={isActive}
-            tooltip={t(item.key)}
+            tooltip={label(item)}
             className={`${activeClasses} data-panel-open:[&>svg:last-child]:rotate-90`}
           />
         }
       >
         {isActive ? <ActiveMarker /> : null}
-        <Icon />
-        <span>{t(item.key)}</span>
+        <NavIcon name={item.icon} />
+        <span>{label(item)}</span>
         {/* เมนูที่มีลูกใช้ badge แบบอินไลน์ ไม่งั้นจะทับกับลูกศร */}
         {item.badge ? (
           <span className="bg-sidebar-primary/25 text-sidebar-accent-foreground ml-auto rounded-full px-1.5 text-xs tabular-nums group-data-[collapsible=icon]:hidden">
@@ -140,7 +177,7 @@ function NavBranch({ item, pathname }: { item: NavItem; pathname: string }) {
                 render={<Link href={child.url} />}
               >
                 {pathname === child.url ? <ActiveMarker thin /> : null}
-                <span>{t(child.key)}</span>
+                <span>{label(child)}</span>
               </SidebarMenuSubButton>
             </SidebarMenuSubItem>
           ))}
@@ -150,11 +187,19 @@ function NavBranch({ item, pathname }: { item: NavItem; pathname: string }) {
   )
 }
 
-export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  groups,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  /** เมนูที่จะแสดง — dashboard-shell ดึงมาจาก API แล้วส่งเข้ามา */
+  groups: NavGroup[]
+}) {
   const pathname = usePathname()
   const t = useTranslations("nav")
   const tc = useTranslations("common")
   const BrandIcon = brand.icon
+
+  console.log("AppSidebar groups:", groups) // Debugging line to check the groups being passed
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -179,16 +224,16 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
-        {navGroups.map((group) => (
-          <SidebarGroup key={group.key}>
-            <SidebarGroupLabel>{t(group.key)}</SidebarGroupLabel>
+        {groups.map((group) => (
+          <SidebarGroup key={group.key ?? "api"}>
+            {group.key ? <SidebarGroupLabel>{t(group.key)}</SidebarGroupLabel> : null}
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) =>
                   item.children?.length ? (
-                    <NavBranch key={item.key} item={item} pathname={pathname} />
+                    <NavBranch key={navId(item)} item={item} pathname={pathname} />
                   ) : (
-                    <NavLeaf key={item.key} item={item} pathname={pathname} />
+                    <NavLeaf key={navId(item)} item={item} pathname={pathname} />
                   )
                 )}
               </SidebarMenu>

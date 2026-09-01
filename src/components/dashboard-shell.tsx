@@ -1,7 +1,9 @@
 import { cookies } from "next/headers"
 
+import { getSession } from "@/app/login/components/auth-actions"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
+import { fetchMenus, toNavGroups } from "@/lib/menu"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 /**
@@ -23,12 +25,24 @@ export default async function DashboardShell({
   children: React.ReactNode
 }) {
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "false"
+  /**
+   * เมนูของผู้ใช้มาจาก API ทางเดียว (ส่ง id ใน session.menus ไปแลกรายละเอียด)
+   * ต้นเมนูที่เคยเขียนไว้ในโค้ดถูก comment ไว้ใน nav.ts แล้ว — API ล่มเมื่อไหร่
+   * sidebar จะว่าง ไม่มีเมนูสำรองมาแทน
+   *
+   * session.menus เก็บเป็นสตริง (["7","6"]) ตามที่ /login ส่งมา แต่ id ของเมนูคือตัวเลข
+   * จึงแปลงเป็น number ก่อนส่งเข้า API   ค่าที่ไม่ใช่เลขบวก (cookie ถูกแก้มา) ทิ้งไป
+   */
+  const session = await getSession()
+  const menuIds = (session?.menus ?? []).map(Number).filter((id) => Number.isInteger(id) && id > 0)
+  const apiMenus = menuIds.length > 0 ? await fetchMenus(menuIds) : null
+  const groups = apiMenus ? toNavGroups(apiMenus) : []
 
   return (
     <SidebarProvider defaultOpen={!collapsed}>
-      <AppSidebar />
+      <AppSidebar groups={groups} />
       <SidebarInset>
-        <SiteHeader />
+        <SiteHeader groups={groups} />
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>

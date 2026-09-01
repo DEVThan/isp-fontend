@@ -18,13 +18,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { breadcrumbKeys } from "@/lib/nav"
+import { useNavLabel } from "@/components/app-sidebar"
+import { breadcrumbTrail, navId, type NavGroup } from "@/lib/nav"
 
-export function SiteHeader() {
+export function SiteHeader({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname()
-  const t = useTranslations("nav")
+  const label = useNavLabel()
   const tc = useTranslations("common")
-  const crumbs = breadcrumbKeys(pathname)
+  const crumbs = breadcrumbTrail(groups, pathname)
 
   return (
     <header className="bg-background/80 sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
@@ -37,16 +38,18 @@ export function SiteHeader() {
           <BreadcrumbItem className="hidden md:block">
             <span className="text-muted-foreground">{tc("appName")}</span>
           </BreadcrumbItem>
-          {crumbs.map((key, index) => (
-            <React.Fragment key={key}>
+          {crumbs.map((crumb, index) => (
+            <React.Fragment key={navId(crumb)}>
               {/* จอแคบเหลือเฉพาะหน้าปัจจุบัน กัน breadcrumb ตกบรรทัดในแถบสูง 56px */}
               <BreadcrumbSeparator className="hidden shrink-0 md:block" />
               <BreadcrumbItem>
                 {index === crumbs.length - 1 ? (
-                  <BreadcrumbPage className="truncate">{t(key)}</BreadcrumbPage>
+                  <BreadcrumbPage className="truncate">
+                    {label(crumb)}
+                  </BreadcrumbPage>
                 ) : (
                   <span className="text-muted-foreground hidden shrink-0 md:block">
-                    {t(key)}
+                    {label(crumb)}
                   </span>
                 )}
               </BreadcrumbItem>
