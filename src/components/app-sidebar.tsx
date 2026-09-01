@@ -199,8 +199,6 @@ export function AppSidebar({
   const tc = useTranslations("common")
   const BrandIcon = brand.icon
 
-  console.log("AppSidebar groups:", groups) // Debugging line to check the groups being passed
-
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

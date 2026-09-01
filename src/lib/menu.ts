@@ -46,7 +46,6 @@ export async function fetchMenus(ids: number[]): Promise<ApiMenu[] | null> {
     })
 
     const envelope = await res.json().catch(() => null)
-    console.log("fetchMenus response status:", envelope) // Debugging line to check the response status
     if (!envelope?.status || !Array.isArray(envelope.result)) return null
     return envelope.result as ApiMenu[]
   } catch {
