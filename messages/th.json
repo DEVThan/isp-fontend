@@ -13,7 +13,9 @@
       "search": "ค้นหา…",
       "add": "เพิ่ม",
       "edit": "แก้ไข",
+      "clear": "ล้าง",
       "empty": "ไม่พบข้อมูลที่ค้นหา",
+      "loading": "กำลังโหลด…",
       "rowsPerPage": "แสดงต่อหน้า",
       "summary": "{from}–{to} จาก {total}",
       "previous": "ก่อนหน้า",
@@ -198,6 +200,22 @@
       "support": "ฝ่ายสนับสนุน",
       "billing": "ฝ่ายการเงิน"
     }
+  },
+  "menus": {
+    "title": "จัดการเมนู",
+    "description": "เมนูทั้งหมด {count} รายการ",
+    "columns": {
+      "name": "ชื่อเมนู",
+      "path": "เส้นทาง",
+      "code": "โค้ด",
+      "parent": "เมนูแม่",
+      "sortOrder": "ลำดับ",
+      "status": "สถานะ"
+    },
+    "root": "เมนูหลัก",
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลเมนูไม่สำเร็จ"
   },
   "status": {
     "active": "ใช้งาน",

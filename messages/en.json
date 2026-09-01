@@ -13,7 +13,9 @@
       "search": "Search…",
       "add": "Add",
       "edit": "Edit",
+      "clear": "Clear",
       "empty": "No matching records",
+      "loading": "Loading…",
       "rowsPerPage": "Rows per page",
       "summary": "{from}–{to} of {total}",
       "previous": "Previous",
@@ -198,6 +200,22 @@
       "support": "Support",
       "billing": "Billing"
     }
+  },
+  "menus": {
+    "title": "Menu management",
+    "description": "{count} menus in total",
+    "columns": {
+      "name": "Menu name",
+      "path": "Path",
+      "code": "Code",
+      "parent": "Parent",
+      "sortOrder": "Order",
+      "status": "Status"
+    },
+    "root": "Top level",
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load menus"
   },
   "status": {
     "active": "Active",

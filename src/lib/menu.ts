@@ -37,7 +37,7 @@ export async function fetchMenus(ids: number[]): Promise<ApiMenu[] | null> {
 
   // console.log("fetchMenus response status:", ids) // Debugging line to check the response status
   try {
-    const res = await fetch(`${API_BASE_URL}/get-menu`, {
+    const res = await fetch(`${API_BASE_URL}/menu-get`, {
       method: "POST",
       // เมนูต้องสดทุกครั้งที่โหลดหน้า — สิทธิ์เปลี่ยนแล้วต้องเห็นทันที
       cache: "no-store",

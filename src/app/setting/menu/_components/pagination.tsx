@@ -12,8 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-/** จำนวนแถวต่อหน้าที่ให้เลือก */
-const PAGE_SIZES = [50, 100, 200, 500]
+/** จำนวนแถวต่อหน้าที่ให้เลือก — เกิน 100 ไม่ได้ API ตอบ 400 (_PER_PAGE_MAX) */
+const PAGE_SIZES = [30, 50, 100]
 
 export function TablePagination({
   page,
