@@ -31,7 +31,10 @@
     "tickets": "Tickets",
     "settings": "Settings",
     "settingsGeneral": "General",
-    "settingsUsers": "Users & roles"
+    "settingsUsers": "Users & roles",
+    "user": "Users",
+    "userrole": "User roles",
+    "menu": "Menus"
   },
   "dashboard": {
     "title": "Dashboard",

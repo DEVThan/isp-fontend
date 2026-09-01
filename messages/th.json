@@ -31,7 +31,10 @@
     "tickets": "แจ้งปัญหา",
     "settings": "ตั้งค่า",
     "settingsGeneral": "ทั่วไป",
-    "settingsUsers": "ผู้ใช้และสิทธิ์"
+    "settingsUsers": "ผู้ใช้และสิทธิ์",
+    "user": "ผู้ใช้งาน",
+    "userrole": "สิทธิ์ผู้ใช้งาน",
+    "menu": "เมนู"
   },
   "dashboard": {
     "title": "แดชบอร์ด",
