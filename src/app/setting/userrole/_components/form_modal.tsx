@@ -45,6 +45,11 @@ import { Textarea } from "@/components/ui/textarea"
  * ปุ่มที่เปิดฟอร์มเป็นคนบอกโหมดมาเอง: "add" เปิดฟอร์มเปล่า "edit" เปิดพร้อมค่าของแถวนั้น
  * กดบันทึกแล้วยิง POST /api/web/userrole-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
  */
+// คลาสขอบแดง — ต้องสลับคลาสเอง ไม่ใช้ variant aria-invalid: เพราะ Tailwind v4 ห่อ variant
+// ด้วย :where() ความจำเพาะจึงเท่ากับ border-input แล้วแพ้ลำดับใน stylesheet
+const INVALID_FIELD =
+  "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
+
 const emptyValues: RoleFormValues = {
   rolename: "",
   detail: "",
@@ -87,6 +92,8 @@ export function FormModal({
 
   const [values, setValues] = React.useState(() => toValues(role))
   const [saving, setSaving] = React.useState(false)
+  /** ชื่อสิทธิ์ยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
+  const [nameError, setNameError] = React.useState(false)
   /** ผลของการกดบันทึกครั้งล่าสุด — null คือยังไม่ได้กด */
   const [result, setResult] = React.useState<{
     ok: boolean
@@ -105,6 +112,7 @@ export function FormModal({
     setValues(toValues(role))
     setResult(null)
     setSaving(false)
+    setNameError(false)
   }
 
   // รายการเมนูสำหรับติ๊กเลือกสิทธิ์ — ดึงตอนเปิดฟอร์ม ไม่ได้ดึงค้างไว้ตั้งแต่โหลดหน้า
@@ -183,6 +191,11 @@ export function FormModal({
           onSubmit={async (event) => {
             event.preventDefault()
             if (saving) return
+            if (!values.rolename.trim()) {
+              setNameError(true)
+              return
+            }
+            setNameError(false)
             setSaving(true)
             setResult(null)
             try {
@@ -219,13 +232,23 @@ export function FormModal({
           ) : null}
           
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="role-name" label={tcol("rolename")} required>
+            <Field
+              id="role-name"
+              label={tcol("rolename")}
+              required
+              error={nameError ? t("required") : undefined}
+            >
               <Input
                 id="role-name"
                 value={values.rolename}
-                onChange={(event) => set("rolename", event.target.value)}
+                onChange={(event) => {
+                  set("rolename", event.target.value)
+                  if (event.target.value.trim()) setNameError(false)
+                }}
                 placeholder="..."
-                required
+                aria-required
+                aria-invalid={nameError || undefined}
+                className={nameError ? INVALID_FIELD : undefined}
               />
             </Field>
             <Field id="role-status" label={tcol("status")}>
@@ -375,12 +398,15 @@ function Field({
   id,
   label,
   required,
+  error,
   children,
 }: {
   id: string
   label: string
   /** ใส่ดอกจันให้รู้ตั้งแต่ก่อนกดบันทึกว่าช่องนี้ต้องกรอก */
   required?: boolean
+  /** ข้อความผิดพลาดใต้ช่อง — ขึ้นตอนกดบันทึกแล้วยังไม่ได้กรอก */
+  error?: string
   children: React.ReactNode
 }) {
   return (
@@ -394,6 +420,7 @@ function Field({
         ) : null}
       </Label>
       {children}
+      {error ? <p className="text-destructive text-xs">{error}</p> : null}
     </div>
   )
 }

@@ -10,6 +10,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
+    "selectRequired": "Please select an option",
+    "required": "Please fill out this field",
     "all": "All",
     "table": {
       "search": "Search…",
@@ -263,6 +265,36 @@
     "selectAll": "Select all",
     "noMenu": "No menu selected",
     "loadError": "Could not load roles"
+  },
+  "userauthens": {
+    "title": "Users",
+    "description": "{count} users in total",
+    "columns": {
+      "username": "Username",
+      "fullname": "Full name",
+      "role": "Role",
+      "email": "Email",
+      "telephone": "Phone",
+      "status": "Status",
+      "password": "Password"
+    },
+    "form": {
+      "addTitle": "Add user",
+      "editTitle": "Edit user",
+      "addDescription": "Fill in the details of the user to add",
+      "editDescription": "Change the details of the selected user",
+      "passwordHint": "Leave blank to keep the current password",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this user?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "noRole": "No role",
+    "loadError": "Could not load users"
   },
   "status": {
     "active": "Active",

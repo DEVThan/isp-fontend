@@ -42,6 +42,9 @@ import { Textarea } from "@/components/ui/textarea"
  * ปุ่มที่เปิดฟอร์มเป็นคนบอกโหมดมาเอง: "add" เปิดฟอร์มเปล่า "edit" เปิดพร้อมค่าของแถวนั้น
  * กดบันทึกแล้วยิง POST /api/web/menu-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
  */
+const INVALID_FIELD =
+  "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
+
 const emptyValues: MenuFormValues = {
   name: "",
   path: "",
@@ -88,6 +91,11 @@ export function FormModal({
 
   const [values, setValues] = React.useState(() => toValues(menu))
   const [saving, setSaving] = React.useState(false)
+  /** ช่องบังคับที่ยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์
+   *  (ป้ายของเบราว์เซอร์ชี้ไม่ตรงช่องเวลาเป็น combobox และหน้าตาไม่เข้ากับที่เหลือ) */
+  const [errors, setErrors] = React.useState<
+    Partial<Record<keyof MenuFormValues, boolean>>
+  >({})
   /** ผลของการกดบันทึกครั้งล่าสุด — null คือยังไม่ได้กด */
   const [result, setResult] = React.useState<{
     ok: boolean
@@ -106,6 +114,7 @@ export function FormModal({
     setValues(toValues(menu))
     setResult(null)
     setSaving(false)
+    setErrors({})
   }
 
   // ตัวเลือกเมนูแม่มาจาก API ไม่ได้ปั้นจากแถวในตาราง — ตารางแบ่งหน้ามาแล้ว
@@ -168,6 +177,15 @@ export function FormModal({
           onSubmit={async (event) => {
             event.preventDefault()
             if (saving) return
+            const missing: Partial<Record<keyof MenuFormValues, boolean>> = {}
+            if (!values.name.trim()) missing.name = true
+            if (!values.code.trim()) missing.code = true
+            if (!values.path.trim()) missing.path = true
+            if (Object.keys(missing).length > 0) {
+              setErrors(missing)
+              return
+            }
+            setErrors({})
             setSaving(true)
             setResult(null)
             try {
@@ -190,33 +208,62 @@ export function FormModal({
           className="grid gap-4"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="menu-name" label={tcol("name")} required>
+            <Field
+              id="menu-name"
+              label={tcol("name")}
+              required
+              error={errors.name ? t("required") : undefined}
+            >
               <Input
                 id="menu-name"
                 value={values.name}
-                onChange={(event) => set("name", event.target.value)}
+                onChange={(event) => {
+                  set("name", event.target.value)
+                  if (event.target.value.trim())
+                    setErrors((e) => ({ ...e, name: false }))
+                }}
                 placeholder="Menu Name..."
-                required
+                aria-required
+                aria-invalid={errors.name || undefined}
+                className={errors.name ? INVALID_FIELD : undefined}
               />
             </Field>
-            <Field id="menu-code" label={tcol("code")} required>
+            <Field
+              id="menu-code"
+              label={tcol("code")}
+              required
+              error={errors.code ? t("required") : undefined}
+            >
               <Input
                 id="menu-code"
                 value={values.code}
-                onChange={(event) => set("code", event.target.value)}
-                required
+                onChange={(event) => {
+                  set("code", event.target.value)
+                  if (event.target.value.trim()) setErrors((e) => ({ ...e, code: false }))
+                }}
+                aria-required
+                aria-invalid={errors.code || undefined}
                 placeholder="code-***"
-                className="font-mono"
+                className={`font-mono ${errors.code ? INVALID_FIELD : ""}`}
               />
             </Field>
-            <Field id="menu-path" label={tcol("path")} required>
+            <Field
+              id="menu-path"
+              label={tcol("path")}
+              required
+              error={errors.path ? t("required") : undefined}
+            >
               <Input
                 id="menu-path"
                 value={values.path}
-                onChange={(event) => set("path", event.target.value)}
-                required
+                onChange={(event) => {
+                  set("path", event.target.value)
+                  if (event.target.value.trim()) setErrors((e) => ({ ...e, path: false }))
+                }}
+                aria-required
+                aria-invalid={errors.path || undefined}
                 placeholder="/path"
-                className="font-mono"
+                className={`font-mono ${errors.path ? INVALID_FIELD : ""}`}
               />
             </Field>
             <Field id="menu-icon" label={tcol("icon")}>
@@ -323,12 +370,15 @@ function Field({
   id,
   label,
   required,
+  error,
   children,
 }: {
   id: string
   label: string
   /** ใส่ดอกจันให้รู้ตั้งแต่ก่อนกดบันทึกว่าช่องนี้ต้องกรอก */
   required?: boolean
+  /** ข้อความผิดพลาดใต้ช่อง — ขึ้นตอนกดบันทึกแล้วยังไม่ได้กรอก */
+  error?: string
   children: React.ReactNode
 }) {
   return (
@@ -342,6 +392,7 @@ function Field({
         ) : null}
       </Label>
       {children}
+      {error ? <p className="text-destructive text-xs">{error}</p> : null}
     </div>
   )
 }
