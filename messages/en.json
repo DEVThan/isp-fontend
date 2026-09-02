@@ -234,6 +234,36 @@
     "inactive": "Inactive",
     "loadError": "Could not load menus"
   },
+  "userroles": {
+    "title": "User roles",
+    "description": "{count} roles in total",
+    "columns": {
+      "id": "Code",
+      "rolename": "Role name",
+      "detail": "Detail",
+      "menus": "Menus",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add role",
+      "editTitle": "Edit role",
+      "addDescription": "Fill in the details of the role to add",
+      "editDescription": "Change the details of the selected role",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this role?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "deleteUsers": "{count} users still have this role and need a new one"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "menuCount": "{count} menus",
+    "selectAll": "Select all",
+    "noMenu": "No menu selected",
+    "loadError": "Could not load roles"
+  },
   "status": {
     "active": "Active",
     "suspended": "Suspended",

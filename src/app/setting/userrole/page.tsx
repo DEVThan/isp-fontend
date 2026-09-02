@@ -1,92 +1,43 @@
 import type { Metadata } from "next"
-import { UserPlus } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 
+import { getUserRoles } from "@/app/setting/userrole/_components/api"
+import type { UserRoleList } from "@/app/setting/userrole/_components/model"
+import { Tables } from "@/app/setting/userrole/_components/table"
 import { PageHeader } from "@/components/page-header"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { adminUsers } from "@/lib/mock-data"
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("users")
+  const t = await getTranslations("userroles")
   return { title: t("title") }
 }
 
-export default async function UsersPage() {
-  const t = await getTranslations("users")
-  const tcol = await getTranslations("users.columns")
-  const tr = await getTranslations("users.roles")
+export default async function UserRolePage() {
+  const t = await getTranslations("userroles")
+
+  // API ล่ม/ต่อไม่ได้ ต้องไม่ทำให้ทั้งหน้าพัง — โชว์ตารางว่างพร้อมข้อความบอกแทน
+  // ดึงหน้าแรกให้ตั้งแต่ฝั่งเซิร์ฟเวอร์ จากนั้นตาราง (client) จะยิงเองทุกครั้งที่ค้นหา/เปลี่ยนหน้า
+  let list: UserRoleList = {
+    userroles: [],
+    total: 0,
+    page: 1,
+    per_page: 0,
+    total_pages: 1,
+  }
+  let loadError = false
+  try {
+    list = await getUserRoles()
+  } catch {
+    loadError = true
+  }
 
   return (
-    <>
+    <div className="flex flex-col gap-0">
       <PageHeader
         title={t("title")}
-        description={t("description", { count: adminUsers.length })}
-      >
-        <Button>
-          <UserPlus />
-          {t("invite")}
-        </Button>
-      </PageHeader>
+        description={t("description", { count: list.total })}
+      />
 
-      <Card>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{tcol("name")}</TableHead>
-                <TableHead>{tcol("email")}</TableHead>
-                <TableHead>{tcol("role")}</TableHead>
-                <TableHead>{tcol("lastActive")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {adminUsers.map((user) => (
-                <TableRow key={user.email}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Avatar className="size-7">
-                        <AvatarFallback className="text-xs">
-                          {user.name.slice(0, 1)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{user.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {user.email}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        user.roleKey === "owner"
-                          ? "bg-info/12 text-info-ink border-transparent"
-                          : undefined
-                      }
-                    >
-                      {tr(user.roleKey)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {user.lastActive}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </>
+      <Tables initial={list} initialError={loadError} />
+    </div>
   )
 }
