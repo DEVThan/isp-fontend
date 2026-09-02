@@ -8,6 +8,8 @@
     "language": "Language",
     "viewAll": "View all",
     "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
     "all": "All",
     "table": {
       "search": "Search…",
@@ -210,7 +212,22 @@
       "code": "Code",
       "parent": "Parent",
       "sortOrder": "Order",
-      "status": "Status"
+      "status": "Status",
+      "icon": "Icon",
+      "detail": "Detail"
+    },
+    "form": {
+      "addTitle": "Add menu",
+      "editTitle": "Edit menu",
+      "addDescription": "Fill in the details of the menu to add",
+      "editDescription": "Change the details of the selected menu",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this menu?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "deleteOrphans": "{count} child menus are now orphaned and need a new parent"
     },
     "root": "Top level",
     "active": "Active",

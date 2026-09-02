@@ -2,11 +2,13 @@
 
 import * as React from "react"
 import {
+  ChevronRight,
   LoaderCircle,
   Pencil,
   Plus,
   Search,
   SearchX,
+  Trash2,
   TriangleAlert,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
@@ -15,11 +17,14 @@ import {
   getAllMenus,
   MENU_PAGE_SIZE,
 } from "@/app/setting/menu/_components/api"
+import { DeleteModal } from "@/app/setting/menu/_components/delete_modal"
+import { FormModal } from "@/app/setting/menu/_components/form_modal"
 import {
   isMenuActive,
   MENU_ACTIVE,
   MENU_INACTIVE,
   type Menu,
+  type MenuFormMode,
   type MenuList,
 } from "@/app/setting/menu/_components/model"
 import { TablePagination } from "@/app/setting/menu/_components/pagination"
@@ -42,7 +47,7 @@ import { fallbackIcon, iconByName } from "@/lib/nav"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 6
+const COLUMN_COUNT = 8
 
 /** parent_id = 0 หรือ null คือเมนูหลัก นอกนั้นเป็นเมนูย่อยของแถวอื่น */
 const isChild = (menu: Menu) => Boolean(menu.parent_id)
@@ -73,12 +78,23 @@ export function Tables({
   const [failed, setFailed] = React.useState(Boolean(initialError))
   const [loading, setLoading] = React.useState(false)
 
+  /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
+  const [form, setForm] = React.useState<{
+    mode: MenuFormMode
+    menu?: Menu
+  } | null>(null)
+
+  /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
+  const [removing, setRemoving] = React.useState<Menu | null>(null)
+
   const [nameQuery, setNameQuery] = React.useState("")
   // const [pathQuery, setPathQuery] = React.useState("")
   const [status, setStatus] = React.useState<string | null>(null)
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(MENU_PAGE_SIZE)
 
+  /** กรอบตาราง — ใช้เลื่อนหน้าให้เห็นหัวตารางทุกครั้งที่เริ่มโหลดข้อมูลใหม่ */
+  const tableRef = React.useRef<HTMLDivElement>(null)
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   /** เลขคำขอล่าสุด — ผลลัพธ์ของคำขอเก่าที่มาช้ากว่าต้องถูกทิ้ง ไม่งั้นตารางเด้งกลับไปค่าที่แล้ว */
   const latest = React.useRef(0)
@@ -104,6 +120,9 @@ export function Tables({
   ) => {
     if (timer.current) clearTimeout(timer.current)
     setLoading(true)
+    // เลื่อนขึ้นมาที่หัวตารางก่อน จะได้เห็นทั้งตัวหมุนและแถวชุดใหม่ตั้งแต่แถวแรก
+    // (scroll-mt-20 ที่กรอบตารางเผื่อที่ให้แถบหัวเว็บที่ปักหมุดอยู่ h-14)
+    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
@@ -140,7 +159,10 @@ export function Tables({
   ]
 
   // เมนูแม่ต้องอยู่ในหน้าเดียวกันถึงจะหาชื่อเจอ — API แบ่งหน้ามาแล้ว ลูกกับแม่อาจอยู่คนละหน้า
-  // const labelById = new Map(list.menus.map((row) => [row.id, labelOf(row)]))
+  const labelById = new Map(list.menus.map((row) => [row.id, labelOf(row)]))
+  /** ชื่อเมนูแม่ — หาเจอเฉพาะตอนแม่อยู่หน้าเดียวกัน (API เรียงลูกไว้ต่อจากแม่อยู่แล้ว) */
+  const parentNameOf = (menu: Menu) =>
+    menu.parent_id ? labelById.get(menu.parent_id) : undefined
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
   const visible = list.menus
@@ -148,7 +170,7 @@ export function Tables({
   return (
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
       <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-4">
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="filter-name" className="text-muted-foreground text-xs">
             {tcol("name")}
           </Label>
@@ -167,14 +189,9 @@ export function Tables({
               className="bg-card/80 focus-visible:border-primary/50 pl-8"
             />
           </div>
-        </div>
+        </div> */}
         <div className="space-y-2">
-          <Label
-            htmlFor="filter-status"
-            className="text-muted-foreground text-xs"
-          >
-            {tcol("status")}
-          </Label>
+          <Label htmlFor="filter-status" className="text-muted-foreground text-xs" >{tcol("status")}</Label>
           <SelectOption
             id="filter-status"
             options={statusOptions}
@@ -191,16 +208,20 @@ export function Tables({
       </CardContent>
 
       <CardContent className="px-4 py-0">
-        <div className="flex flex-wrap items-end justify-end gap-0 p-0 md:p-0">
-          <Button className="from-chart-1 to-chart-5  bg-gradient-to-r text-white  transition-transform hover:-translate-y-0.5 hover:opacity-95">
+        {/* <div className="flex flex-wrap items-end justify-end gap-0 p-0 md:p-0">
+          <Button
+            onClick={() => setForm({ mode: "add" })}
+            className="from-chart-1 to-chart-5  bg-gradient-to-r text-white  transition-transform hover:-translate-y-0.5 hover:opacity-95"
+          >
             <Plus /> {t("add")}
           </Button>
-        </div>
+        </div> */}
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ
             ไม่งั้นตัวหมุนจะจางตามไปด้วย — ใช้พื้นโปร่งของตัวคลุมแทน) */}
         <div
           aria-busy={loading}
-          className="border-border/60 relative mt-1 mb-4 overflow-hidden rounded-lg border"
+          ref={tableRef}
+          className="border-border/60 relative mt-1 mb-4 scroll-mt-20 overflow-hidden rounded-lg border"
         >
           {loading ? (
             // เกาะไว้ด้านบน ไม่ใช่กึ่งกลาง — ตารางยาว ๆ ตัวหมุนจะได้ไม่ไปอยู่นอกจอ
@@ -210,10 +231,7 @@ export function Tables({
               className="from-card/85 via-card/70 to-card/85 animate-in fade-in absolute inset-0 z-10 flex items-start justify-center bg-gradient-to-b pt-14 backdrop-blur-[2px] duration-200"
             >
               {/* แถบวิ่งบนขอบตาราง ไล่เฉดชุดเดียวกับปุ่มหลักและโลโก้ */}
-              <span
-                aria-hidden
-                className="absolute inset-x-0 top-0 h-[3px] overflow-hidden"
-              >
+              <span aria-hidden className="absolute inset-x-0 top-0 h-[3px] overflow-hidden" >
                 <span className="from-chart-1 via-chart-5 to-chart-1 animate-loading-sweep absolute top-0 h-full w-[30%] rounded-full bg-gradient-to-r" />
               </span>
 
@@ -231,77 +249,87 @@ export function Tables({
                 <TableHead className="text-muted-foreground pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("path")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("code")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
                 {/* <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("parent")}</TableHead> */}
                 <TableHead className="text-muted-foreground text-right text-xs font-semibold tracking-wide uppercase">{tcol("sortOrder")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
-                <TableHead className="w-14 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
+                <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {visible.map((menu) => (
-                <TableRow
-                  key={menu.id}
-                  className="group/row border-border/50 hover:bg-accent/40 transition-colors"
-                >
+                <TableRow key={menu.id} className="group/row border-border/50 hover:bg-accent/40 transition-colors" >
                   <TableCell className="relative pl-6">
                     <span
                       aria-hidden
                       className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
                     />
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex min-w-0 items-center gap-2.5">
                       {isChild(menu) ? (
-                        <span
-                          aria-hidden
-                          className="border-border ml-4 size-4 shrink-0 -translate-y-1.5 rounded-bl-[6px] border-b border-l"
-                        />
+                        // <span
+                        //   aria-hidden
+                        //   className="border-border/70 ml-4 size-4 shrink-0 -translate-y-1.5 rounded-bl-[6px] border-b border-l"
+                        // />
+                        <span aria-hidden className="border-border/70 ml-4 size-4 shrink-0 " />
                       ) : (
-                        <span className="bg-primary/10 ring-primary/20 flex size-8 items-center justify-center rounded-md ring-1">
+                        <span className="bg-primary/10 ring-primary/20 flex size-8 shrink-0 items-center justify-center rounded-md ring-1">
                           <MenuIcon name={menu.icon} />
                         </span>
                       )}
-                      <span
-                        className={
-                          isChild(menu) ? "text-muted-foreground" : "font-medium"
-                        }
-                      >
-                        {labelOf(menu)}
-                      </span>
+                      {isChild(menu) ? (
+                        // เมนูย่อย: ชื่อเมนูแม่นำหน้าแบบ breadcrumb ตัวเล็กสีจาง แล้วตามด้วยชื่อจริงที่อ่านง่าย
+                        <span className="flex min-w-0 items-center gap-1">
+                          {parentNameOf(menu) ? (
+                            <>
+                              <span className="text-muted-foreground/80 truncate text-xs">{parentNameOf(menu)}</span>
+                              <ChevronRight aria-hidden className="text-muted-foreground/50 size-3 shrink-0"/>
+                            </>
+                          ) : null}
+                          <span className="truncate">{labelOf(menu)}</span>
+                        </span>
+                      ) : (
+                        <span className="truncate font-medium">{labelOf(menu)}</span>
+                      )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground group-hover/row:text-foreground font-mono text-xs transition-colors">
-                    {menu.path}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-xs">
-                    {menu.code}
-                  </TableCell>
-                  {/* <TableCell className="text-muted-foreground">
-                    {(menu.parent_id && labelById.get(menu.parent_id)) ||
-                      tm("root")}
-                  </TableCell> */}
-                  <TableCell className="text-muted-foreground text-right tabular-nums">
-                    {menu.sort_order}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground group-hover/row:text-foreground font-mono text-xs transition-colors">{menu.path}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">{menu.code}</TableCell>
+                  <TableCell className="text-muted-foreground max-w-[220px] truncate">{menu.detail || ""}</TableCell>
+                  {/* <TableCell className="text-muted-foreground">{(menu.parent_id && labelById.get(menu.parent_id)) || tm("root")}</TableCell> */}
+                  <TableCell className="text-muted-foreground text-right tabular-nums">{menu.sort_order}</TableCell>
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className={`border-transparent ring-1 ring-inset ${
+                      className={`border-transparent font-medium ${
                         isMenuActive(menu)
-                          ? "bg-success/12 text-success-ink ring-success/25"
-                          : "bg-muted text-muted-foreground ring-border"
+                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                          : "bg-orange-100 text-orange-700 hover:bg-orange-100"
                       }`}
                     >
                       {isMenuActive(menu) ? tm("active") : tm("inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell className="pr-6 text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={t("edit")}
-                      className="text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-60 transition group-hover/row:opacity-100"
-                    >
-                      <Pencil />
-                    </Button>
+                    <div className="flex justify-end gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("edit")}
+                        onClick={() => setForm({ mode: "edit", menu })}
+                        className="border border-orange-200 text-orange-500 transition-colors hover:bg-orange-50 hover:text-orange-700"
+                      >
+                        <Pencil />
+                      </Button>
+                      {/* <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={tall("delete")}
+                        onClick={() => setRemoving(menu)}
+                        className="border border-red-200 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 "
+                      >
+                        <Trash2 />
+                      </Button> */}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -347,6 +375,28 @@ export function Tables({
           }}
         />
       </CardContent>
+
+      {/* ฟอร์มอยู่นอกตาราง เปิด/ปิดด้วย state เดียว ปุ่มเป็นคนบอกว่าโหมดไหน */}
+      <FormModal
+        open={form !== null}
+        onOpenChange={(next) => {
+          if (!next) setForm(null)
+        }}
+        mode={form?.mode ?? "add"}
+        menu={form?.menu}
+        // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
+        onSaved={() => load({ name: nameQuery, status, page, pageSize })}
+      />
+
+      {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
+      <DeleteModal
+        open={removing !== null}
+        onOpenChange={(next) => {
+          if (!next) setRemoving(null)
+        }}
+        menu={removing ?? undefined}
+        onDeleted={() => load({ name: nameQuery, status, page, pageSize })}
+      />
     </Card>
   )
 }

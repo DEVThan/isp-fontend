@@ -226,7 +226,7 @@ export function AppSidebar({
           <SidebarGroup key={group.key ?? "api"}>
             {group.key ? <SidebarGroupLabel>{t(group.key)}</SidebarGroupLabel> : null}
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-1">
                 {group.items.map((item) =>
                   item.children?.length ? (
                     <NavBranch key={navId(item)} item={item} pathname={pathname} />

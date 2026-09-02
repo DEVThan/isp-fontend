@@ -3,7 +3,14 @@ import {
   ApiError,
   type ApiEnvelope,
 } from "@/app/login/components/api"
-import type { MenuList } from "@/app/setting/menu/_components/model"
+import type {
+  Menu,
+  MenuDeleted,
+  MenuFormMode,
+  MenuFormValues,
+  MenuList,
+  MenuOption,
+} from "@/app/setting/menu/_components/model"
 
 const API_BASE_URL =
   typeof window === "undefined"
@@ -80,4 +87,122 @@ export async function getAllMenus(query: MenuQuery = {}): Promise<MenuList> {
     per_page: result?.per_page ?? 0,
     total_pages: result?.total_pages ?? 1,
   }
+}
+
+/**
+ * POST /api/web/menu-get-option — ตัวเลือกสำหรับ dropdown "เมนูแม่"
+ *
+ * ไม่รับพารามิเตอร์ ไม่แบ่งหน้า และคืนเฉพาะเมนูชั้นบนสุดที่ active
+ * แถวแรกคือ id 0 "New Main Menu" ที่ API ใส่มาให้เสมอ = ไม่มีเมนูแม่
+ */
+export async function getMenuOptions(): Promise<MenuOption[]> {
+  const url = `${API_BASE_URL}/menu-get-option`
+  let res: Response
+
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    })
+  } catch (cause) {
+    throw new ApiError(
+      API_NETWORK_ERROR,
+      `เรียก API ไม่สำเร็จ: ${url} (${String(cause)})`
+    )
+  }
+
+  const envelope = (await res
+    .json()
+    .catch(() => null)) as ApiEnvelope<MenuOption[]> | null
+  if (!envelope) {
+    throw new ApiError(res.status, res.statusText || "Invalid response")
+  }
+  if (!envelope.status) {
+    throw new ApiError(envelope.resultcode ?? res.status, envelope.message)
+  }
+  return envelope.result ?? []
+}
+
+/**
+ * POST /api/web/menu-action — เพิ่ม/แก้ไขเมนู เส้นเดียวจบ แยกด้วย action ใน body
+ *
+ * action "add" ไม่ต้องส่ง id (ฐานข้อมูลออกให้เอง) · "edit" ต้องส่ง id ของแถวที่แก้
+ * ทั้งสองแบบส่งไปทุกฟิลด์ ไม่ใช่เฉพาะที่แก้ และคืนแถวหลังบันทึกกลับมา
+ * ผิดพลาดจะโยน ApiError ที่มี message จาก API (เช่น "name is required",
+ * "parent_id not found") ให้เอาไปแสดงได้เลย
+ */
+export async function saveMenu(
+  action: MenuFormMode,
+  values: MenuFormValues,
+  menuId?: number
+): Promise<Menu> {
+  const url = `${API_BASE_URL}/menu-action`
+  let res: Response
+
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: action,
+        ...values,
+        id: menuId ?? 0,
+      }),
+    })
+  } catch (cause) {
+    throw new ApiError(
+      API_NETWORK_ERROR,
+      `เรียก API ไม่สำเร็จ: ${url} (${String(cause)})`
+    )
+  }
+
+  const envelope = (await res
+    .json()
+    .catch(() => null)) as ApiEnvelope<Menu> | null
+  if (!envelope) {
+    throw new ApiError(res.status, res.statusText || "Invalid response")
+  }
+  if (!envelope.status) {
+    throw new ApiError(envelope.resultcode ?? res.status, envelope.message)
+  }
+  return envelope.result as Menu
+}
+
+/**
+ * POST /api/web/menu-delete — ลบเมนูตาม id (ส่งไปแค่ id เท่านั้น)
+ *
+ * ลบออกจากตารางจริง กู้คืนไม่ได้ · ไม่มี id นั้นแล้วตอบ 404 และไม่ได้ลบอะไรเลย
+ * ผลลัพธ์บอกจำนวนเมนูลูกที่กลายเป็นเมนูลอยมาด้วย เอาไปเตือนผู้ใช้ต่อได้
+ */
+export async function deleteMenu(id: number): Promise<MenuDeleted> {
+  const url = `${API_BASE_URL}/menu-delete`
+  let res: Response
+
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    })
+  } catch (cause) {
+    throw new ApiError(
+      API_NETWORK_ERROR,
+      `เรียก API ไม่สำเร็จ: ${url} (${String(cause)})`
+    )
+  }
+
+  const envelope = (await res
+    .json()
+    .catch(() => null)) as ApiEnvelope<MenuDeleted> | null
+  if (!envelope) {
+    throw new ApiError(res.status, res.statusText || "Invalid response")
+  }
+  if (!envelope.status) {
+    throw new ApiError(envelope.resultcode ?? res.status, envelope.message)
+  }
+  return envelope.result as MenuDeleted
 }
