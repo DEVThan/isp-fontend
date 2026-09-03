@@ -302,8 +302,8 @@ export function Tables({
                       variant="secondary"
                       className={`border-transparent font-medium ${
                         isMenuActive(menu)
-                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                          : "bg-orange-100 text-orange-700 hover:bg-orange-100"
+                          ? "bg-success/12 text-success-ink hover:bg-success/12"
+                          : "bg-muted text-muted-foreground hover:bg-muted"
                       }`}
                     >
                       {isMenuActive(menu) ? tm("active") : tm("inactive")}
@@ -316,19 +316,19 @@ export function Tables({
                         size="icon"
                         aria-label={t("edit")}
                         onClick={() => setForm({ mode: "edit", menu })}
-                        className="border border-orange-200 text-orange-500 transition-colors hover:bg-orange-50 hover:text-orange-700"
+                        className="bg-warning/18 text-warning-ink hover:bg-orange-50 hover:text-orange-300"
                       >
                         <Pencil />
                       </Button>
-                      {/* <Button
+                      <Button
                         variant="ghost"
                         size="icon"
                         aria-label={tall("delete")}
                         onClick={() => setRemoving(menu)}
-                        className="border border-red-200 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 "
+                        className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
                       >
                         <Trash2 />
-                      </Button> */}
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>

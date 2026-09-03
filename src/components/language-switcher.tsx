@@ -1,8 +1,8 @@
 "use client"
 
-import { useTransition, type ReactNode } from "react"
+import { useId, useTransition, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Languages } from "lucide-react"
+import { Check } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
@@ -21,25 +21,26 @@ import { setUserLocale } from "@/i18n/actions"
 /**
  * ธงเล็กหน้าชื่อภาษา — วาดเป็น SVG เอง ไม่ใช้ emoji ธง (🇹🇭)
  * เพราะ Windows ไม่มีฟอนต์ธง จะกลายเป็นตัวอักษร "TH" แทน
+ * รับ id มาจากผู้เรียก เพราะธงใบเดียวถูกวาดหลายที่ ใช้ id ซ้ำใน DOM ไม่ได้
  */
-const flags: Record<Locale, ReactNode> = {
-  th: (
+const flags: Record<Locale, (id: string) => ReactNode> = {
+  th: () => (
     <svg viewBox="0 0 9 6" className="size-full">
       <rect width="9" height="6" fill="#A51931" />
       <rect y="1" width="9" height="4" fill="#F4F5F8" />
       <rect y="2" width="9" height="2" fill="#2D2A4A" />
     </svg>
   ),
-  en: (
+  en: (id) => (
     <svg viewBox="0 0 60 30" className="size-full">
-      <clipPath id="flag-en-diagonals">
+      <clipPath id={id}>
         <path d="M30,15 h30 v15 z v15 h-30 z h-30 v-15 z v-15 h30 z" />
       </clipPath>
       <rect width="60" height="30" fill="#012169" />
       <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6" />
       <path
         d="M0,0 L60,30 M60,0 L0,30"
-        clipPath="url(#flag-en-diagonals)"
+        clipPath={`url(#${id})`}
         stroke="#C8102E"
         strokeWidth="4"
       />
@@ -47,7 +48,7 @@ const flags: Record<Locale, ReactNode> = {
       <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6" />
     </svg>
   ),
-  // mm: (
+  // mm: () => (
   //   <svg viewBox="0 0 9 6" className="size-full">
   //     <rect width="9" height="6" fill="#FECB00" />
   //     <rect y="2" width="9" height="4" fill="#34B233" />
@@ -58,6 +59,17 @@ const flags: Record<Locale, ReactNode> = {
   //     />
   //   </svg>
   // ),
+}
+
+/** ครอบด้วย span เพราะเมนู/ปุ่มบังคับ svg เปล่าให้เป็นสี่เหลี่ยมจัตุรัส 16px */
+function Flag({ locale }: { locale: Locale }) {
+  // useId ให้ค่ามีอักขระพิเศษ (« ») ซึ่งใช้ใน url(#...) ของ SVG ไม่ได้ จึงตัดทิ้ง
+  const id = `flag-${useId().replace(/[^a-zA-Z0-9]/g, "")}`
+  return (
+    <span className="h-3 w-[18px] shrink-0 overflow-hidden rounded-[2px] ring-1 ring-black/10 dark:ring-white/15">
+      {flags[locale](id)}
+    </span>
+  )
 }
 
 export function LanguageSwitcher() {
@@ -81,7 +93,7 @@ export function LanguageSwitcher() {
           <Button variant="ghost" size="icon" aria-label={t("language")} />
         }
       >
-        <Languages className="size-4" />
+        <Flag locale={active} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40">
         <DropdownMenuGroup>
@@ -98,10 +110,7 @@ export function LanguageSwitcher() {
               <Check
                 className={locale === active ? "opacity-100" : "opacity-0"}
               />
-              {/* ครอบด้วย span เพราะเมนูบังคับ svg เปล่าให้เป็นสี่เหลี่ยมจัตุรัส 16px */}
-              <span className="h-3 w-[18px] shrink-0 overflow-hidden rounded-[2px] ring-1 ring-black/10 dark:ring-white/15">
-                {flags[locale]}
-              </span>
+              <Flag locale={locale} />
               {localeNames[locale]}
             </DropdownMenuItem>
           ))}

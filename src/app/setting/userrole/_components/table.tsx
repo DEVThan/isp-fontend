@@ -239,28 +239,22 @@ export function Tables({
                   key={role.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
-                  <TableCell className="relative pl-6">
+                  <TableCell className="pt-1 pb-1 relative pl-6">
                     {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ */}
                     <span
                       aria-hidden
                       className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
                     />
-                    <span className="text-muted-foreground font-mono text-xs">
-                      {role.id}
-                    </span>
+                    <span className="text-muted-foreground font-mono text-xs">{role.id}</span>
                   </TableCell>
-                  <TableCell className="font-medium">{role.rolename}</TableCell>
-                  {/* รายละเอียดยาวได้ ตัดด้วย truncate กันดันคอลัมน์อื่นแคบ · ว่างก็ขีดคั่นไว้ให้เห็นว่าไม่มี */}
-                  <TableCell className="text-muted-foreground max-w-[220px] truncate">
-                    {role.detail || "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
+                  <TableCell className="pt-1 pb-1 font-medium">{role.rolename}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{role.detail || "—"}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground tabular-nums">
                     {role.permission_menus.length
                       ? tr("menuCount", { count: role.permission_menus.length })
                       : tr("noMenu")}
                   </TableCell>
-                  <TableCell>
-                    {/* พื้นอ่อน ตัวอักษรเข้ม ไม่มีขอบ · hover: กันไม่ให้ Badge เปลี่ยนสีตอนชี้ */}
+                  <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"
                       className={`border-transparent font-medium ${
@@ -272,7 +266,7 @@ export function Tables({
                       {isRoleActive(role) ? tr("active") : tr("inactive")}
                     </Badge>
                   </TableCell>
-                  <TableCell className="pr-6 text-right">
+                  <TableCell className="pt-1 pb-1 pr-6 text-right">
                     <div className="flex justify-end gap-0.5">
                       <Button
                         variant="ghost"

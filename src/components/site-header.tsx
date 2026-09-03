@@ -59,13 +59,13 @@ export function SiteHeader({ groups }: { groups: NavGroup[] }) {
       </Breadcrumb>
 
       <div className="ml-auto flex items-center gap-2">
-        <div className="relative hidden lg:block">
+        {/* <div className="relative hidden lg:block">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
           <Input placeholder={tc("search")} className="w-56 pl-8 xl:w-72" />
-        </div>
-        <Button variant="ghost" size="icon" aria-label={tc("notifications")}>
+        </div> */}
+        {/* <Button variant="ghost" size="icon" aria-label={tc("notifications")}>
           <Bell className="size-4" />
-        </Button>
+        </Button> */}
         <LanguageSwitcher />
         <ThemeToggle />
       </div>

@@ -282,27 +282,15 @@ export function Tables({
                   key={user.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
-                  <TableCell className="relative pl-6 font-medium">
-                    {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ */}
-                    <span
-                      aria-hidden
-                      className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
-                    />
+                  <TableCell className="pt-1 pb-1 relative pl-6 font-medium">
+                    <span aria-hidden className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100" />
                     {user.username}
                   </TableCell>
-                  <TableCell>{user.fullname || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {/* rolename มาจากการ join ถ้ายังไม่ได้กำหนดสิทธิ์จะเป็น null */}
-                    {user.rolename || tu("noRole")}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                    {user.email || "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {user.telephone || "—"}
-                  </TableCell>
-                  <TableCell>
-                    {/* พื้นอ่อน ตัวอักษรเข้ม ไม่มีขอบ · hover: กันไม่ให้ Badge เปลี่ยนสีตอนชี้ */}
+                  <TableCell className="pt-1 pb-1 ">{user.fullname || "—"}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground">{user.rolename || tu("noRole")}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[200px] truncate">{user.email || "—"}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground tabular-nums">{user.telephone || "—"}</TableCell>
+                  <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"
                       className={`border-transparent font-medium ${
@@ -314,7 +302,7 @@ export function Tables({
                       {isUserActive(user) ? tu("active") : tu("inactive")}
                     </Badge>
                   </TableCell>
-                  <TableCell className="pr-6 text-right">
+                  <TableCell className="pt-1 pb-1 pr-6 text-right">
                     <div className="flex justify-end gap-0.5">
                       <Button
                         variant="ghost"
