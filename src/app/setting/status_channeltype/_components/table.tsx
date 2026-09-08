@@ -43,8 +43,9 @@ import {
 } from "@/components/ui/table"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
- *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 6
+ *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ)
+ *  คอลัมน์ logo ถูกซ่อนไว้ ค่ายังอยู่ในข้อมูลและยังส่งกลับตอนบันทึก แค่ไม่แสดงในตาราง */
+const COLUMN_COUNT = 5
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -230,9 +231,9 @@ export function Tables({
           <Table>
             <TableHeader className="bg-muted/60">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-muted-foreground pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
+                <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("logo")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
@@ -253,8 +254,6 @@ export function Tables({
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 font-medium">{channel.name}</TableCell>
-                  {/* logo เป็นข้อความล้วนในฐานข้อมูล (path/URL) จึงโชว์เป็นข้อความ ไม่ได้โหลดรูปมาแสดง */}
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[200px] truncate font-mono text-xs">{channel.logo || "—"}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{channel.detail || "—"}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge

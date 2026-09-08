@@ -336,7 +336,6 @@
     "columns": {
       "no": "No.",
       "name": "Channel name",
-      "logo": "Logo",
       "detail": "Detail",
       "status": "Status"
     },

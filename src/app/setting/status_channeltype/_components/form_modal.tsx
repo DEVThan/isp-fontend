@@ -51,6 +51,8 @@ const emptyValues: ChannelTypeFormValues = {
   active_status: CHANNEL_ACTIVE,
 }
 
+/** ฟอร์มไม่มีช่อง logo ให้กรอกแล้ว แต่ยังพาค่าเดิมไปกับตอนบันทึกด้วย
+ *  ไม่งั้น edit หนึ่งครั้งจะเขียนทับ logo ที่มีอยู่ให้กลายเป็นค่าว่าง */
 const toValues = (channel: ChannelType | undefined): ChannelTypeFormValues =>
   channel
     ? {
@@ -195,16 +197,6 @@ export function FormModal({
               />
             </Field>
           </div>
-
-          {/* logo เก็บเป็นข้อความล้วน (path / URL) — API ไม่ได้ตรวจว่าเป็นรูปจริง จึงเป็นแค่ช่องพิมพ์ */}
-          <Field id="channel-logo" label={tcol("logo")}>
-            <Input
-              id="channel-logo"
-              value={values.logo}
-              placeholder="/img/channel/pptv.png"
-              onChange={(event) => set("logo", event.target.value)}
-            />
-          </Field>
 
           <Field id="channel-detail" label={tcol("detail")}>
             <Textarea
