@@ -51,6 +51,14 @@
     "user": "ผู้ใช้งาน",
     "userrole": "สิทธิ์ผู้ใช้งาน",
     "menu": "เมนู",
+    "shiptmenttypes": "ประเภทการจัดส่ง",
+    "channeltype": "ช่องทางการขาย",
+    "status_km": "สถานะ KM",
+    "importantdoc": "เอกสารสำคัญ",
+    "status_mou": "สถานะ MOU",
+    "status_kmprotocall": "สถานะ KM Protocall",
+    "status_linemyshop": "สถานะ Line My Shop",
+    "status_tvprogramfootage": "สถานะหนังสือยินยอมให้ใช้สิทธิ์ในเทปรายการโทรทัศน์",
     "setting": "ตั้งค่า"
   },
   "dashboard": {
@@ -295,6 +303,209 @@
     "inactive": "ปิดใช้งาน",
     "noRole": "ยังไม่กำหนดสิทธิ์",
     "loadError": "ดึงข้อมูลผู้ใช้งานไม่สำเร็จ"
+  },
+  "shiptmenttypes": {
+    "title": "ประเภทการจัดส่ง",
+    "description": "ประเภทการจัดส่งทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อประเภทการจัดส่ง",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มประเภทการจัดส่ง",
+      "editTitle": "แก้ไขประเภทการจัดส่ง",
+      "addDescription": "กรอกข้อมูลประเภทการจัดส่งที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของประเภทการจัดส่งที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบประเภทการจัดส่งนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ",
+      "deleteProducts": "มีสินค้า {count} รายการที่ยังใช้ชื่อนี้อยู่ ต้องไปแก้ประเภทการจัดส่งให้ใหม่"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลประเภทการจัดส่งไม่สำเร็จ"
+  },
+  "channeltypes": {
+    "title": "ช่องทางการขาย",
+    "description": "ช่องทางการขายทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อช่องทางการขาย",
+      "logo": "โลโก้",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มช่องทางการขาย",
+      "editTitle": "แก้ไขช่องทางการขาย",
+      "addDescription": "กรอกข้อมูลช่องทางการขายที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของช่องทางการขายที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบช่องทางการขายนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ",
+      "deleteOrders": "มีใบสั่งขาย {count} รายการที่ยังใช้ชื่อนี้อยู่ ต้องไปแก้ช่องทางการขายให้ใหม่"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลช่องทางการขายไม่สำเร็จ"
+  },
+  "statuskms": {
+    "title": "สถานะ KM",
+    "description": "สถานะ KM ทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อสถานะ",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มสถานะ KM",
+      "editTitle": "แก้ไขสถานะ KM",
+      "addDescription": "กรอกข้อมูลสถานะ KM ที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของสถานะ KM ที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบสถานะ KM นี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลสถานะ KM ไม่สำเร็จ"
+  },
+  "importantdocs": {
+    "title": "เอกสารสำคัญ",
+    "description": "เอกสารสำคัญทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อเอกสาร",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มเอกสารสำคัญ",
+      "editTitle": "แก้ไขเอกสารสำคัญ",
+      "addDescription": "กรอกข้อมูลเอกสารสำคัญที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของเอกสารสำคัญที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบเอกสารสำคัญนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลเอกสารสำคัญไม่สำเร็จ"
+  },
+  "statusmous": {
+    "title": "สถานะ MOU",
+    "description": "สถานะ MOU ทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อสถานะ",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มสถานะ MOU",
+      "editTitle": "แก้ไขสถานะ MOU",
+      "addDescription": "กรอกข้อมูลสถานะ MOU ที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของสถานะ MOU ที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบสถานะ MOU นี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลสถานะ MOU ไม่สำเร็จ"
+  },
+  "statuskmprotocalls": {
+    "title": "สถานะ KM Protocall",
+    "description": "สถานะ KM Protocall ทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อสถานะ",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มสถานะ KM Protocall",
+      "editTitle": "แก้ไขสถานะ KM Protocall",
+      "addDescription": "กรอกข้อมูลสถานะ KM Protocall ที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของสถานะ KM Protocall ที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบสถานะ KM Protocall นี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลสถานะ KM Protocall ไม่สำเร็จ"
+  },
+  "statuslinemyshops": {
+    "title": "สถานะ Line My Shop",
+    "description": "สถานะ Line My Shop ทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อสถานะ",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มสถานะ Line My Shop",
+      "editTitle": "แก้ไขสถานะ Line My Shop",
+      "addDescription": "กรอกข้อมูลสถานะ Line My Shop ที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของสถานะ Line My Shop ที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบสถานะ Line My Shop นี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลสถานะ Line My Shop ไม่สำเร็จ"
+  },
+  "statustvprogramfootages": {
+    "title": "สถานะหนังสือยินยอมให้ใช้สิทธิ์ในเทปรายการโทรทัศน์",
+    "description": "ทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อสถานะ",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มสถานะ",
+      "editTitle": "แก้ไขสถานะ",
+      "addDescription": "กรอกข้อมูลสถานะหนังสือยินยอมให้ใช้สิทธิ์ในเทปรายการโทรทัศน์ที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของสถานะที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบสถานะนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลสถานะหนังสือยินยอมให้ใช้สิทธิ์ในเทปรายการโทรทัศน์ไม่สำเร็จ"
   },
   "status": {
     "active": "ใช้งาน",

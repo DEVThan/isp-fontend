@@ -51,6 +51,14 @@
     "user": "Users",
     "userrole": "User roles",
     "menu": "Menus",
+    "shiptmenttypes": "Shipment types",
+    "channeltype": "Channels types",
+    "status_km": "KM statuses",
+    "importantdoc": "Important documents",
+    "status_mou": "MOU statuses",
+    "status_kmprotocall": "KM Protocall statuses",
+    "status_linemyshop": "Line My Shop statuses",
+    "status_tvprogramfootage": "Status TV program footage",
     "setting": "Setting"
   },
   "dashboard": {
@@ -295,6 +303,209 @@
     "inactive": "Inactive",
     "noRole": "No role",
     "loadError": "Could not load users"
+  },
+  "shiptmenttypes": {
+    "title": "Shipment types",
+    "description": "{count} shipment types in total",
+    "columns": {
+      "no": "No.",
+      "name": "Shipment type",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add shipment type",
+      "editTitle": "Edit shipment type",
+      "addDescription": "Fill in the details of the shipment type to add",
+      "editDescription": "Change the details of the selected shipment type",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this shipment type?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "deleteProducts": "{count} products still use this name and need a new shipment type"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load shipment types"
+  },
+  "channeltypes": {
+    "title": "Sales channels",
+    "description": "{count} sales channels in total",
+    "columns": {
+      "no": "No.",
+      "name": "Channel name",
+      "logo": "Logo",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add sales channel",
+      "editTitle": "Edit sales channel",
+      "addDescription": "Fill in the details of the sales channel to add",
+      "editDescription": "Change the details of the selected sales channel",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this sales channel?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "deleteOrders": "{count} sales orders still use this name and need a new channel"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load sales channels"
+  },
+  "statuskms": {
+    "title": "KM statuses",
+    "description": "{count} KM statuses in total",
+    "columns": {
+      "no": "No.",
+      "name": "Status name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add KM status",
+      "editTitle": "Edit KM status",
+      "addDescription": "Fill in the details of the KM status to add",
+      "editDescription": "Change the details of the selected KM status",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this KM status?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load KM statuses"
+  },
+  "importantdocs": {
+    "title": "Important documents",
+    "description": "{count} important documents in total",
+    "columns": {
+      "no": "No.",
+      "name": "Document name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add important document",
+      "editTitle": "Edit important document",
+      "addDescription": "Fill in the details of the important document to add",
+      "editDescription": "Change the details of the selected important document",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this important document?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load important documents"
+  },
+  "statusmous": {
+    "title": "MOU statuses",
+    "description": "{count} MOU statuses in total",
+    "columns": {
+      "no": "No.",
+      "name": "Status name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add MOU status",
+      "editTitle": "Edit MOU status",
+      "addDescription": "Fill in the details of the MOU status to add",
+      "editDescription": "Change the details of the selected MOU status",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this MOU status?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load MOU statuses"
+  },
+  "statuskmprotocalls": {
+    "title": "KM Protocall statuses",
+    "description": "{count} KM Protocall statuses in total",
+    "columns": {
+      "no": "No.",
+      "name": "Status name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add KM Protocall status",
+      "editTitle": "Edit KM Protocall status",
+      "addDescription": "Fill in the details of the KM Protocall status to add",
+      "editDescription": "Change the details of the selected KM Protocall status",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this KM Protocall status?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load KM Protocall statuses"
+  },
+  "statuslinemyshops": {
+    "title": "Line My Shop statuses",
+    "description": "{count} Line My Shop statuses in total",
+    "columns": {
+      "no": "No.",
+      "name": "Status name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add Line My Shop status",
+      "editTitle": "Edit Line My Shop status",
+      "addDescription": "Fill in the details of the Line My Shop status to add",
+      "editDescription": "Change the details of the selected Line My Shop status",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this Line My Shop status?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load Line My Shop statuses"
+  },
+  "statustvprogramfootages": {
+    "title": "Status TV program footage",
+    "description": "{count} statuses in total",
+    "columns": {
+      "no": "No.",
+      "name": "Status name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add status",
+      "editTitle": "Edit status",
+      "addDescription": "Fill in the details of the status to add",
+      "editDescription": "Change the details of the selected status",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this status?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load TV program footage statuses"
   },
   "status": {
     "active": "Active",

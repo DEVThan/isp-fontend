@@ -51,6 +51,14 @@
     "user": "အသုံးပြုသူများ",
     "userrole": "အသုံးပြုသူ ခွင့်ပြုချက်များ",
     "menu": "မီနူးများ",
+    "shiptmenttypes": "ပို့ဆောင်မှု အမျိုးအစားများ",
+    "channeltype": "ရောင်းချမှု လမ်းကြောင်းများ",
+    "status_km": "KM အခြေအနေများ",
+    "importantdoc": "အရေးကြီး စာရွက်စာတမ်းများ",
+    "status_mou": "MOU အခြေအနေများ",
+    "status_kmprotocall": "KM Protocall အခြေအနေများ",
+    "status_linemyshop": "Line My Shop အခြေအနေများ",
+    "status_tvprogramfootage": "TV Program Footage အခြေအနေများ",
     "setting": "ဆက်တင်များ"
   },
   "dashboard": {
@@ -295,6 +303,209 @@
     "inactive": "ပိတ်ထား",
     "noRole": "ရာထူး မသတ်မှတ်ရသေး",
     "loadError": "အသုံးပြုသူများ ရယူ၍ မရပါ"
+  },
+  "shiptmenttypes": {
+    "title": "ပို့ဆောင်မှု အမျိုးအစားများ",
+    "description": "စုစုပေါင်း ပို့ဆောင်မှု အမျိုးအစား {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "ပို့ဆောင်မှု အမျိုးအစား",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "ပို့ဆောင်မှု အမျိုးအစား ထည့်ရန်",
+      "editTitle": "ပို့ဆောင်မှု အမျိုးအစား ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် ပို့ဆောင်မှု အမျိုးအစား၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော ပို့ဆောင်မှု အမျိုးအစား၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤပို့ဆောင်မှု အမျိုးအစားကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ",
+      "deleteProducts": "ဤအမည်ကို သုံးနေဆဲ ကုန်ပစ္စည်း {count} ခု အသစ် သတ်မှတ်ရန် လိုသည်"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "ပို့ဆောင်မှု အမျိုးအစားများ ရယူ၍ မရပါ"
+  },
+  "channeltypes": {
+    "title": "ရောင်းချမှု လမ်းကြောင်းများ",
+    "description": "စုစုပေါင်း ရောင်းချမှု လမ်းကြောင်း {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "လမ်းကြောင်း အမည်",
+      "logo": "လိုဂို",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "ရောင်းချမှု လမ်းကြောင်း ထည့်ရန်",
+      "editTitle": "ရောင်းချမှု လမ်းကြောင်း ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် ရောင်းချမှု လမ်းကြောင်း၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော ရောင်းချမှု လမ်းကြောင်း၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤရောင်းချမှု လမ်းကြောင်းကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ",
+      "deleteOrders": "ဤအမည်ကို သုံးနေဆဲ အရောင်းအော်ဒါ {count} ခု အသစ် သတ်မှတ်ရန် လိုသည်"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "ရောင်းချမှု လမ်းကြောင်းများ ရယူ၍ မရပါ"
+  },
+  "statuskms": {
+    "title": "KM အခြေအနေများ",
+    "description": "စုစုပေါင်း KM အခြေအနေ {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "အခြေအနေ အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "KM အခြေအနေ ထည့်ရန်",
+      "editTitle": "KM အခြေအနေ ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် KM အခြေအနေ၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော KM အခြေအနေ၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤ KM အခြေအနေကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "KM အခြေအနေများ ရယူ၍ မရပါ"
+  },
+  "importantdocs": {
+    "title": "အရေးကြီး စာရွက်စာတမ်းများ",
+    "description": "စုစုပေါင်း အရေးကြီး စာရွက်စာတမ်း {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "စာရွက်စာတမ်း အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "အရေးကြီး စာရွက်စာတမ်း ထည့်ရန်",
+      "editTitle": "အရေးကြီး စာရွက်စာတမ်း ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် အရေးကြီး စာရွက်စာတမ်း၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော အရေးကြီး စာရွက်စာတမ်း၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤအရေးကြီး စာရွက်စာတမ်းကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "အရေးကြီး စာရွက်စာတမ်းများ ရယူ၍ မရပါ"
+  },
+  "statusmous": {
+    "title": "MOU အခြေအနေများ",
+    "description": "စုစုပေါင်း MOU အခြေအနေ {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "အခြေအနေ အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "MOU အခြေအနေ ထည့်ရန်",
+      "editTitle": "MOU အခြေအနေ ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် MOU အခြေအနေ၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော MOU အခြေအနေ၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤ MOU အခြေအနေကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "MOU အခြေအနေများ ရယူ၍ မရပါ"
+  },
+  "statuskmprotocalls": {
+    "title": "KM Protocall အခြေအနေများ",
+    "description": "စုစုပေါင်း KM Protocall အခြေအနေ {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "အခြေအနေ အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "KM Protocall အခြေအနေ ထည့်ရန်",
+      "editTitle": "KM Protocall အခြေအနေ ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် KM Protocall အခြေအနေ၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော KM Protocall အခြေအနေ၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤ KM Protocall အခြေအနေကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "KM Protocall အခြေအနေများ ရယူ၍ မရပါ"
+  },
+  "statuslinemyshops": {
+    "title": "Line My Shop အခြေအနေများ",
+    "description": "စုစုပေါင်း Line My Shop အခြေအနေ {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "အခြေအနေ အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "Line My Shop အခြေအနေ ထည့်ရန်",
+      "editTitle": "Line My Shop အခြေအနေ ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် Line My Shop အခြေအနေ၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော Line My Shop အခြေအနေ၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤ Line My Shop အခြေအနေကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "Line My Shop အခြေအနေများ ရယူ၍ မရပါ"
+  },
+  "statustvprogramfootages": {
+    "title": "TV Program Footage အခြေအနေများ",
+    "description": "စုစုပေါင်း အခြေအနေ {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "အခြေအနေ အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "အခြေအနေ ထည့်ရန်",
+      "editTitle": "အခြေအနေ ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် အခြေအနေ၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော အခြေအနေ၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤအခြေအနေကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "TV Program Footage အခြေအနေများ ရယူ၍ မရပါ"
   },
   "status": {
     "active": "အသုံးပြုနေဆဲ",
