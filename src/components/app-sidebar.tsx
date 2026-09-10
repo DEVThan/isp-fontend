@@ -47,8 +47,24 @@ import {
  * เมนูที่เลือกอยู่: ไล่เฉดจากสีแบรนด์จาง ๆ + เส้นบอกตำแหน่งด้านซ้าย + ไอคอนสีฟ้าสว่าง
  * (นุ่มกว่าถมสีทึบทั้งแถบ และยังเห็นชัดจากมุมตา)
  */
+/**
+ * ห้ามใช้ transition-colors ตรงนี้ และห้ามใส่ color ลงในทรานซิชันด้วย
+ *
+ * 1. transition-colors ของ Tailwind v4 ไล่ค่า --tw-gradient-from/via/to ไปด้วย
+ *    Safari เลยต้องวาด gradient ใหม่ทุกเฟรมในกล่องที่ overflow:hidden + มุมโค้ง + ring แบบ inset
+ * 2. ที่หนักกว่าคือ color — มันเป็นพร็อพเดียวในชุดนี้ที่แตะตัวอักษร พอไล่ค่าทีละเฟรม
+ *    Safari ต้อง rasterize ตัวอักษรใหม่ทุกเฟรม และฟอนต์ที่นี่เป็น variable font
+ *    เมนูที่เลือกอยู่ใช้ font-medium (น้ำหนัก 500 ต้อง interpolate ไม่ใช่ instance ตั้งต้น)
+ *    น้ำหนักเลยกระตุก เห็นเป็นตัวหนังสือเล็กใหญ่สลับกันตอนเอาเมาส์ไปชี้ (Chrome ไม่เป็น)
+ *
+ * แม้ไล่แค่ background-color ก็ยังไม่พอ เพราะตัวอักษรอยู่บนเลเยอร์เดียวกับพื้น
+ * พื้นเปลี่ยนทีละเฟรม = ตัวอักษรถูกวาดใหม่ทีละเฟรมอยู่ดี จึงตัดทรานซิชันทิ้งทั้งหมด
+ * สีตอน hover เปลี่ยนทันที (เดิมหน่วง 0.15 วิ) ตาแทบแยกไม่ออก แต่ไม่มีเฟรมกลางให้กระตุกอีก
+ */
+const COLOR_TRANSITION = "transition-none"
+
 const activeClasses = [
-  "relative overflow-hidden transition-colors",
+  `relative overflow-hidden ${COLOR_TRANSITION}`,
   "hover:bg-sidebar-accent/60",
   "data-active:bg-gradient-to-r data-active:from-sidebar-primary/32 data-active:via-sidebar-primary/12 data-active:to-transparent",
   "data-active:text-white data-active:font-medium",
@@ -58,7 +74,7 @@ const activeClasses = [
 ].join(" ")
 
 const subActiveClasses = [
-  "relative overflow-hidden transition-colors",
+  `relative overflow-hidden ${COLOR_TRANSITION}`,
   "hover:bg-sidebar-accent/60",
   "data-active:bg-sidebar-primary/18 data-active:font-medium data-active:text-white",
 ].join(" ")

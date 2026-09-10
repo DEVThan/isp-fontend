@@ -9,6 +9,7 @@
     "viewAll": "View all",
     "save": "Save",
     "cancel": "Cancel",
+    "close": "Close",
     "delete": "Delete",
     "selectRequired": "Please select an option",
     "required": "Please fill out this field",
@@ -59,7 +60,11 @@
     "status_kmprotocall": "KM Protocall statuses",
     "status_linemyshop": "Line My Shop statuses",
     "status_tvprogramfootage": "Status TV program footage",
-    "setting": "Setting"
+    "setting": "Setting",
+    "product": "Products",
+    "product_code": "Product codes",
+    "product_type": "Product types",
+    "vendor": "Vendors"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -505,6 +510,92 @@
     "active": "Active",
     "inactive": "Inactive",
     "loadError": "Could not load TV program footage statuses"
+  },
+  "productcodes": {
+    "title": "Product codes",
+    "description": "{count} product codes in total",
+    "columns": {
+      "no": "No.",
+      "prefix": "Prefix",
+      "name": "Code name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add product code",
+      "editTitle": "Edit product code",
+      "addDescription": "Fill in the details of the product code to add",
+      "editDescription": "Change the details of the selected product code",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this product code?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load product codes"
+  },
+  "producttypes": {
+    "title": "Product types",
+    "description": "{count} product types in total",
+    "columns": {
+      "no": "No.",
+      "name": "Type name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add product type",
+      "editTitle": "Edit product type",
+      "addDescription": "Fill in the details of the product type to add",
+      "editDescription": "Change the details of the selected product type",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this product type?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load product types"
+  },
+  "vendors": {
+    "title": "Vendors",
+    "description": "{count} vendors in total",
+    "columns": {
+      "no": "No.",
+      "code": "Vendor code",
+      "name": "Vendor name",
+      "email": "Email",
+      "tel": "Phone",
+      "address": "Address",
+      "remark": "Remark",
+      "shipping": "Shipping",
+      "senderCode": "Sender code",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add vendor",
+      "editTitle": "Edit vendor",
+      "addDescription": "Fill in the details of the vendor to add",
+      "editDescription": "Change the details of the selected vendor",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this vendor?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "addSenderCode": "Add sender code",
+      "noSenderCode": "No sender codes yet",
+      "viewSenderCode": "View sender codes",
+      "senderDescription": "All sender codes for “{name}”"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load vendors"
   },
   "status": {
     "active": "Active",

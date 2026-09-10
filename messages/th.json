@@ -9,6 +9,7 @@
     "viewAll": "ดูทั้งหมด",
     "save": "บันทึก",
     "cancel": "ยกเลิก",
+    "close": "ปิด",
     "delete": "ลบ",
     "selectRequired": "กรุณาเลือกข้อมูล",
     "required": "กรุณากรอกข้อมูล",
@@ -59,7 +60,11 @@
     "status_kmprotocall": "สถานะ KM Protocall",
     "status_linemyshop": "สถานะ Line My Shop",
     "status_tvprogramfootage": "สถานะหนังสือยินยอมให้ใช้สิทธิ์ในเทปรายการโทรทัศน์",
-    "setting": "ตั้งค่า"
+    "setting": "ตั้งค่า",
+    "product": "สินค้า",
+    "product_code": "รหัสสินค้า",
+    "product_type": "ประเภทสินค้า",
+    "vendor": "ผู้ขาย"
   },
   "dashboard": {
     "title": "แดชบอร์ด",
@@ -505,6 +510,92 @@
     "active": "เปิดใช้งาน",
     "inactive": "ปิดใช้งาน",
     "loadError": "ดึงข้อมูลสถานะหนังสือยินยอมให้ใช้สิทธิ์ในเทปรายการโทรทัศน์ไม่สำเร็จ"
+  },
+  "productcodes": {
+    "title": "รหัสสินค้า",
+    "description": "รหัสสินค้าทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "prefix": "ตัวอักษรนำหน้า",
+      "name": "ชื่อรหัสสินค้า",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มรหัสสินค้า",
+      "editTitle": "แก้ไขรหัสสินค้า",
+      "addDescription": "กรอกข้อมูลรหัสสินค้าที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของรหัสสินค้าที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบรหัสสินค้านี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลรหัสสินค้าไม่สำเร็จ"
+  },
+  "producttypes": {
+    "title": "ประเภทสินค้า",
+    "description": "ประเภทสินค้าทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อประเภทสินค้า",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มประเภทสินค้า",
+      "editTitle": "แก้ไขประเภทสินค้า",
+      "addDescription": "กรอกข้อมูลประเภทสินค้าที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของประเภทสินค้าที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบประเภทสินค้านี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลประเภทสินค้าไม่สำเร็จ"
+  },
+  "vendors": {
+    "title": "ผู้ขาย",
+    "description": "ผู้ขายทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "code": "รหัสผู้ขาย",
+      "name": "ชื่อผู้ขาย",
+      "email": "อีเมล",
+      "tel": "เบอร์โทร",
+      "address": "ที่อยู่",
+      "remark": "หมายเหตุ",
+      "shipping": "ขนส่ง",
+      "senderCode": "รหัสผู้ส่ง",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มผู้ขาย",
+      "editTitle": "แก้ไขผู้ขาย",
+      "addDescription": "กรอกข้อมูลผู้ขายที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของผู้ขายที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบผู้ขายรายนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ",
+      "addSenderCode": "เพิ่มรหัสผู้ส่ง",
+      "noSenderCode": "ยังไม่มีรหัสผู้ส่ง",
+      "viewSenderCode": "ดูรหัสผู้ส่ง",
+      "senderDescription": "รหัสผู้ส่งทั้งหมดของ “{name}”"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลผู้ขายไม่สำเร็จ"
   },
   "status": {
     "active": "ใช้งาน",

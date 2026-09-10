@@ -16,6 +16,7 @@ import {
   Router,
   Settings,
   ShieldCheck,
+  Store,
   Truck,
   Users,
   type LucideIcon,
@@ -117,6 +118,7 @@ export const iconByName: Record<string, LucideIcon> = {
   RefreshCw,
   Cog,
   ReceiptText,
+  Store,
   // ชื่อที่ฐานข้อมูลเขียนเป็นโค้ดเมนู ไม่ใช่ชื่อไอคอนของ lucide
   vat: Percent,
   company: Building2,

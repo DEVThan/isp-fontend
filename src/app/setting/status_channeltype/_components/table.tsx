@@ -254,7 +254,7 @@ export function Tables({
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 font-medium">{channel.name}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{channel.detail || "—"}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{channel.detail}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"

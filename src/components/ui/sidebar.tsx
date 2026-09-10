@@ -510,6 +510,17 @@ function SidebarMenuButton({
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
   } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const { isMobile, state } = useSidebar()
+
+  /**
+   * tooltip มีไว้ตอนแถบข้างย่อเหลือแต่ไอคอนเท่านั้น — ตอนกางอยู่มีชื่อเมนูให้อ่านแล้ว
+   *
+   * เดิมสร้าง Tooltip ทิ้งไว้ตลอดแล้วค่อยสั่ง hidden ตอนกาง ซึ่งซ่อนได้แต่ "ยังทำงาน":
+   * ทุกครั้งที่เมาส์ผ่านเมนู Base UI จะ mount portal + โหนด position:fixed คำนวณตำแหน่ง
+   * แล้ว unmount ทิ้ง (วัดได้ 126 DOM mutation ต่อการ hover 4 วินาที) ทั้งที่ไม่มีใครเห็น
+   * Safari จะ repaint ทั้งหน้าเวลาโหนด fixed ถูกแทรก/ถอด เลยเห็นเป็นอาการกะพริบ
+   */
+  const withTooltip = Boolean(tooltip) && state === "collapsed" && !isMobile
+
   const comp = useRender({
     defaultTagName: "button",
     props: mergeProps<"button">(
@@ -518,7 +529,7 @@ function SidebarMenuButton({
       },
       props
     ),
-    render: !tooltip ? render : <TooltipTrigger render={render} />,
+    render: !withTooltip ? render : <TooltipTrigger render={render} />,
     state: {
       slot: "sidebar-menu-button",
       sidebar: "menu-button",
@@ -527,7 +538,7 @@ function SidebarMenuButton({
     },
   })
 
-  if (!tooltip) {
+  if (!withTooltip) {
     return comp
   }
 
@@ -540,12 +551,8 @@ function SidebarMenuButton({
   return (
     <Tooltip>
       {comp}
-      <TooltipContent
-        side="right"
-        align="center"
-        hidden={state !== "collapsed" || isMobile}
-        {...tooltip}
-      />
+      {/* ไม่ต้องส่ง hidden แล้ว — ถึงตรงนี้ได้แปลว่าแถบข้างย่ออยู่จริง */}
+      <TooltipContent side="right" align="center" {...tooltip} />
     </Tooltip>
   )
 }

@@ -7,27 +7,30 @@ import {
   Plus,
   Search,
   SearchX,
+  Truck,
   Trash2,
   TriangleAlert,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import {
-  getUserRoles,
-  ROLE_PAGE_SIZE,
-} from "@/app/setting/userrole/_components/api"
-import { DeleteModal } from "@/app/setting/userrole/_components/delete_modal"
-import { FormModal } from "@/app/setting/userrole/_components/form_modal"
+  getVendors,
+  VENDOR_PAGE_SIZE,
+} from "@/app/vendor/_components/api"
+import { DeleteModal } from "@/app/vendor/_components/delete_modal"
+import { FormModal } from "@/app/vendor/_components/form_modal"
 import {
-  isRoleActive,
-  ROLE_ACTIVE,
-  ROLE_INACTIVE,
-  type RoleFormMode,
-  type UserRole,
-  type UserRoleList,
-} from "@/app/setting/userrole/_components/model"
-import { TablePagination } from "@/app/setting/userrole/_components/pagination"
-import { SelectOption } from "@/app/setting/userrole/_components/selectoption"
+  isVendorActive,
+  parseSenderCodes,
+  VENDOR_ACTIVE,
+  VENDOR_INACTIVE,
+  type Vendor,
+  type VendorFormMode,
+  type VendorList,
+} from "@/app/vendor/_components/model"
+import { TablePagination } from "@/app/vendor/_components/pagination"
+import { SelectOption } from "@/app/vendor/_components/selectoption"
+import { SenderModal } from "@/app/vendor/_components/sender_modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -44,23 +47,28 @@ import {
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 6
+const COLUMN_COUNT = 8
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
+
+/** ผู้ขายรายนี้มีรหัสผู้ส่งกี่รายการ — 0 คือไม่ต้องโชว์ปุ่มในตาราง */
+const senderCount = (vendor: Vendor) =>
+  parseSenderCodes(vendor.sender_code).length
 
 export function Tables({
   initial,
   initialError,
 }: {
   /** ผลลัพธ์หน้าแรกที่ page.tsx ดึงมาให้ตั้งแต่ฝั่งเซิร์ฟเวอร์ (กันตารางว่างตอนโหลดหน้า) */
-  initial: UserRoleList
+  initial: VendorList
   initialError?: boolean
 }) {
   const t = useTranslations("common.table")
   const tall = useTranslations("common")
-  const tr = useTranslations("userroles")
-  const tcol = useTranslations("userroles.columns")
+  const tr = useTranslations("vendors")
+  const tcol = useTranslations("vendors.columns")
+  const tform = useTranslations("vendors.form")
 
   const [list, setList] = React.useState(initial)
   const [failed, setFailed] = React.useState(Boolean(initialError))
@@ -68,17 +76,21 @@ export function Tables({
 
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
   const [form, setForm] = React.useState<{
-    mode: RoleFormMode
-    role?: UserRole
+    mode: VendorFormMode
+    vendor?: Vendor
   } | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
-  const [removing, setRemoving] = React.useState<UserRole | null>(null)
+  const [removing, setRemoving] = React.useState<Vendor | null>(null)
+  /** แถวที่กดดูรหัสผู้ส่ง — null คือปิดกล่อง */
+  const [viewingSender, setViewingSender] = React.useState<Vendor | null>(null)
 
+  /** ค้นจากรหัสผู้ขาย — แยกช่องจากชื่อ เพราะ API รับคนละพารามิเตอร์ */
+  const [codeQuery, setCodeQuery] = React.useState("")
   const [nameQuery, setNameQuery] = React.useState("")
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
   const [status, setStatus] = React.useState<string | null>(null)
   const [page, setPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(ROLE_PAGE_SIZE)
+  const [pageSize, setPageSize] = React.useState(VENDOR_PAGE_SIZE)
 
   /** กรอบตาราง — ใช้เลื่อนหน้าให้เห็นหัวตารางทุกครั้งที่เริ่มโหลดข้อมูลใหม่ */
   const tableRef = React.useRef<HTMLDivElement>(null)
@@ -98,7 +110,8 @@ export function Tables({
    */
   const load = (
     next: {
-      rolename: string
+      code: string
+      name: string
       status: string | null
       page: number
       pageSize: number
@@ -112,8 +125,9 @@ export function Tables({
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
-        const result = await getUserRoles({
-          rolename: next.rolename.trim(),
+        const result = await getVendors({
+          code: next.code.trim(),
+          name: next.name.trim(),
           status: next.status,
           page: next.page,
           perPage: next.pageSize,
@@ -132,30 +146,61 @@ export function Tables({
   }
 
   const statusOptions = [
-    { value: ROLE_ACTIVE, label: tr("active") },
-    { value: ROLE_INACTIVE, label: tr("inactive") },
+    { value: VENDOR_ACTIVE, label: tr("active") },
+    { value: VENDOR_INACTIVE, label: tr("inactive") },
   ]
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
-  const visible = list.userroles
+  const visible = list.vendors
+
+  /** ลำดับที่โชว์แทนรหัส — นับต่อจากหน้าก่อนหน้า (หน้า 2 แถวแรกได้ 31 เมื่อหน้าละ 30)
+   *  ใช้ page/per_page ที่ API ตอบกลับมา ไม่ใช่ state ของตัวกรอง เลขจึงตรงกับแถวที่เห็นจริง */
+  const rowNumber = (index: number) =>
+    ((list.page || 1) - 1) * (list.per_page || pageSize) + index + 1
 
   return (
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
       <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-4">
         <div className="space-y-2">
-          <Label htmlFor="filter-rolename" className="text-muted-foreground text-xs">
-            {tcol("rolename")}
+          <Label htmlFor="filter-code" className="text-muted-foreground text-xs">
+            {tcol("code")}
           </Label>
           <div className="group relative">
             <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
             <Input
-              id="filter-rolename"
+              id="filter-code"
+              value={codeQuery}
+              onChange={(event) => {
+                const code = event.target.value
+                setCodeQuery(code)
+                setPage(1)
+                load(
+                  { code, name: nameQuery, status, page: 1, pageSize },
+                  SEARCH_DELAY_MS
+                )
+              }}
+              placeholder={t("search")}
+              className="bg-card/80 focus-visible:border-primary/50 pl-8"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="filter-name" className="text-muted-foreground text-xs">
+            {tcol("name")}
+          </Label>
+          <div className="group relative">
+            <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
+            <Input
+              id="filter-name"
               value={nameQuery}
               onChange={(event) => {
-                const rolename = event.target.value
-                setNameQuery(rolename)
+                const name = event.target.value
+                setNameQuery(name)
                 setPage(1)
-                load({ rolename, status, page: 1, pageSize }, SEARCH_DELAY_MS)
+                load(
+                  { code: codeQuery, name, status, page: 1, pageSize },
+                  SEARCH_DELAY_MS
+                )
               }}
               placeholder={t("search")}
               className="bg-card/80 focus-visible:border-primary/50 pl-8"
@@ -173,7 +218,13 @@ export function Tables({
             onValueChange={(next) => {
               setStatus(next)
               setPage(1)
-              load({ rolename: nameQuery, status: next, page: 1, pageSize })
+              load({
+                code: codeQuery,
+                name: nameQuery,
+                status: next,
+                page: 1,
+                pageSize,
+              })
             }}
             placeholder={tall("all")}
             label={tcol("status")}
@@ -225,18 +276,21 @@ export function Tables({
           <Table>
             <TableHeader className="bg-muted/60">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-muted-foreground pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("id")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("rolename")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("menus")}</TableHead>
+                {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
+                <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("code")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("email")}</TableHead>
+                <TableHead className="text-muted-foreground w-36 text-xs font-semibold tracking-wide uppercase">{tcol("tel")}</TableHead>
+                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("senderCode")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visible.map((role) => (
+              {visible.map((vendor, index) => (
                 <TableRow
-                  key={role.id}
+                  key={vendor.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
                   <TableCell className="pt-1 pb-1 relative pl-6">
@@ -245,25 +299,41 @@ export function Tables({
                       aria-hidden
                       className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
                     />
-                    <span className="text-muted-foreground font-mono text-xs">{role.id}</span>
+                    <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
-                  <TableCell className="pt-1 pb-1 font-medium">{role.rolename}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{role.detail}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground tabular-nums">
-                    {role.permission_menus.length
-                      ? tr("menuCount", { count: role.permission_menus.length })
-                      : tr("noMenu")}
+                  <TableCell className="pt-1 pb-1">
+                    <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
+                      {vendor.code}
+                    </span>
+                  </TableCell>
+                  <TableCell className="pt-1 pb-1 font-medium">{vendor.name}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{vendor.email}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground font-mono text-xs">{vendor.tel}</TableCell>
+                  <TableCell className="pt-1 pb-1">
+                    {/* ผู้ขายที่ยังไม่มีรหัสผู้ส่ง ปล่อยช่องว่างไว้ ไม่ต้องมีปุ่มให้กด กดไปก็เจอตารางเปล่า */}
+                    {senderCount(vendor) > 0 ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={tform("viewSenderCode")}
+                        onClick={() => setViewingSender(vendor)}
+                        className="bg-primary/10 text-primary hover:bg-primary/20 h-7 gap-1.5 px-2 text-xs font-medium"
+                      >
+                        <Truck className="size-3.5" />
+                        {senderCount(vendor)}
+                      </Button>
+                    ) : null}
                   </TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"
                       className={`border-transparent font-medium ${
-                        isRoleActive(role)
+                        isVendorActive(vendor)
                           ? "bg-success/12 text-success-ink hover:bg-success/12"
                           : "bg-muted text-muted-foreground hover:bg-muted"
                       }`}
                     >
-                      {isRoleActive(role) ? tr("active") : tr("inactive")}
+                      {isVendorActive(vendor) ? tr("active") : tr("inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 pr-6 text-right">
@@ -272,7 +342,7 @@ export function Tables({
                         variant="ghost"
                         size="icon"
                         aria-label={t("edit")}
-                        onClick={() => setForm({ mode: "edit", role })}
+                        onClick={() => setForm({ mode: "edit", vendor })}
                         className="bg-warning/18 text-warning-ink hover:bg-orange-50 hover:text-orange-300"
                       >
                         <Pencil />
@@ -281,7 +351,7 @@ export function Tables({
                         variant="ghost"
                         size="icon"
                         aria-label={tall("delete")}
-                        onClick={() => setRemoving(role)}
+                        onClick={() => setRemoving(vendor)}
                         className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
                       >
                         <Trash2 />
@@ -324,12 +394,24 @@ export function Tables({
           total={list.total}
           onPageChange={(next) => {
             setPage(next)
-            load({ rolename: nameQuery, status, page: next, pageSize })
+            load({
+              code: codeQuery,
+              name: nameQuery,
+              status,
+              page: next,
+              pageSize,
+            })
           }}
           onPageSizeChange={(size) => {
             setPageSize(size)
             setPage(1)
-            load({ rolename: nameQuery, status, page: 1, pageSize: size })
+            load({
+              code: codeQuery,
+              name: nameQuery,
+              status,
+              page: 1,
+              pageSize: size,
+            })
           }}
         />
       </CardContent>
@@ -341,9 +423,20 @@ export function Tables({
           if (!next) setForm(null)
         }}
         mode={form?.mode ?? "add"}
-        role={form?.role}
+        vendor={form?.vendor}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
-        onSaved={() => load({ rolename: nameQuery, status, page, pageSize })}
+        onSaved={() =>
+          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
+        }
+      />
+
+      {/* ดูรหัสผู้ส่งของแถวนั้น — อ่านอย่างเดียว แก้ไขทำที่ฟอร์ม */}
+      <SenderModal
+        open={viewingSender !== null}
+        onOpenChange={(next) => {
+          if (!next) setViewingSender(null)
+        }}
+        vendor={viewingSender ?? undefined}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
@@ -352,8 +445,10 @@ export function Tables({
         onOpenChange={(next) => {
           if (!next) setRemoving(null)
         }}
-        role={removing ?? undefined}
-        onDeleted={() => load({ rolename: nameQuery, status, page, pageSize })}
+        vendor={removing ?? undefined}
+        onDeleted={() =>
+          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
+        }
       />
     </Card>
   )

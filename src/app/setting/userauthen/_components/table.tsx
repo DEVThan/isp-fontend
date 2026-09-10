@@ -286,10 +286,10 @@ export function Tables({
                     <span aria-hidden className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100" />
                     {user.username}
                   </TableCell>
-                  <TableCell className="pt-1 pb-1 ">{user.fullname || "—"}</TableCell>
+                  <TableCell className="pt-1 pb-1 ">{user.fullname}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{user.rolename || tu("noRole")}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[200px] truncate">{user.email || "—"}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground tabular-nums">{user.telephone || "—"}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[200px] truncate">{user.email}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground tabular-nums">{user.telephone}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"

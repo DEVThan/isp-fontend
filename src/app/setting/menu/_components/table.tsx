@@ -208,14 +208,14 @@ export function Tables({
       </CardContent>
 
       <CardContent className="px-4 py-0">
-        {/* <div className="flex flex-wrap items-end justify-end gap-0 p-0 md:p-0">
+        <div className="flex flex-wrap items-end justify-end gap-0 p-0 md:p-0">
           <Button
             onClick={() => setForm({ mode: "add" })}
             className="from-chart-1 to-chart-5  bg-gradient-to-r text-white  transition-transform hover:-translate-y-0.5 hover:opacity-95"
           >
             <Plus /> {t("add")}
           </Button>
-        </div> */}
+        </div>
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ
             ไม่งั้นตัวหมุนจะจางตามไปด้วย — ใช้พื้นโปร่งของตัวคลุมแทน) */}
         <div

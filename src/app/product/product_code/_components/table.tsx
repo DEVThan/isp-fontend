@@ -13,21 +13,21 @@ import {
 import { useTranslations } from "next-intl"
 
 import {
-  getUserRoles,
-  ROLE_PAGE_SIZE,
-} from "@/app/setting/userrole/_components/api"
-import { DeleteModal } from "@/app/setting/userrole/_components/delete_modal"
-import { FormModal } from "@/app/setting/userrole/_components/form_modal"
+  getProductCodes,
+  CODE_PAGE_SIZE,
+} from "@/app/product/product_code/_components/api"
+import { DeleteModal } from "@/app/product/product_code/_components/delete_modal"
+import { FormModal } from "@/app/product/product_code/_components/form_modal"
 import {
-  isRoleActive,
-  ROLE_ACTIVE,
-  ROLE_INACTIVE,
-  type RoleFormMode,
-  type UserRole,
-  type UserRoleList,
-} from "@/app/setting/userrole/_components/model"
-import { TablePagination } from "@/app/setting/userrole/_components/pagination"
-import { SelectOption } from "@/app/setting/userrole/_components/selectoption"
+  isProductCodeActive,
+  CODE_ACTIVE,
+  CODE_INACTIVE,
+  type ProductCode,
+  type ProductCodeFormMode,
+  type ProductCodeList,
+} from "@/app/product/product_code/_components/model"
+import { TablePagination } from "@/app/product/product_code/_components/pagination"
+import { SelectOption } from "@/app/product/product_code/_components/selectoption"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -54,13 +54,13 @@ export function Tables({
   initialError,
 }: {
   /** ผลลัพธ์หน้าแรกที่ page.tsx ดึงมาให้ตั้งแต่ฝั่งเซิร์ฟเวอร์ (กันตารางว่างตอนโหลดหน้า) */
-  initial: UserRoleList
+  initial: ProductCodeList
   initialError?: boolean
 }) {
   const t = useTranslations("common.table")
   const tall = useTranslations("common")
-  const tr = useTranslations("userroles")
-  const tcol = useTranslations("userroles.columns")
+  const tr = useTranslations("productcodes")
+  const tcol = useTranslations("productcodes.columns")
 
   const [list, setList] = React.useState(initial)
   const [failed, setFailed] = React.useState(Boolean(initialError))
@@ -68,17 +68,19 @@ export function Tables({
 
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
   const [form, setForm] = React.useState<{
-    mode: RoleFormMode
-    role?: UserRole
+    mode: ProductCodeFormMode
+    code?: ProductCode
   } | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
-  const [removing, setRemoving] = React.useState<UserRole | null>(null)
+  const [removing, setRemoving] = React.useState<ProductCode | null>(null)
 
+  /** ค้นจากตัวอักษรนำหน้ารหัส — แยกช่องจากชื่อ เพราะ API รับคนละพารามิเตอร์ */
+  const [prefixQuery, setPrefixQuery] = React.useState("")
   const [nameQuery, setNameQuery] = React.useState("")
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
   const [status, setStatus] = React.useState<string | null>(null)
   const [page, setPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(ROLE_PAGE_SIZE)
+  const [pageSize, setPageSize] = React.useState(CODE_PAGE_SIZE)
 
   /** กรอบตาราง — ใช้เลื่อนหน้าให้เห็นหัวตารางทุกครั้งที่เริ่มโหลดข้อมูลใหม่ */
   const tableRef = React.useRef<HTMLDivElement>(null)
@@ -98,7 +100,8 @@ export function Tables({
    */
   const load = (
     next: {
-      rolename: string
+      prefix: string
+      name: string
       status: string | null
       page: number
       pageSize: number
@@ -112,8 +115,9 @@ export function Tables({
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
-        const result = await getUserRoles({
-          rolename: next.rolename.trim(),
+        const result = await getProductCodes({
+          prefix: next.prefix.trim(),
+          name: next.name.trim(),
           status: next.status,
           page: next.page,
           perPage: next.pageSize,
@@ -132,30 +136,64 @@ export function Tables({
   }
 
   const statusOptions = [
-    { value: ROLE_ACTIVE, label: tr("active") },
-    { value: ROLE_INACTIVE, label: tr("inactive") },
+    { value: CODE_ACTIVE, label: tr("active") },
+    { value: CODE_INACTIVE, label: tr("inactive") },
   ]
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
-  const visible = list.userroles
+  const visible = list.productcodes
+
+  /** ลำดับที่โชว์แทนรหัส — นับต่อจากหน้าก่อนหน้า (หน้า 2 แถวแรกได้ 31 เมื่อหน้าละ 30)
+   *  ใช้ page/per_page ที่ API ตอบกลับมา ไม่ใช่ state ของตัวกรอง เลขจึงตรงกับแถวที่เห็นจริง */
+  const rowNumber = (index: number) =>
+    ((list.page || 1) - 1) * (list.per_page || pageSize) + index + 1
 
   return (
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
       <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-4">
         <div className="space-y-2">
-          <Label htmlFor="filter-rolename" className="text-muted-foreground text-xs">
-            {tcol("rolename")}
+          <Label
+            htmlFor="filter-prefix"
+            className="text-muted-foreground text-xs"
+          >
+            {tcol("prefix")}
           </Label>
           <div className="group relative">
             <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
             <Input
-              id="filter-rolename"
+              id="filter-prefix"
+              value={prefixQuery}
+              onChange={(event) => {
+                const prefix = event.target.value
+                setPrefixQuery(prefix)
+                setPage(1)
+                load(
+                  { prefix, name: nameQuery, status, page: 1, pageSize },
+                  SEARCH_DELAY_MS
+                )
+              }}
+              placeholder={t("search")}
+              className="bg-card/80 focus-visible:border-primary/50 pl-8 uppercase"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="filter-name" className="text-muted-foreground text-xs">
+            {tcol("name")}
+          </Label>
+          <div className="group relative">
+            <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
+            <Input
+              id="filter-name"
               value={nameQuery}
               onChange={(event) => {
-                const rolename = event.target.value
-                setNameQuery(rolename)
+                const name = event.target.value
+                setNameQuery(name)
                 setPage(1)
-                load({ rolename, status, page: 1, pageSize }, SEARCH_DELAY_MS)
+                load(
+                  { prefix: prefixQuery, name, status, page: 1, pageSize },
+                  SEARCH_DELAY_MS
+                )
               }}
               placeholder={t("search")}
               className="bg-card/80 focus-visible:border-primary/50 pl-8"
@@ -173,7 +211,13 @@ export function Tables({
             onValueChange={(next) => {
               setStatus(next)
               setPage(1)
-              load({ rolename: nameQuery, status: next, page: 1, pageSize })
+              load({
+                prefix: prefixQuery,
+                name: nameQuery,
+                status: next,
+                page: 1,
+                pageSize,
+              })
             }}
             placeholder={tall("all")}
             label={tcol("status")}
@@ -225,18 +269,20 @@ export function Tables({
           <Table>
             <TableHeader className="bg-muted/60">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-muted-foreground pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("id")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("rolename")}</TableHead>
+                {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
+                <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                {/* ตัวอักษรนำหน้าเป็นตัวเดียว ตรึงความกว้างไว้เหมือนคอลัมน์ลำดับ */}
+                <TableHead className="text-muted-foreground w-20 text-xs font-semibold tracking-wide uppercase">{tcol("prefix")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("menus")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visible.map((role) => (
+              {visible.map((code, index) => (
                 <TableRow
-                  key={role.id}
+                  key={code.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
                   <TableCell className="pt-1 pb-1 relative pl-6">
@@ -245,25 +291,25 @@ export function Tables({
                       aria-hidden
                       className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
                     />
-                    <span className="text-muted-foreground font-mono text-xs">{role.id}</span>
+                    <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
-                  <TableCell className="pt-1 pb-1 font-medium">{role.rolename}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{role.detail}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground tabular-nums">
-                    {role.permission_menus.length
-                      ? tr("menuCount", { count: role.permission_menus.length })
-                      : tr("noMenu")}
+                  <TableCell className="pt-1 pb-1">
+                    <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
+                      {code.prefix}
+                    </span>
                   </TableCell>
+                  <TableCell className="pt-1 pb-1 font-medium">{code.name}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{code.detail}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"
                       className={`border-transparent font-medium ${
-                        isRoleActive(role)
+                        isProductCodeActive(code)
                           ? "bg-success/12 text-success-ink hover:bg-success/12"
                           : "bg-muted text-muted-foreground hover:bg-muted"
                       }`}
                     >
-                      {isRoleActive(role) ? tr("active") : tr("inactive")}
+                      {isProductCodeActive(code) ? tr("active") : tr("inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 pr-6 text-right">
@@ -272,7 +318,7 @@ export function Tables({
                         variant="ghost"
                         size="icon"
                         aria-label={t("edit")}
-                        onClick={() => setForm({ mode: "edit", role })}
+                        onClick={() => setForm({ mode: "edit", code })}
                         className="bg-warning/18 text-warning-ink hover:bg-orange-50 hover:text-orange-300"
                       >
                         <Pencil />
@@ -281,7 +327,7 @@ export function Tables({
                         variant="ghost"
                         size="icon"
                         aria-label={tall("delete")}
-                        onClick={() => setRemoving(role)}
+                        onClick={() => setRemoving(code)}
                         className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
                       >
                         <Trash2 />
@@ -324,12 +370,24 @@ export function Tables({
           total={list.total}
           onPageChange={(next) => {
             setPage(next)
-            load({ rolename: nameQuery, status, page: next, pageSize })
+            load({
+              prefix: prefixQuery,
+              name: nameQuery,
+              status,
+              page: next,
+              pageSize,
+            })
           }}
           onPageSizeChange={(size) => {
             setPageSize(size)
             setPage(1)
-            load({ rolename: nameQuery, status, page: 1, pageSize: size })
+            load({
+              prefix: prefixQuery,
+              name: nameQuery,
+              status,
+              page: 1,
+              pageSize: size,
+            })
           }}
         />
       </CardContent>
@@ -341,9 +399,11 @@ export function Tables({
           if (!next) setForm(null)
         }}
         mode={form?.mode ?? "add"}
-        role={form?.role}
+        code={form?.code}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
-        onSaved={() => load({ rolename: nameQuery, status, page, pageSize })}
+        onSaved={() =>
+          load({ prefix: prefixQuery, name: nameQuery, status, page, pageSize })
+        }
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
@@ -352,8 +412,10 @@ export function Tables({
         onOpenChange={(next) => {
           if (!next) setRemoving(null)
         }}
-        role={removing ?? undefined}
-        onDeleted={() => load({ rolename: nameQuery, status, page, pageSize })}
+        code={removing ?? undefined}
+        onDeleted={() =>
+          load({ prefix: prefixQuery, name: nameQuery, status, page, pageSize })
+        }
       />
     </Card>
   )
