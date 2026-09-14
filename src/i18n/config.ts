@@ -1,5 +1,5 @@
-// export const locales = ["th", "en", "mm"] as const
-export const locales = ["th", "en"] as const
+export const locales = ["th", "en", "mm"] as const
+// export const locales = ["th", "en"] as const
 
 export type Locale = (typeof locales)[number]
 
@@ -9,7 +9,7 @@ export const defaultLocale: Locale = "th"
 export const localeNames: Record<Locale, string> = {
   th: "ไทย",
   en: "English",
-  // mm: "မြန်မာ",
+  mm: "မြန်မာ",
 }
 
 export const LOCALE_COOKIE = "NEXT_LOCALE"
@@ -22,7 +22,7 @@ export const LOCALE_COOKIE = "NEXT_LOCALE"
 export const bcp47: Record<Locale, string> = {
   th: "th",
   en: "en",
-  // mm: "my",
+  mm: "my",
 }
 
 /**

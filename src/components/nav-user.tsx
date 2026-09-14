@@ -73,7 +73,7 @@ export function NavUser() {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
+            {/* <DropdownMenuGroup>
               <DropdownMenuItem>
                 <UserRound />
                 {t("profile")}
@@ -82,8 +82,8 @@ export function NavUser() {
                 <CreditCard />
                 {t("billing")}
               </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            </DropdownMenuGroup> */}
+            {/* <DropdownMenuSeparator /> */}
             <DropdownMenuItem
               variant="destructive"
               onClick={handleSignOut}

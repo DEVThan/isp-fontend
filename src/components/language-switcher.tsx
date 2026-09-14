@@ -48,17 +48,18 @@ const flags: Record<Locale, (id: string) => ReactNode> = {
       <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6" />
     </svg>
   ),
-  // mm: () => (
-  //   <svg viewBox="0 0 9 6" className="size-full">
-  //     <rect width="9" height="6" fill="#FECB00" />
-  //     <rect y="2" width="9" height="4" fill="#34B233" />
-  //     <rect y="4" width="9" height="2" fill="#EA2839" />
-  //     <path
-  //       d="M4.50,1.15 L4.89,2.36 L6.16,2.36 L5.14,3.11 L5.53,4.32 L4.50,3.57 L3.47,4.32 L3.86,3.11 L2.84,2.36 L4.11,2.36 Z"
-  //       fill="#FFF"
-  //     />
-  //   </svg>
-  // ),
+  // ต้องเปิด/ปิดคู่กับ locales ใน src/i18n/config.ts — มี locale แต่ไม่มีธง เมนูเลือกภาษาจะพัง (flags[locale] is not a function)
+  mm: () => (
+    <svg viewBox="0 0 9 6" className="size-full">
+      <rect width="9" height="6" fill="#FECB00" />
+      <rect y="2" width="9" height="4" fill="#34B233" />
+      <rect y="4" width="9" height="2" fill="#EA2839" />
+      <path
+        d="M4.50,1.15 L4.89,2.36 L6.16,2.36 L5.14,3.11 L5.53,4.32 L4.50,3.57 L3.47,4.32 L3.86,3.11 L2.84,2.36 L4.11,2.36 Z"
+        fill="#FFF"
+      />
+    </svg>
+  ),
 }
 
 /** ครอบด้วย span เพราะเมนู/ปุ่มบังคับ svg เปล่าให้เป็นสี่เหลี่ยมจัตุรัส 16px */
