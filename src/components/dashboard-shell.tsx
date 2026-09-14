@@ -1,9 +1,9 @@
 import { cookies } from "next/headers"
 
-import { getSession } from "@/app/login/components/auth-actions"
+import { getMenus } from "@/app/login/components/auth-actions"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
-import { fetchMenus, toNavGroups } from "@/lib/menu"
+import type { NavGroup } from "@/lib/nav"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 /**
@@ -26,17 +26,13 @@ export default async function DashboardShell({
 }) {
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "false"
   /**
-   * เมนูของผู้ใช้มาจาก API ทางเดียว (ส่ง id ใน session.menus ไปแลกรายละเอียด)
-   * ต้นเมนูที่เคยเขียนไว้ในโค้ดถูก comment ไว้ใน nav.ts แล้ว — API ล่มเมื่อไหร่
-   * sidebar จะว่าง ไม่มีเมนูสำรองมาแทน
-   *
-   * session.menus เก็บเป็นสตริง (["7","6"]) ตามที่ /login ส่งมา แต่ id ของเมนูคือตัวเลข
-   * จึงแปลงเป็น number ก่อนส่งเข้า API   ค่าที่ไม่ใช่เลขบวก (cookie ถูกแก้มา) ทิ้งไป
+   * เมนูมาพร้อม /login แล้ว — login-form สร้างต้นเมนูครั้งเดียวแล้วเก็บไว้ใน cookie isp_menus
+   * ที่นี่แค่อ่านไปวาด ไม่ยิง API ทุกครั้งที่โหลดหน้าแบบเดิม (เดิมเอา id ใน session ไปแลกที่ /menu-get)
+   * ต้นเมนูที่เคยเขียนไว้ในโค้ดถูก comment ไว้ใน nav.ts แล้ว — ไม่มี cookie เมนูเมื่อไหร่ sidebar ว่าง
+   * (เช่นคนที่ล็อกอินค้างไว้ก่อนเปลี่ยนมาแบบนี้ ต้องล็อกอินใหม่หนึ่งครั้ง)
    */
-  const session = await getSession()
-  const menuIds = (session?.menus ?? []).map(Number).filter((id) => Number.isInteger(id) && id > 0)
-  const apiMenus = menuIds.length > 0 ? await fetchMenus(menuIds) : null
-  const groups = apiMenus ? toNavGroups(apiMenus) : []
+  const items = await getMenus()
+  const groups: NavGroup[] = items.length > 0 ? [{ items }] : []
 
   return (
     <SidebarProvider defaultOpen={!collapsed}>

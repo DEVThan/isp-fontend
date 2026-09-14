@@ -44,6 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import type { InitialResult } from "@/lib/initial-list"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
@@ -58,20 +59,22 @@ const senderCount = (vendor: Vendor) =>
 
 export function Tables({
   initial,
-  initialError,
 }: {
-  /** ผลลัพธ์หน้าแรกที่ page.tsx ดึงมาให้ตั้งแต่ฝั่งเซิร์ฟเวอร์ (กันตารางว่างตอนโหลดหน้า) */
-  initial: VendorList
-  initialError?: boolean
+  /**
+   * หน้าแรกจาก page.tsx — promise ที่ยังไม่เสร็จ (page.tsx ไม่ await เพื่อให้หน้าเปิดได้ทันทีตอนกดเมนู)
+   * React.use() รอจนเสร็จ ระหว่างนั้น <Suspense> ใน page.tsx โชว์ TableLoading แทน · API ล่มได้ failed: true ไม่ throw
+   */
+  initial: Promise<InitialResult<VendorList>>
 }) {
+  const first = React.use(initial)
   const t = useTranslations("common.table")
   const tall = useTranslations("common")
   const tr = useTranslations("vendors")
   const tcol = useTranslations("vendors.columns")
   const tform = useTranslations("vendors.form")
 
-  const [list, setList] = React.useState(initial)
-  const [failed, setFailed] = React.useState(Boolean(initialError))
+  const [list, setList] = React.useState(first.list)
+  const [failed, setFailed] = React.useState(first.failed)
   const [loading, setLoading] = React.useState(false)
 
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */

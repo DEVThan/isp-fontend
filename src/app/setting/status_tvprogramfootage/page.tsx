@@ -1,10 +1,14 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
+import { Suspense } from "react"
 
 import { getTvFootages } from "@/app/setting/status_tvprogramfootage/_components/api"
 import type { TvFootageList } from "@/app/setting/status_tvprogramfootage/_components/model"
 import { Tables } from "@/app/setting/status_tvprogramfootage/_components/table"
+import { AwaitValue } from "@/components/await-value"
 import { PageHeader } from "@/components/page-header"
+import { TableLoading } from "@/components/table-loading"
+import { settleInitial } from "@/lib/initial-list"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("statustvprogramfootages")
@@ -13,31 +17,36 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TvFootagePage() {
   const t = await getTranslations("statustvprogramfootages")
+  const tc = await getTranslations("common.table")
 
-  // API ล่ม/ต่อไม่ได้ ต้องไม่ทำให้ทั้งหน้าพัง — โชว์ตารางว่างพร้อมข้อความบอกแทน
-  // ดึงหน้าแรกให้ตั้งแต่ฝั่งเซิร์ฟเวอร์ จากนั้นตาราง (client) จะยิงเองทุกครั้งที่ค้นหา/เปลี่ยนหน้า
-  let list: TvFootageList = {
+  // ไม่ await — ส่งหัวเรื่อง + กรอบตารางไปก่อน กดเมนูแล้วหน้าเปิดทันที (API ช้า ~4 วินาที เดิมหน้าค้างรอ)
+  // ข้อมูลหน้าแรกตามมาผ่าน <Suspense> ด้านล่าง จากนั้นตาราง (client) จะยิงเองทุกครั้งที่ค้นหา/เปลี่ยนหน้า
+  // API ล่ม/ต่อไม่ได้ ต้องไม่ทำให้ทั้งหน้าพัง — settleInitial ให้ { list ว่าง, failed: true } แทนการ throw
+  const empty: TvFootageList = {
     statustvprogramfootages: [],
     total: 0,
     page: 1,
     per_page: 0,
     total_pages: 1,
   }
-  let loadError = false
-  try {
-    list = await getTvFootages()
-  } catch {
-    loadError = true
-  }
+  const initial = settleInitial(getTvFootages(), empty)
+
+  // จำนวนรายการในหัวหน้าต้องรอข้อมูลเหมือนกัน — โชว์ "กำลังโหลด…" ไปก่อน
+  const description = (
+    <Suspense fallback={tc("loading")}>
+      <AwaitValue promise={initial}>
+        {({ list }) => t("description", { count: list.total })}
+      </AwaitValue>
+    </Suspense>
+  )
 
   return (
     <div className="flex flex-col gap-0">
-      <PageHeader
-        title={t("title")}
-        description={t("description", { count: list.total })}
-      />
+      <PageHeader title={t("title")} description={description} />
 
-      <Tables initial={list} initialError={loadError} />
+      <Suspense fallback={<TableLoading label={tc("loading")} />}>
+        <Tables initial={initial} />
+      </Suspense>
     </div>
   )
 }

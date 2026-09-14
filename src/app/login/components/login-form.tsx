@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { AlertCircle, Eye, EyeOff, LoaderCircle, LogIn } from "lucide-react"
 import { useTranslations } from "next-intl"
 
+import { toNavGroups } from "@/lib/menu"
 import { DASHBOARD_ROOT } from "@/lib/nav"
 import { Button } from "@/components/ui/button"
 // import { Checkbox } from "@/components/ui/checkbox"
@@ -16,6 +17,7 @@ import {
   login,
 } from "@/app/login/components/api"
 import {
+  saveMenus,
   saveSession,
   toSession,
   validateCredentials,
@@ -82,6 +84,8 @@ export function LoginForm() {
     try {
       const user = await login(username, password)
       saveSession(toSession(user), remember)
+      // เมนูมาพร้อม /login แล้ว — สร้างต้นเมนูครั้งเดียวตรงนี้ เก็บลง cookie ให้ทุกหน้าอ่านไปวาดได้เลย
+      saveMenus(toNavGroups(user.menus ?? [])[0]?.items ?? [], remember)
       router.replace(nextPath())
       // cookie เพิ่งเปลี่ยน — สั่งดึงหน้าใหม่เพื่อให้ฝั่ง server เห็น session
       router.refresh()

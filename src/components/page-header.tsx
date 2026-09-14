@@ -4,7 +4,8 @@ export function PageHeader({
   children,
 }: {
   title: string
-  description?: string
+  /** ข้อความใต้หัวเรื่อง — รับ element ได้ เพราะหน้ารายการส่ง <Suspense> มา (จำนวนรายการตามมาทีหลังข้อมูล) */
+  description?: React.ReactNode
   children?: React.ReactNode
 }) {
   return (
