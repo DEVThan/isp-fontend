@@ -1,52 +1,19 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
-import { Suspense } from "react"
 
-import { getShiptmentTypes } from "@/app/setting/status_shiptmenttype/_components/api"
-import type { ShiptmentTypeList } from "@/app/setting/status_shiptmenttype/_components/model"
 import { Tables } from "@/app/setting/status_shiptmenttype/_components/table"
-import { AwaitValue } from "@/components/await-value"
-import { PageHeader } from "@/components/page-header"
-import { TableLoading } from "@/components/table-loading"
-import { settleInitial } from "@/lib/initial-list"
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("shiptmenttypes")
   return { title: t("title") }
 }
 
-export default async function ShiptmentTypePage() {
-  const t = await getTranslations("shiptmenttypes")
-  const tc = await getTranslations("common.table")
-
-  // ไม่ await — ส่งหัวเรื่อง + กรอบตารางไปก่อน กดเมนูแล้วหน้าเปิดทันที (API ช้า ~4 วินาที เดิมหน้าค้างรอ)
-  // ข้อมูลหน้าแรกตามมาผ่าน <Suspense> ด้านล่าง จากนั้นตาราง (client) จะยิงเองทุกครั้งที่ค้นหา/เปลี่ยนหน้า
-  // API ล่ม/ต่อไม่ได้ ต้องไม่ทำให้ทั้งหน้าพัง — settleInitial ให้ { list ว่าง, failed: true } แทนการ throw
-  const empty: ShiptmentTypeList = {
-    shiptmenttypes: [],
-    total: 0,
-    page: 1,
-    per_page: 0,
-    total_pages: 1,
-  }
-  const initial = settleInitial(getShiptmentTypes(), empty)
-
-  // จำนวนรายการในหัวหน้าต้องรอข้อมูลเหมือนกัน — โชว์ "กำลังโหลด…" ไปก่อน
-  const description = (
-    <Suspense fallback={tc("loading")}>
-      <AwaitValue promise={initial}>
-        {({ list }) => t("description", { count: list.total })}
-      </AwaitValue>
-    </Suspense>
-  )
-
+export default function ShiptmentTypePage() {
+  // หัวเรื่อง จำนวนรายการ และตาราง อยู่ใน Tables (client) ทั้งหมด — ตารางดึงข้อมูลหน้าแรกเองตอนเปิดหน้า
+  // หน้านี้จึงไม่เรียก API: กดเมนูแล้วหน้าเปิดทันที และเปลี่ยนภาษา (router.refresh) ไม่ยิง API ซ้ำ ตัวกรองไม่รีเซ็ต
   return (
     <div className="flex flex-col gap-0">
-      <PageHeader title={t("title")} description={description} />
-
-      <Suspense fallback={<TableLoading label={tc("loading")} />}>
-        <Tables initial={initial} />
-      </Suspense>
+      <Tables />
     </div>
   )
 }

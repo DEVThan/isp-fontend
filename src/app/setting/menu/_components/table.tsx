@@ -44,7 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { fallbackIcon, iconByName } from "@/lib/nav"
-import type { InitialResult } from "@/lib/initial-list"
+import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
@@ -62,24 +62,27 @@ function MenuIcon({ name }: { name: string }) {
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
 
-export function Tables({
-  initial,
-}: {
-  /**
-   * หน้าแรกจาก page.tsx — promise ที่ยังไม่เสร็จ (page.tsx ไม่ await เพื่อให้หน้าเปิดได้ทันทีตอนกดเมนู)
-   * React.use() รอจนเสร็จ ระหว่างนั้น <Suspense> ใน page.tsx โชว์ TableLoading แทน · API ล่มได้ failed: true ไม่ throw
-   */
-  initial: Promise<InitialResult<MenuList>>
-}) {
-  const first = React.use(initial)
+/**
+ * รายการว่างตอนเริ่ม — ตารางดึงหน้าแรกเองตอนเปิดหน้า (page.tsx ไม่ดึงให้แล้ว)
+ * page.tsx เคยดึงให้บน server แต่ทุกครั้งที่เปลี่ยนภาษา (router.refresh) server เรนเดอร์หน้าใหม่ = ยิง API ซ้ำ
+ * ทั้งที่ข้อมูลไม่ได้ขึ้นกับภาษาเลย · ตอนนี้ refresh เรนเดอร์ใหม่แค่ข้อความ ตารางตัวเดิมอยู่ต่อ ไม่ยิง API และตัวกรองไม่รีเซ็ต
+ */
+const EMPTY_LIST: MenuList = { menus: [], total: 0, page: 1, per_page: 0, total_pages: 1 }
+
+export function Tables() {
   const t = useTranslations("common.table")
+  /** ชื่อหน้า + จำนวนรายการในหัวหน้า — อยู่ในตารางเพราะจำนวนมาจากข้อมูลที่ตารางดึงเอง */
+  const tpage = useTranslations("menus")
   const tm = useTranslations("menus")
   const tcol = useTranslations("menus.columns")
   const tall = useTranslations("common")
 
-  const [list, setList] = React.useState(first.list)
-  const [failed, setFailed] = React.useState(first.failed)
-  const [loading, setLoading] = React.useState(false)
+  const [list, setList] = React.useState<MenuList>(EMPTY_LIST)
+  const [failed, setFailed] = React.useState(false)
+  // เริ่มที่ true — หน้าแรกกำลังดึงอยู่ตั้งแต่เปิดหน้า (ดู effect ใต้ load)
+  const [loading, setLoading] = React.useState(true)
+  /** ดึงหน้าแรกเสร็จแล้วหรือยัง — ก่อนหน้านั้นหัวหน้าโชว์ "กำลังโหลด…" แทนจำนวน และแถวว่างไม่โชว์ "ไม่พบข้อมูล" */
+  const [loaded, setLoaded] = React.useState(false)
 
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
   const [form, setForm] = React.useState<{
@@ -125,7 +128,8 @@ export function Tables({
     setLoading(true)
     // เลื่อนขึ้นมาที่หัวตารางก่อน จะได้เห็นทั้งตัวหมุนและแถวชุดใหม่ตั้งแต่แถวแรก
     // (scroll-mt-20 ที่กรอบตารางเผื่อที่ให้แถบหัวเว็บที่ปักหมุดอยู่ h-14)
-    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    // ครั้งแรกตอนเปิดหน้าไม่ต้องเลื่อน — หน้าเพิ่งเปิด ผู้ใช้ยังอยู่บนสุดอยู่แล้ว
+    if (loaded) tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
@@ -143,10 +147,24 @@ export function Tables({
         if (id !== latest.current) return
         setFailed(true)
       } finally {
-        if (id === latest.current) setLoading(false)
+        if (id === latest.current) {
+          setLoading(false)
+          setLoaded(true)
+        }
       }
     }, delay)
   }
+
+  /**
+   * ดึงหน้าแรกครั้งเดียวตอนเปิดหน้า ด้วยเงื่อนไขเริ่มต้น (ชุดเดียวกับที่ลบเสร็จแล้วใช้โหลดใหม่)
+   * เรียกผ่าน setTimeout — set state ตรง ๆ ใน effect ผิดกฎ react-hooks/set-state-in-effect
+   * dev (StrictMode) mount ซ้ำ: cleanup ยกเลิกรอบแรกก่อนยิง จึงยิงจริงครั้งเดียว
+   */
+  React.useEffect(() => {
+    const start = setTimeout(() => load({ name: nameQuery, status, page, pageSize }))
+    return () => clearTimeout(start)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ตั้งใจดึงแค่ตอนเปิดหน้า ที่เหลือ load ถูกเรียกจากตัวกรอง/แบ่งหน้าเอง
+  }, [])
 
   /**
    * ชื่อที่แสดง — ตัวเดียวกับที่เมนูข้างและ breadcrumb ใช้
@@ -171,6 +189,12 @@ export function Tables({
   const visible = list.menus
 
   return (
+    <>
+      <PageHeader
+        title={tpage("title")}
+        description={loaded ? tpage("description", { count: list.total }) : t("loading")}
+      />
+
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
       <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-4">
         {/* <div className="space-y-2">
@@ -343,7 +367,7 @@ export function Tables({
                     colSpan={COLUMN_COUNT}
                     className="text-muted-foreground py-12 text-center"
                   >
-                    {failed ? (
+                    {loading && !loaded ? null : failed ? (
                       <>
                         <TriangleAlert className="text-warning mx-auto mb-2 size-8" />
                         {tm("loadError")}
@@ -401,5 +425,6 @@ export function Tables({
         onDeleted={() => load({ name: nameQuery, status, page, pageSize })}
       />
     </Card>
+    </>
   )
 }

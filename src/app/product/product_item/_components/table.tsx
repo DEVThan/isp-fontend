@@ -50,7 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { InitialResult } from "@/lib/initial-list"
+import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
@@ -74,24 +74,29 @@ type Filters = {
   pageSize: number
 }
 
-export function Tables({
-  initial,
-}: {
-  /**
-   * หน้าแรกจาก page.tsx — promise ที่ยังไม่เสร็จ (page.tsx ไม่ await เพื่อให้หน้าเปิดได้ทันทีตอนกดเมนู)
-   * React.use() รอจนเสร็จ ระหว่างนั้น <Suspense> ใน page.tsx โชว์ TableLoading แทน · API ล่มได้ failed: true ไม่ throw
-   */
-  initial: Promise<InitialResult<ProductItemList>>
-}) {
-  const first = React.use(initial)
+/**
+ * รายการว่างตอนเริ่ม — ตารางดึงหน้าแรกเองตอนเปิดหน้า (page.tsx ไม่ดึงให้แล้ว)
+ * page.tsx เคยดึงให้บน server แต่ทุกครั้งที่เปลี่ยนภาษา (router.refresh) server เรนเดอร์หน้าใหม่ = ยิง API ซ้ำ
+ * ทั้งที่ข้อมูลไม่ได้ขึ้นกับภาษาเลย · ตอนนี้ refresh เรนเดอร์ใหม่แค่ข้อความ ตารางตัวเดิมอยู่ต่อ ไม่ยิง API และตัวกรองไม่รีเซ็ต
+ */
+const EMPTY_LIST: ProductItemList = {
+  products: [],
+  total: 0,
+  page: 1,
+  per_page: 0,
+  total_pages: 1,
+}
+
+export function Tables() {
   const t = useTranslations("common.table")
+  /** ชื่อหน้า + จำนวนรายการในหัวหน้า — อยู่ในตารางเพราะจำนวนมาจากข้อมูลที่ตารางดึงเอง */
+  const tpage = useTranslations("productitems")
   const tall = useTranslations("common")
   const tr = useTranslations("productitems")
   const tcol = useTranslations("productitems.columns")
 
-  const [list, setList] = React.useState(first.list)
-  const [failed, setFailed] = React.useState(first.failed)
-  const [loading, setLoading] = React.useState(false)
+  const [list, setList] = React.useState<ProductItemList>(EMPTY_LIST)
+  const [failed, setFailed] = React.useState(false)
 
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
   const [form, setForm] = React.useState<{
@@ -120,13 +125,24 @@ export function Tables({
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(ITEM_PAGE_SIZE)
 
-  /** ตัวเลือกของตัวกรองแบบ dropdown — ดึงครั้งเดียวตอนเปิดหน้า ยังไม่ได้ก็เลือกไม่ได้เฉย ๆ */
+  // เริ่มที่ true — หน้าแรกกำลังดึงอยู่ตั้งแต่เปิดหน้า (ดู effect ใต้ load)
+  const [loading, setLoading] = React.useState(true)
+  /** ดึงหน้าแรกเสร็จแล้วหรือยัง — ก่อนหน้านั้นหัวหน้าโชว์ "กำลังโหลด…" แทนจำนวน และแถวว่างไม่โชว์ "ไม่พบข้อมูล" */
+  const [loaded, setLoaded] = React.useState(false)
+
+  /** ตัวเลือกของตัวกรองแบบ dropdown — ดึงครั้งเดียว ยังไม่ได้ก็เลือกไม่ได้เฉย ๆ */
   const [filterOptions, setFilterOptions] = React.useState<ProductItemFilterOptions>({
     productTypes: [],
     shipmentTypes: [],
     vendors: [],
   })
+  /**
+   * ดึงตัวเลือกหลังหน้าแรกโหลดเสร็จ ไม่ใช่พร้อมกันตอนเปิดหน้า — API ช้าลงเมื่อยิงพร้อมกันหลายเส้น
+   * (3 เส้นตัวเลือก + รายการ ในโหมด dev StrictMode ยิงตัวเลือกซ้ำเป็น 6) รายการที่ผู้ใช้รอดูเคยช้าจาก ~4 เป็น ~9 วินาที
+   * loaded เปลี่ยนเป็น true ครั้งเดียว effect นี้จึงยิงครั้งเดียวต่อการเปิดหน้า
+   */
   React.useEffect(() => {
+    if (!loaded) return
     let cancelled = false
     // getProductItemFilterOptions ไม่มีทาง throw — เส้นไหนล้ม ตัวกรองนั้นได้ [] ไป
     getProductItemFilterOptions().then((next) => {
@@ -135,7 +151,7 @@ export function Tables({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [loaded])
 
   /** กรอบตาราง — ใช้เลื่อนหน้าให้เห็นหัวตารางทุกครั้งที่เริ่มโหลดข้อมูลใหม่ */
   const tableRef = React.useRef<HTMLDivElement>(null)
@@ -169,7 +185,8 @@ export function Tables({
     if (timer.current) clearTimeout(timer.current)
     setLoading(true)
     // เลื่อนขึ้นมาที่หัวตารางก่อน จะได้เห็นทั้งตัวหมุนและแถวชุดใหม่ตั้งแต่แถวแรก
-    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    // ครั้งแรกตอนเปิดหน้าไม่ต้องเลื่อน — หน้าเพิ่งเปิด ผู้ใช้ยังอยู่บนสุดอยู่แล้ว
+    if (loaded) tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
@@ -191,10 +208,24 @@ export function Tables({
         if (id !== latest.current) return
         setFailed(true)
       } finally {
-        if (id === latest.current) setLoading(false)
+        if (id === latest.current) {
+          setLoading(false)
+          setLoaded(true)
+        }
       }
     }, delay)
   }
+
+  /**
+   * ดึงหน้าแรกครั้งเดียวตอนเปิดหน้า ด้วยเงื่อนไขเริ่มต้น (ชุดเดียวกับที่ลบเสร็จแล้วใช้โหลดใหม่)
+   * เรียกผ่าน setTimeout — set state ตรง ๆ ใน effect ผิดกฎ react-hooks/set-state-in-effect
+   * dev (StrictMode) mount ซ้ำ: cleanup ยกเลิกรอบแรกก่อนยิง จึงยิงจริงครั้งเดียว
+   */
+  React.useEffect(() => {
+    const start = setTimeout(() => load(filters))
+    return () => clearTimeout(start)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ตั้งใจดึงแค่ตอนเปิดหน้า ที่เหลือ load ถูกเรียกจากตัวกรอง/แบ่งหน้าเอง
+  }, [])
 
   const statusOptions = [
     { value: ITEM_ACTIVE, label: tr("active") },
@@ -250,6 +281,12 @@ export function Tables({
     ((list.page || 1) - 1) * (list.per_page || pageSize) + index + 1
 
   return (
+    <>
+      <PageHeader
+        title={tpage("title")}
+        description={loaded ? tpage("description", { count: list.total }) : t("loading")}
+      />
+
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
       {/* แถวบน: รหัส + ชื่อสินค้า (ช่องพิมพ์ค้น กินครึ่งแถวคนละครึ่ง) · แถวล่าง: dropdown 4 ตัว
           ไม่ใช้ div ครอบแยกแถว — xl:col-span-2 ของสองช่องบนดันให้ 4 ตัวที่เหลือตกไปแถวล่างเอง */}
@@ -490,7 +527,7 @@ export function Tables({
                     className="text-muted-foreground py-12 text-center"
                   >
                     {/* ดึงข้อมูลไม่สำเร็จ ต้องแยกให้ออกจาก "ค้นหาแล้วไม่เจอ" */}
-                    {failed ? (
+                    {loading && !loaded ? null : failed ? (
                       <>
                         <TriangleAlert className="text-warning mx-auto mb-2 size-8" />
                         {tr("loadError")}
@@ -561,5 +598,6 @@ export function Tables({
         onDeleted={() => load(filters)}
       />
     </Card>
+    </>
   )
 }

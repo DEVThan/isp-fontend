@@ -15,8 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { localeNames, locales, type Locale } from "@/i18n/config"
-import { setUserLocale } from "@/i18n/actions"
+import { LOCALE_COOKIE, localeNames, locales, type Locale } from "@/i18n/config"
 
 /**
  * ธงเล็กหน้าชื่อภาษา — วาดเป็น SVG เอง ไม่ใช้ emoji ธง (🇹🇭)
@@ -62,6 +61,15 @@ const flags: Record<Locale, (id: string) => ReactNode> = {
   ),
 }
 
+/**
+ * เขียน cookie ภาษาจากฝั่ง browser — อายุ 1 ปี path=/ เท่ากับที่ server action setUserLocale เคยเขียน
+ * cookie เดิมของผู้ใช้จึงถูกเขียนทับตัวเดียวกัน · ไม่ใช่ความลับ (แค่ th/en/mm) ค่าที่ไม่รู้จัก locale.ts ถอยไปภาษาตั้งต้นเอง
+ * อยู่นอก component เพราะกฎ react-hooks ห้ามแก้ค่าข้างนอก (document.cookie) จากในตัว component — แบบเดียวกับ saveSession
+ */
+function saveLocaleCookie(locale: Locale) {
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`
+}
+
 /** ครอบด้วย span เพราะเมนู/ปุ่มบังคับ svg เปล่าให้เป็นสี่เหลี่ยมจัตุรัส 16px */
 function Flag({ locale }: { locale: Locale }) {
   // useId ให้ค่ามีอักขระพิเศษ (« ») ซึ่งใช้ใน url(#...) ของ SVG ไม่ได้ จึงตัดทิ้ง
@@ -79,10 +87,18 @@ export function LanguageSwitcher() {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
+  /**
+   * เขียน cookie ภาษาจากฝั่ง browser เอง แล้วสั่งดึงหน้าใหม่ (URL ไม่เปลี่ยน ต้อง refresh เอง)
+   *
+   * เดิมเรียก server action setUserLocale (i18n/actions.ts) — การ set cookie ใน server action ทำให้ Next
+   * เรนเดอร์หน้าปัจจุบันใหม่ใน response ของ action เอง แล้ว router.refresh() ก็เรนเดอร์ซ้ำอีกรอบ
+   * หน้ารายการเลยยิง API พร้อมกัน 2 ครั้งและรอทั้งคู่ (~6.5 วินาทีกว่าข้อความจะเปลี่ยน · dashboard 0.2 วินาที)
+   * ส่วนตารางที่ยังค้าง ดู key={locale} ของ <Suspense> ใน page.tsx ของหน้ารายการ
+   */
   function change(locale: Locale) {
-    startTransition(async () => {
-      await setUserLocale(locale)
-      // URL ไม่เปลี่ยน จึงต้องสั่งดึงหน้าใหม่เองหลังเปลี่ยน cookie
+    if (!locales.includes(locale)) return
+    saveLocaleCookie(locale)
+    startTransition(() => {
       router.refresh()
     })
   }
