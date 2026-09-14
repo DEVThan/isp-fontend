@@ -316,7 +316,7 @@ export function Tables({
         )}
         {selectFilter(
           "filter-vendor",
-          tcol("supplierName"),
+          tcol("vendor"),
           vendorOptions,
           vendor,
           (next) => {
@@ -385,7 +385,7 @@ export function Tables({
                 {/* รูป + รหัส + ชื่อสินค้า รวมอยู่คอลัมน์เดียว ไม่ตรึงความกว้าง ให้กินที่ที่เหลือของตาราง */}
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("itemCode")} / {tcol("productName")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("productTypeName")}</TableHead>
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("supplierName")}</TableHead>
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("vendor")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("shipmentType")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-32 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
@@ -427,7 +427,14 @@ export function Tables({
                     </div>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{item.product_type_name}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[160px] truncate">{item.supplier_name}</TableCell>
+                  {/* vendor มาจากทะเบียนผู้ขายที่ API join ด้วย vendo_code (ไม่ใช่ supplier_name ซึ่งแยกเป็นอีกช่องแล้ว)
+                      ไม่มีชื่อ (code ไม่อยู่ในทะเบียน) โชว์ code แทน · ชื่อยาวตัดท้าย ชี้ดูเต็มได้ */}
+                  <TableCell
+                    className="pt-1 pb-1 text-muted-foreground max-w-[160px] truncate"
+                    title={item.vendor_name ?? item.vendo_code ?? undefined}
+                  >
+                    {item.vendor_name ?? item.vendo_code}
+                  </TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{item.shipment_type}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
