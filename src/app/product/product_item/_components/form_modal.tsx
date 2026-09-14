@@ -1,9 +1,18 @@
 "use client"
 
 import * as React from "react"
-import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react"
+import {
+  CircleCheck,
+  ClipboardCheck,
+  LoaderCircle,
+  Package,
+  TriangleAlert,
+  Truck,
+  Wallet,
+} from "lucide-react"
 import { useTranslations } from "next-intl"
 
+import { ACCENTS, type Accent } from "@/app/product/product_item/_components/accents"
 import {
   getProductItemFormOptions,
   saveProductItem,
@@ -23,6 +32,7 @@ import {
   type ProductItemFormMode,
   type ProductItemFormOptions,
   type ProductItemFormValues,
+  type ProductItemRow,
 } from "@/app/product/product_item/_components/model"
 import { ImagePicker } from "@/app/product/product_item/_components/image_picker"
 import { MultiSelectOption } from "@/app/product/product_item/_components/multiselectoption"
@@ -50,6 +60,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 /**
  * form_modal.tsx — ฟอร์มเพิ่ม/แก้ไขสินค้าในกล่องซ้อน
@@ -65,7 +76,8 @@ import { Textarea } from "@/components/ui/textarea"
  * **ช่อง select** ตัวเลือกมาจากเส้น -get-option ของแต่ละทะเบียน ดึงใหม่ทุกครั้งที่เปิดฟอร์ม
  * เก็บลงคอลัมน์ต่างกัน: ประเภทสินค้า/การจัดส่ง/ช่องทางขาย/เอกสารสำคัญ เก็บ "ชื่อ"
  * (ช่องทางขายกับเอกสารสำคัญเลือกได้หลายตัว ชื่อต่อกันคั่นด้วย , — ดู parseNameList),
- * สถานะ KM/MOU/KM Protocall/หนังสือยินยอมฯ เก็บ "id", ผู้ขายเก็บ code ลง vendo_code + ชื่อลง supplier_name
+ * สถานะ KM/MOU/KM Protocall/หนังสือยินยอมฯ เก็บ "id", ผู้ขาย (vendor) เก็บ code ลง vendo_code อย่างเดียว
+ * (supplier_name เป็นช่องพิมพ์ของตัวเอง แยกจาก vendor แล้ว — เลือก vendor ไม่เขียนทับ supplier_name)
  * ค่าเดิมของแถวที่ไม่อยู่ในตัวเลือก (ทะเบียนปิดไปแล้ว หรือข้อมูลเก่าที่พิมพ์เอง) ถูกเติมเข้าไปให้เห็น
  * ไม่งั้นช่องจะดูว่างทั้งที่มีค่า และกดเลือกอย่างอื่นแล้วค่าเก่าหายโดยไม่รู้ตัว
  *
@@ -84,9 +96,11 @@ import { Textarea } from "@/components/ui/textarea"
 const INVALID_FIELD =
   "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
 
-/** ปุ่มแท็บที่เลือกอยู่ — มีขอบ + ตัวอักษรสีหลัก ให้แยกออกจากแท็บอื่นได้ชัด */
-const TAB_TRIGGER =
-  "data-active:border-border data-active:text-primary data-active:font-semibold data-active:shadow-sm"
+/**
+ * ปุ่มแท็บ — ไอคอนสีประจำกลุ่มอยู่หน้าชื่อเสมอ แท็บที่เลือกอยู่ได้พื้นจาง + ขอบ + เส้นใต้สีเดียวกัน (ACCENTS[..].tab)
+ * สีชุดเดียวกับการ์ดกลุ่มในกล่องดูข้อมูล · ตัวหนังสือเป็นสีปกติ ตัวหนาเมื่อเลือกอยู่
+ */
+const TAB_TRIGGER = "shrink-0 gap-1.5 data-active:font-semibold data-active:shadow-sm"
 
 /** เนื้อในแท็บ — กรอบต่อจากแถบแท็บ (ไม่มีขอบบนซ้ำ) สูงขั้นต่ำเท่ากันทุกแท็บ กล่องจะได้ไม่กระตุกตอนสลับ */
 const TAB_PANEL =
@@ -107,6 +121,8 @@ const REQUIRED_FIELDS = {
   product_type_name: "main",
   price: "price",
   cogs: "price",
+  // ผู้ขาย: เช็คที่ vendo_code (ต้องเลือกจากทะเบียนผู้ขาย) — แถวเก่ามีแค่ supplier_name จึงต้องเลือกใหม่ก่อนบันทึก
+  vendo_code: "supply",
   avg_deelivery_cost: "supply",
 } as const satisfies Partial<Record<keyof ProductItemFormValues, string | null>>
 
@@ -143,6 +159,7 @@ const emptyValues: ProductItemFormValues = Object.fromEntries(
 type ShownField =
   | "product_group"
   | "barcode"
+  | "supplier_name"
   | "unit"
   | "item_group"
   | "l_group"
@@ -214,7 +231,14 @@ const withCurrent = (
 ]
 
 const toValues = (item: ProductItem | undefined): ProductItemFormValues => {
-  if (!item) return { ...emptyValues, active_status: ITEM_ACTIVE }
+  // สินค้าใหม่: ตัดสต็อก = ใช่ · ขายเกินสต็อก = ไม่ใช่ (โหมดแก้ไขใช้ค่าจริงของแถว ไม่เติมให้ ไม่งั้นบันทึกแล้วค่าเปลี่ยนเงียบ ๆ)
+  if (!item)
+    return {
+      ...emptyValues,
+      active_status: ITEM_ACTIVE,
+      status_deduct_stock: ITEM_YES,
+      status_allow_oversell: ITEM_NO,
+    }
   // ทุกคอลัมน์กลายเป็นสตริงเพื่อผูกกับช่องกรอก — null/undefined เป็นค่าว่าง
   // (numeric ส่งมาเป็นสตริงอยู่แล้ว ส่วน integer เป็นตัวเลข ต้อง String() ให้)
   return Object.fromEntries(
@@ -236,8 +260,8 @@ export function FormModal({
   onOpenChange: (open: boolean) => void
   /** ปุ่มไหนเป็นคนเปิด — "add" หรือ "edit" */
   mode: ProductItemFormMode
-  /** แถวที่กำลังแก้ (โหมด edit เท่านั้น) */
-  item?: ProductItem
+  /** แถวที่กำลังแก้ (โหมด edit เท่านั้น) — แถวจาก -get-list มี vendor_name ติดมา ใช้เป็นป้าย vendor ระหว่างรอตัวเลือก */
+  item?: ProductItemRow
   /** บันทึกสำเร็จแล้ว — ตารางเอาไปโหลดข้อมูลใหม่ */
   onSaved?: () => void
 }) {
@@ -427,12 +451,14 @@ export function FormModal({
     values.vendo_code &&
     !vendorOptions.some((option) => option.value === values.vendo_code)
   ) {
-    // code เดิมที่ไม่มีในทะเบียนแล้ว — โชว์คู่กับชื่อที่แถวเก็บไว้
+    // code ที่ยังไม่อยู่ในตัวเลือก — ตัวเลือก 11 เส้นโหลดช้า (~6–12 วินาที) หรือผู้ขายถูกปิดไปแล้ว
+    // ป้ายใช้ชื่อจริงของ vendor ที่ API join มากับแถว (vendor_name) ไม่ใช้ supplier_name ซึ่งเป็นคนละช่องแล้ว
+    // ใช้ชื่อนั้นเฉพาะตอน code ยังเป็นของแถวเดิม — เปลี่ยน code แล้วชื่อเก่าไม่ใช่ของ code ใหม่
+    const vendorName =
+      item?.vendo_code === values.vendo_code ? item?.vendor_name : null
     vendorOptions.push({
       value: values.vendo_code,
-      label: values.supplier_name
-        ? `${values.vendo_code} — ${values.supplier_name}`
-        : values.vendo_code,
+      label: vendorName ? `${values.vendo_code} — ${vendorName}` : values.vendo_code,
     })
   }
 
@@ -491,19 +517,11 @@ export function FormModal({
                 item?.id,
                 mode === "add" ? codePrefix : undefined
               )
-              // add: path รูปมีรหัสสินค้า ซึ่งเพิ่งได้จาก API — อัปโหลดตอนนี้แล้วเขียน path ลงแถวที่เพิ่งเพิ่ม
+              // add: ชื่อไฟล์รูปคือรหัสสินค้า ซึ่งเพิ่งได้จาก API — อัปโหลดตอนนี้
+              // API เขียน path ลงคอลัมน์ image ของรหัสนี้ให้เอง ไม่ต้องยิง edit ทั้งแถวซ้ำ
               if (mode === "add" && pendingImage) {
                 try {
-                  const image = await uploadProductItemImage(
-                    pendingImage,
-                    saved.item_code
-                  )
-                  // edit ด้วยค่าที่ API เพิ่งคืนมาทั้งแถว (รหัสจริง / กลุ่มสินค้า) เปลี่ยนแค่ image
-                  await saveProductItem(
-                    "edit",
-                    { ...toValues(saved), image },
-                    saved.id
-                  )
+                  await uploadProductItemImage(pendingImage, saved.item_code)
                 } catch (imageError) {
                   // แถวสินค้าบันทึกไปแล้ว — กดบันทึกซ้ำจะได้สินค้าซ้ำ จึงปิดกล่องแล้วบอกให้ไปใส่รูปในโหมดแก้ไข
                   const detail =
@@ -535,7 +553,11 @@ export function FormModal({
           }}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4">
+          {/* auto-rows-max: กล่องนี้สูงจำกัดแล้วเลื่อนเอง แถวที่ถือกล่อง overflow-hidden (กรอบรหัส/ชื่อ) จะหดได้ถึง 0
+              แล้วโดนแถวถัดไปวาดทับ — ให้ทุกแถวสูงเท่าเนื้อในเสมอ (เคยเจอในกล่องดูข้อมูล) */}
+          {/* grid-cols-[minmax(0,1fr)]: คอลัมน์เดียวของ grid ห้ามกว้างเกินกล่อง — แถบแท็บ 4 อันกว้างขั้นต่ำ ~500px
+              บนมือถือจะดันทั้งฟอร์มล้นขอบ (ช่องกรอกโดนตัดทางขวา) ให้แถบแท็บเลื่อนแนวนอนเองแทน */}
+          <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4">
             {/* รูปสินค้าอยู่บนสุด — เลือกไฟล์แล้วอัปโหลดทันที ฟอร์มถือแค่ URL ที่ได้กลับมา */}
             <ImagePicker
               id="item-image"
@@ -551,7 +573,13 @@ export function FormModal({
 
             {/* สองช่องที่บังคับกรอก อยู่นอกแท็บเสมอ — เป็นตัวบอกว่ากำลังแก้สินค้าตัวไหน
                 และถ้ากดบันทึกทั้งที่ยังว่าง กรอบแดงต้องเห็นได้ไม่ว่าเปิดแท็บไหนอยู่ */}
-            <div className="border-border/60 bg-muted/30 grid gap-4 rounded-lg border p-3 sm:grid-cols-3">
+            {/* แถบไล่เฉดสีด้านบนชุดเดียวกับโลโก้ + พื้นไล่เฉดจาง ๆ (แบบเดียวกับการ์ดสรุปในกล่องดูข้อมูล)
+                overflow-hidden ตัดมุมแถบสี — ต้องคู่กับ auto-rows-max ของกล่องเลื่อน ไม่งั้นแถวนี้หดจนโดนแถวถัดไปทับ */}
+            <div className="border-border/60 bg-card from-chart-1/6 to-chart-5/6 relative grid gap-4 overflow-hidden rounded-lg border bg-gradient-to-br via-transparent p-3 pt-4 sm:grid-cols-3">
+              <span
+                aria-hidden
+                className="from-chart-1 via-chart-5 to-chart-2 absolute inset-x-0 top-0 h-1 bg-gradient-to-r"
+              />
               {mode === "add" ? (
                 // add: เลือก prefix อย่างเดียว — รหัสจริงออกให้ตอนบันทึก พิมพ์รหัสเองไม่ได้
                 <Field
@@ -611,22 +639,26 @@ export function FormModal({
               onValueChange={(next) => setTab(String(next))}
               className="gap-0"
             >
-              <TabsList className="border-border bg-muted/70 w-full rounded-b-none border p-1 group-data-horizontal/tabs:h-10">
-                <TabsTrigger value="main" className={TAB_TRIGGER}>
+              <TabsList className="border-border bg-muted/70 w-full justify-start overflow-x-auto rounded-b-none border p-1 group-data-horizontal/tabs:h-10">
+                <TabsTrigger value="main" className={cn(TAB_TRIGGER, ACCENTS.blue.tab)}>
+                  <Package className={ACCENTS.blue.icon} />
                   {tform("sectionMain")}
                 </TabsTrigger>
-                <TabsTrigger value="price" className={TAB_TRIGGER}>
+                <TabsTrigger value="price" className={cn(TAB_TRIGGER, ACCENTS.orange.tab)}>
+                  <Wallet className={ACCENTS.orange.icon} />
                   {tform("sectionPrice")}
                 </TabsTrigger>
-                <TabsTrigger value="supply" className={TAB_TRIGGER}>
+                <TabsTrigger value="supply" className={cn(TAB_TRIGGER, ACCENTS.aqua.tab)}>
+                  <Truck className={ACCENTS.aqua.icon} />
                   {tform("sectionSupply")}
                 </TabsTrigger>
-                <TabsTrigger value="status" className={TAB_TRIGGER}>
+                <TabsTrigger value="status" className={cn(TAB_TRIGGER, ACCENTS.magenta.tab)}>
+                  <ClipboardCheck className={ACCENTS.magenta.icon} />
                   {tform("sectionStatus")}
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="main" className={TAB_PANEL}>
+              <TabsContent value="main" className={cn(TAB_PANEL, ACCENTS.blue.panel)}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {text("product_group")}
                   {text("barcode")}
@@ -635,7 +667,7 @@ export function FormModal({
                 <div className="grid gap-4 sm:grid-cols-3">
                   {num("qty")}
                 </div>
-                <Divider label={tform("sectionGroup")} />
+                <Divider label={tform("sectionGroup")} accent="yellow" />
                 <div className="grid gap-4 sm:grid-cols-2">
                   {select("product_type_name", byName(options.productTypes))}
                   {text("item_group")}
@@ -644,11 +676,10 @@ export function FormModal({
                 </div>
               </TabsContent>
 
-              <TabsContent value="price" className={TAB_PANEL}>
+              <TabsContent value="price" className={cn(TAB_PANEL, ACCENTS.orange.panel)}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {num("price")}
                   {num("cost")}
-                  {num("cogs")}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {num("gp_percentage")}
@@ -659,40 +690,41 @@ export function FormModal({
                   {num("cm_bath")}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
+                  {num("cogs")}
                   {num("check1")}
                   {num("check2")}
                 </div>
               </TabsContent>
 
-              <TabsContent value="supply" className={TAB_PANEL}>
+              <TabsContent value="supply" className={cn(TAB_PANEL, ACCENTS.aqua.panel)}>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {/* ป้าย "code — ชื่อ" ยาว กินสองช่อง */}
+                  {/* ผู้ขาย (vendor) เลือกจากทะเบียน — ป้าย "code — ชื่อ" ยาว กินสองช่อง */}
                   <div className="sm:col-span-2">
-                    <Field id="item-vendor" label={tcol("supplier_name")} select>
+                    <Field
+                      id="item-vendor"
+                      label={tcol("vendor")}
+                      select
+                      required
+                      error={errorOf("vendo_code")}
+                    >
                       <SelectOption
                         id="item-vendor"
                         options={vendorOptions}
                         value={values.vendo_code || null}
-                        onValueChange={(next) => {
-                          const vendor = options.vendors.find(
-                            (option) => option.code === next
-                          )
-                          // เขียนคู่กันเสมอ: code ลง vendo_code ชื่อลง supplier_name · ล้างก็ล้างทั้งคู่
-                          setValues((current) => ({
-                            ...current,
-                            vendo_code: next ?? "",
-                            supplier_name: next
-                              ? (vendor?.name ?? current.supplier_name)
-                              : "",
-                          }))
-                        }}
-                        // แถวเก่ามีแค่ชื่อผู้ขาย ไม่มี code — โชว์ชื่อนั้นจาง ๆ แทน "..."
-                        placeholder={values.supplier_name || "..."}
-                        label={tcol("supplier_name")}
+                        // เก็บแค่ code ลง vendo_code — supplier_name แยกเป็นช่องของตัวเองแล้ว เลือก vendor ไม่เขียนทับ
+                        // ผ่าน set() เพื่อให้กรอบแดงของช่องบังคับหายทันทีที่เลือก
+                        onValueChange={(next) => set("vendo_code", next ?? "")}
+                        placeholder="..."
+                        label={tcol("vendor")}
+                        invalid={Boolean(errorOf("vendo_code"))}
                       />
                     </Field>
                   </div>
                   {select("shipment_type", byName(options.shipmentTypes))}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {/* supplier_name พิมพ์เอง — ข้อมูลเดิมเป็นข้อความอิสระ (เช่น "iShopping") ไม่ได้ผูกกับทะเบียนผู้ขาย */}
+                  <div className="sm:col-span-2">{text("supplier_name")}</div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {num("delivery_fee", { integer: true })}
@@ -709,7 +741,7 @@ export function FormModal({
                 </div>
               </TabsContent>
 
-              <TabsContent value="status" className={TAB_PANEL}>
+              <TabsContent value="status" className={cn(TAB_PANEL, ACCENTS.magenta.panel)}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {select("status_km", byId(options.kms))}
                   {select("status_mou", byId(options.mous))}
@@ -801,7 +833,13 @@ export function FormModal({
               />
             </Field>
 
-            {result ? (
+          </div>
+
+          {/* ผลการบันทึก — อยู่นอกกล่องเลื่อน ติดเหนือปุ่มเสมอ
+              เดิมอยู่ท้ายกล่องเลื่อน ฟอร์มยาวกว่าที่เห็น alert เลยไปอยู่ใต้ขอบล่างของส่วนที่มองเห็น
+              (วัดได้ top 1030px แต่ขอบล่างของกล่องอยู่ที่ 875px) แล้วกล่องปิดเองใน 1.4 วินาที ผู้ใช้จึงไม่เคยเห็น */}
+          {result ? (
+            <div className="border-border/60 border-t px-4 pt-3">
               <Alert variant={result.ok ? "success" : "destructive"}>
                 {result.ok ? <CircleCheck /> : <TriangleAlert />}
                 <AlertContent>
@@ -813,8 +851,8 @@ export function FormModal({
                   ) : null}
                 </AlertContent>
               </Alert>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           {/* แถบท้ายไล่เฉดชุดเดียวกับแถบแบ่งหน้าในตาราง — อยู่นอกกรอบที่เลื่อน ปุ่มจึงติดอยู่เสมอ
               mx-0 mb-0: DialogFooter ติด -mx-4 -mb-4 มาเพื่อชดเชย p-4 ของ DialogContent
@@ -842,10 +880,14 @@ export function FormModal({
   )
 }
 
-/** เส้นคั่นพร้อมป้ายกำกับ — ใช้แบ่งกลุ่มย่อยภายในแท็บเดียวกัน */
-function Divider({ label }: { label: string }) {
+/** เส้นคั่นพร้อมป้ายกำกับ — ใช้แบ่งกลุ่มย่อยภายในแท็บเดียวกัน · ขีดสีหน้าชื่อเป็นสีประจำกลุ่มย่อยนั้น */
+function Divider({ label, accent }: { label: string; accent: Accent }) {
   return (
     <div className="flex items-center gap-3">
+      <span
+        aria-hidden
+        className={cn("h-3.5 w-1 shrink-0 rounded-full", ACCENTS[accent].bar)}
+      />
       <span className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         {label}
       </span>

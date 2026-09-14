@@ -105,6 +105,19 @@ export function isProductItemActive(item: ProductItem) {
   return item.active_status !== ITEM_INACTIVE
 }
 
+/**
+ * หนึ่งแถวของ -get-list — สินค้า + ข้อมูลผู้ขายที่ API join มาจาก vendor ด้วย vendo_code (อ่านอย่างเดียว)
+ *
+ * แยกจาก ProductItem เพราะ ProductItemFormValues สร้างจากคีย์ของ ProductItem
+ * ถ้าใส่สองตัวนี้ไว้ในนั้น ฟอร์มจะถือ/ส่งฟิลด์ที่ไม่ใช่คอลัมน์ของ products ไปบันทึกด้วย
+ * แถวที่ไม่มี vendo_code (ข้อมูลเก่าที่มีแต่ supplier_name) หรือหาผู้ขายไม่เจอ ได้ null ทั้งคู่
+ */
+export type ProductItemRow = ProductItem & {
+  vendor_name: string | null
+  /** vendor.sender_code ดิบ ๆ — JSON string ของ [{shipping, sendercode}] อ่านด้วย parseSenderCodes ของหน้า vendor */
+  vendor_sender_code: string | null
+}
+
 /** ความยาวสูงสุดของคอลัมน์ varchar — ตรงกับ _VARCHAR ฝั่ง API เกินแล้วตอบ 400 */
 export const ITEM_MAX_LEN: Record<string, number> = {
   image: 255,
@@ -128,7 +141,7 @@ export const ITEM_MAX_LEN: Record<string, number> = {
  * คีย์รายการคือ "products" ตามชื่อตาราง ไม่ใช่ "productitems" ตามชื่อเส้น
  */
 export type ProductItemList = {
-  products: ProductItem[]
+  products: ProductItemRow[]
   total: number
   page: number
   per_page: number

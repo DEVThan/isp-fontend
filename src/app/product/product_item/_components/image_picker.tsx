@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label"
 /**
  * image_picker.tsx — ช่องเลือกรูปสินค้า (browse ไฟล์) พร้อมรูปตัวอย่าง
  *
- * รูปเก็บที่ /uploads/products/{item_code}/thump/{ชื่อไฟล์} — ต้องรู้รหัสสินค้าก่อนถึงจะอัปโหลดได้ จึงมีสองแบบ:
+ * รูปเก็บที่ /uploads/products/{item_code}/thump/{item_code}.{นามสกุล} — API ลบรูปเดิมทิ้งและเขียนคอลัมน์ image ให้เลย
+ * ต้องรู้รหัสสินค้าก่อนถึงจะอัปโหลดได้ จึงมีสองแบบ:
  * - มี itemCode (โหมดแก้ไข): เลือกไฟล์ปุ๊บอัปโหลดทันที แล้วส่ง path กลับผ่าน onChange
  *   ระหว่างอัปโหลดบอกพ่อผ่าน onUploadingChange ให้ปิดปุ่มบันทึก ไม่งั้นบันทึกไปก่อนได้ path รูปใหม่
  * - ไม่มี itemCode (โหมดเพิ่ม — รหัสออกให้ตอนบันทึก): ถือไฟล์ไว้ผ่าน onPendingFileChange
@@ -68,7 +69,12 @@ export function ImagePicker({
    * พอเปลี่ยนรูปใหม่ src ไม่ตรงแล้วก็ลองแสดงใหม่เอง ไม่ต้องล้างค่าด้วย effect
    */
   const [brokenSrc, setBrokenSrc] = React.useState<string | null>(null)
-  const src = previewUrl ?? value
+  /**
+   * ชื่อไฟล์คือรหัสสินค้า — เปลี่ยนรูปนามสกุลเดิมได้ path เดิมเป๊ะ <img> เลยโชว์รูปเก่าจาก cache
+   * ต่อ ?v= หลังอัปโหลดสำเร็จเพื่อบังคับโหลดใหม่ ใช้แสดงผลเท่านั้น ไม่ได้ส่งลงคอลัมน์
+   */
+  const [version, setVersion] = React.useState<number | null>(null)
+  const src = previewUrl ?? (value && version ? `${value}?v=${version}` : value)
   const showImage = Boolean(src) && brokenSrc !== src
   const hasImage = Boolean(pendingFile || value)
 
@@ -90,6 +96,7 @@ export function ImagePicker({
     onUploadingChange?.(true)
     try {
       onChange(await uploadProductItemImage(file, itemCode))
+      setVersion(Date.now())
     } catch (cause) {
       // ข้อความจาก API บอกสาเหตุตรง ๆ (ไม่ใช่รูป / ใหญ่เกิน) — ห้าม console.error ใน dev จะขึ้นเต็มจอ
       setError(
@@ -159,7 +166,7 @@ export function ImagePicker({
               size="sm"
               disabled={uploading}
               onClick={() => {
-                // เอารูปออกจากสินค้าเท่านั้น ไฟล์บนเครื่อง API ยังอยู่
+                // เอารูปออกจากสินค้า (มีผลตอนกดบันทึก) ไฟล์บนเครื่อง API ยังอยู่ จนกว่าจะอัปโหลดรูปใหม่ของรหัสนี้
                 onPendingFileChange(null)
                 onChange("")
                 setError(null)

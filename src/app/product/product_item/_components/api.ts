@@ -214,12 +214,13 @@ export async function saveProductItem(
 
 /**
  * POST /api/web/product-item-upload-image — อัปโหลดรูปสินค้า คืน path ไว้ใส่ values.image
- * path = /uploads/products/{item_code}/thump/{ชื่อไฟล์} (ใช้เป็น src ได้ตรง ๆ ผ่าน rewrite ใน next.config.ts)
+ * path = /uploads/products/{item_code}/thump/{item_code}.{นามสกุล} (ใช้เป็น src ได้ตรง ๆ ผ่าน rewrite ใน next.config.ts)
  *
  * ส่งเป็น multipart ไม่ใช่ JSON จึงใช้ post() ไม่ได้ — ห้ามตั้ง Content-Type เอง
  * (browser ต้องใส่ boundary ของ FormData ให้ ตั้งเองแล้ว Flask อ่านไฟล์ไม่เจอ)
  * item_code ต้องมีในตาราง products แล้ว (API ตอบ 404 ถ้าไม่มี) — สินค้าใหม่จึงอัปโหลดหลังบันทึกแถว
- * ยังไม่ได้บันทึกลงสินค้า ต้องส่ง path ไปกับ -action ก่อนถึงจะลงคอลัมน์ image
+ * API ลบรูปเดิมของสินค้าตัวนี้ทิ้ง และเขียน path ลงคอลัมน์ image ให้ทันที (ไม่ต้องรอกดบันทึกฟอร์ม)
+ * — กดยกเลิกฟอร์มหลังอัปโหลดแล้วรูปก็เปลี่ยนไปแล้ว เพราะรูปเดิมไม่มีเหลือให้ย้อนกลับ
  */
 export async function uploadProductItemImage(
   file: File,

@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import {
+  Eye,
   LoaderCircle,
   Pencil,
   Plus,
@@ -27,12 +28,15 @@ import {
   type ProductItemFilterOptions,
   type ProductItemFormMode,
   type ProductItemList,
+  type ProductItemRow,
 } from "@/app/product/product_item/_components/model"
 import { TablePagination } from "@/app/product/product_item/_components/pagination"
+import { ProductImage } from "@/app/product/product_item/_components/product_image"
 import {
   SelectOption,
   type SelectOptionItem,
 } from "@/app/product/product_item/_components/selectoption"
+import { ViewModal } from "@/app/product/product_item/_components/view_modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -49,7 +53,7 @@ import {
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 8
+const COLUMN_COUNT = 7
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -89,10 +93,18 @@ export function Tables({
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
   const [form, setForm] = React.useState<{
     mode: ProductItemFormMode
-    item?: ProductItem
+    item?: ProductItemRow
   } | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
   const [removing, setRemoving] = React.useState<ProductItem | null>(null)
+  /** แถวที่กำลังเปิดดูข้อมูลทั้งหมด — null คือปิดกล่อง */
+  const [viewing, setViewing] = React.useState<ProductItemRow | null>(null)
+  /**
+   * เลขต่อท้าย URL รูป — เปลี่ยนทุกครั้งที่บันทึกสินค้า
+   * รูปชื่อ {item_code}.{นามสกุล} เปลี่ยนรูปแล้ว URL มักเหมือนเดิม browser จะโชว์รูปเก่าจากหน่วยความจำ
+   * (get-list ไม่ได้ส่ง updated_at มาให้ใช้แทน)
+   */
+  const [imageVersion, setImageVersion] = React.useState(0)
 
   /** ค้นจากรหัสสินค้า — แยกช่องจากชื่อ เพราะ API รับคนละพารามิเตอร์ */
   const [codeQuery, setCodeQuery] = React.useState("")
@@ -367,13 +379,13 @@ export function Tables({
               <TableRow className="hover:bg-transparent">
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
                 <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("itemCode")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("productName")}</TableHead>
+                {/* รูป + รหัส + ชื่อสินค้า รวมอยู่คอลัมน์เดียว ไม่ตรึงความกว้าง ให้กินที่ที่เหลือของตาราง */}
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("itemCode")} / {tcol("productName")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("productTypeName")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("supplierName")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("shipmentType")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
-                <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
+                <TableHead className="w-32 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -390,13 +402,27 @@ export function Tables({
                     />
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
-                  <TableCell className="pt-1 pb-1">
-                    <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
-                      {item.item_code}
-                    </span>
+                  <TableCell className="pt-1.5 pb-1.5">
+                    {/* รูปซ้ายสุด ข้างขวาเป็นรหัส (บน) + ชื่อสินค้า (ล่าง) ซ้อนกัน
+                        ไม่มีรูป ProductImage ไม่แสดงอะไร ข้อความจึงชิดซ้ายเอง */}
+                    <div className="flex max-w-[400px] items-center gap-3">
+                      <ProductImage
+                        src={item.image}
+                        version={imageVersion}
+                        alt={item.item_code}
+                        className="size-12"
+                      />
+                      <div className="grid min-w-0 gap-1">
+                        <span className="bg-primary/10 text-primary w-fit rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
+                          {item.item_code}
+                        </span>
+                        {/* ชื่อสินค้ายาวมาก (มีเดือน/โปรฯ ต่อท้าย) ตัดทิ้งแล้วให้ชี้ดูเต็มด้วย title */}
+                        <span className="truncate font-medium" title={item.product_name}>
+                          {item.product_name}
+                        </span>
+                      </div>
+                    </div>
                   </TableCell>
-                  {/* ชื่อสินค้ายาวมาก (มีเดือน/โปรฯ ต่อท้าย) ตัดทิ้งแล้วให้ชี้ดูเต็มด้วย title */}
-                  <TableCell className="pt-1 pb-1 max-w-[320px] truncate font-medium" title={item.product_name}>{item.product_name}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{item.product_type_name}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[160px] truncate">{item.supplier_name}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{item.shipment_type}</TableCell>
@@ -414,6 +440,16 @@ export function Tables({
                   </TableCell>
                   <TableCell className="pt-1 pb-1 pr-6 text-right">
                     <div className="flex justify-end gap-0.5">
+                      {/* ดูข้อมูลทั้งหมด — สี info แยกจากส้ม (แก้ไข) และแดง (ลบ) */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("view")}
+                        onClick={() => setViewing(item)}
+                        className="bg-info/12 text-info-ink hover:bg-info/20"
+                      >
+                        <Eye />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -489,7 +525,20 @@ export function Tables({
         mode={form?.mode ?? "add"}
         item={form?.item}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
-        onSaved={() => load(filters)}
+        onSaved={() => {
+          setImageVersion(Date.now())
+          load(filters)
+        }}
+      />
+
+      {/* ดูข้อมูลทั้งหมดแบบอ่านอย่างเดียว */}
+      <ViewModal
+        open={viewing !== null}
+        onOpenChange={(next) => {
+          if (!next) setViewing(null)
+        }}
+        item={viewing ?? undefined}
+        imageVersion={imageVersion}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
