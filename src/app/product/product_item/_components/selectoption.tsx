@@ -4,6 +4,8 @@ import { Combobox } from "@base-ui/react/combobox"
 import { Check, ChevronDown, Search, X } from "lucide-react"
 import { useTranslations } from "next-intl"
 
+import { cn } from "@/lib/utils"
+
 /**
  * selectoption.tsx — ช่องเลือกตัวเลือกที่พิมพ์ค้นหาได้ (Base UI Combobox)
  *
@@ -26,6 +28,7 @@ export function SelectOption({
   placeholder,
   /** ใช้เป็นชื่อของช่องให้ screen reader — ปกติส่งชื่อหัวข้อของช่องนี้มา */
   label,
+  invalid = false,
 }: {
   id?: string
   options: SelectOptionItem[]
@@ -34,6 +37,8 @@ export function SelectOption({
   onValueChange: (value: string | null) => void
   placeholder?: string
   label?: string
+  /** ช่องบังคับที่ยังไม่ได้เลือกตอนกดบันทึก — ขึ้นกรอบแดงแบบเดียวกับช่องกรอก */
+  invalid?: boolean
 }) {
   const t = useTranslations("common.table")
 
@@ -52,7 +57,13 @@ export function SelectOption({
         <Combobox.Trigger
           id={id}
           aria-label={label}
-          className="border-input bg-card/80 data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-between gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30"
+          aria-invalid={invalid || undefined}
+          // cn (tailwind-merge) ให้ border-destructive ทับ border-input จริง — ต่อสตริงเฉย ๆ ตัวไหนชนะขึ้นกับลำดับใน stylesheet
+          className={cn(
+            "border-input bg-card/80 data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-between gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30",
+            invalid &&
+              "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
+          )}
         >
           {/* Value ไม่ได้ render element ของตัวเอง (ไม่มี className) จึงต้องมี span ครอบ */}
           <span className="truncate">

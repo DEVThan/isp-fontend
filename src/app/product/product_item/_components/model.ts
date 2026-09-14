@@ -17,6 +17,14 @@ export const ITEM_INACTIVE = "inactive"
 export const ITEM_ACTIVE = "active"
 
 /**
+ * ค่า "ใช่ / ไม่ใช่" ของ status_deduct_stock กับ status_allow_oversell (varchar(50) ไม่มีทะเบียนให้ดึง)
+ * ตั้งเองเป็นตัวพิมพ์เล็กแบบเดียวกับ active/inactive — ตอนเพิ่มช่องยังไม่มีข้อมูลเดิมให้ยึดรูปแบบ
+ * แถวที่มีค่าอื่นอยู่แล้ว ฟอร์มยังโชว์และส่งค่านั้นกลับไปเหมือนเดิม (withCurrent ใน form_modal)
+ */
+export const ITEM_YES = "yes"
+export const ITEM_NO = "no"
+
+/**
  * หนึ่งแถวในตาราง products ตามที่ POST /api/web/product-item-get-list คืนมา
  *
  * ชนิดค่าตามที่ได้รับจริง ไม่ใช่ตามชนิดในฐานข้อมูล:
@@ -72,6 +80,8 @@ export type ProductItem = {
   cogs: string
   check1: string
   check2: string
+  /** จำนวนสินค้า — numeric(12,2) not null default 0 เพิ่มเข้าตารางทีหลัง */
+  qty: string
 
   // --- integer ว่างได้ · สี่ตัวท้ายเก็บ id ของทะเบียน status_* (ผูกด้วยเลข ไม่มี foreign key) ---
   delivery_fee: number | null
@@ -133,6 +143,69 @@ export type ProductItemOption = {
   product_name: string
 }
 
+/** ตัวเลือกจากทะเบียนที่มีแค่ id/name — product_type และ status_* ทุกตัว (เส้น -get-option) */
+export type NamedOption = { id: number; name: string }
+
+/** ตัวเลือกผู้ขายจาก /vendor-get-option — มี code เพราะผู้ขายชื่อซ้ำกันได้ code ต่างหากที่ไม่ซ้ำ */
+export type VendorOption = { id: number; code: string; name: string }
+
+/**
+ * ตัวเลือกรหัสสินค้าจาก /product-code-get-option — prefix คือส่วนหน้าของ item_code (P0 / D0 / F1 / F2)
+ * ตอนเพิ่มสินค้าเลือก prefix แล้ว API ออกเลขวิ่งต่อท้ายให้ตอนบันทึก (P0 → P00034)
+ */
+export type ProductCodeOption = { id: number; prefix: string; name: string }
+
+/** ตัวเลือกช่องทางการขายจาก /status-channeltype-get-option — มี logo ติดมาด้วย (ยังไม่ได้ใช้) */
+export type ChannelTypeOption = NamedOption & { logo: string | null }
+
+/**
+ * ตัวเลือกของทุกช่อง select ในฟอร์มสินค้า — ดึงพร้อมกันตอนเปิดฟอร์ม
+ *
+ * แต่ละช่องเก็บลง products ไม่เหมือนกัน (ดูคอมเมนต์ _INTEGER ใน controller/web/product_item.py):
+ * - product_type_name / shipment_type / channel_type / important_doc / status_line_my_shop เก็บ "ชื่อ" เป็นข้อความ
+ * - status_km / status_tv_program_footage / status_mou / status_km_protocall เก็บ "id" เป็นเลข
+ * - vendo_code เก็บ code ของผู้ขาย และ supplier_name เก็บชื่อคู่กัน
+ */
+export type ProductItemFormOptions = {
+  productTypes: NamedOption[]
+  shipmentTypes: NamedOption[]
+  vendors: VendorOption[]
+  channelTypes: ChannelTypeOption[]
+  kms: NamedOption[]
+  importantDocs: NamedOption[]
+  tvProgramFootages: NamedOption[]
+  mous: NamedOption[]
+  kmProtocalls: NamedOption[]
+  lineMyShops: NamedOption[]
+  productCodes: ProductCodeOption[]
+}
+
+/** ตัวเลือกของตัวกรองในหน้ารายการ — ใช้แค่ 3 ทะเบียน ไม่ต้องดึงครบ 11 เส้นแบบฟอร์ม */
+export type ProductItemFilterOptions = Pick<
+  ProductItemFormOptions,
+  "productTypes" | "shipmentTypes" | "vendors"
+>
+
+/**
+ * channel_type กับ important_doc เลือกได้หลายตัว แต่คอลัมน์เป็น varchar(255) ตัวเดียว ไม่มีตารางลูก
+ * จึงเก็บชื่อต่อกันคั่นด้วย "," (เช่น "TV,Line OA" / "อย.,ฆอ.2") — รวมกันเกิน 255 ตัว API ตอบ 400
+ * แถวเก่าที่เก็บชื่อเดียว ("TV") อ่านได้เป็น ["TV"] ตามรูปแบบนี้อยู่แล้ว ไม่ต้องแปลงข้อมูล
+ */
+const NAME_LIST_SEPARATOR = ","
+
+/** อ่านรายชื่อจากคอลัมน์ — ตัดช่องว่างรอบ ๆ และทิ้งช่องว่างเปล่า ("" ได้ []) */
+export function parseNameList(raw: string): string[] {
+  return raw
+    .split(NAME_LIST_SEPARATOR)
+    .map((name) => name.trim())
+    .filter(Boolean)
+}
+
+/** เขียนกลับลงคอลัมน์ — ไม่ได้เลือกเลยได้ "" (API เก็บเป็น NULL) */
+export function serializeNameList(names: string[]): string {
+  return names.join(NAME_LIST_SEPARATOR)
+}
+
 /** ปุ่มไหนเป็นคนเปิดฟอร์ม — ค่าเดียวกับ action ที่ POST /api/web/product-item-action รับ */
 export type ProductItemFormMode = "add" | "edit"
 
@@ -185,6 +258,7 @@ export const ITEM_FIELDS = [
   "cogs",
   "check1",
   "check2",
+  "qty",
   "delivery_fee",
   "dimension_cm",
   "status_km",

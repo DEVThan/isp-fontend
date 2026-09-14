@@ -4,12 +4,18 @@ import {
   type ApiEnvelope,
 } from "@/app/login/components/api"
 import type {
+  ChannelTypeOption,
+  NamedOption,
   ProductItem,
   ProductItemDeleted,
+  ProductItemFilterOptions,
   ProductItemFormMode,
+  ProductItemFormOptions,
   ProductItemFormValues,
   ProductItemList,
+  ProductCodeOption,
   ProductItemOption,
+  VendorOption,
 } from "@/app/product/product_item/_components/model"
 
 /**
@@ -67,6 +73,12 @@ export type ProductItemQuery = {
   productName?: string
   /** "active" / "inactive" — null หรือไม่ส่ง = ไม่กรองสถานะ */
   status?: string | null
+  /** ชื่อประเภทสินค้าจาก dropdown — ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง */
+  productType?: string | null
+  /** ชื่อประเภทการจัดส่งจาก dropdown — ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง */
+  shipmentType?: string | null
+  /** รหัสผู้ขาย — API นับแถวเก่าที่มีแต่ supplier_name ตรงกับชื่อผู้ขายรหัสนี้ด้วย · null = ไม่กรอง */
+  vendorCode?: string | null
   page?: number
   perPage?: number
 }
@@ -85,6 +97,9 @@ export async function getProductItems(
     product_name: query.productName ?? "",
     // ไม่ส่ง active_status เลยเมื่อไม่ได้กรอง — ส่งสตริงว่างไปก็ได้ แต่ไม่ส่งอ่านง่ายกว่าตอน debug
     ...(query.status ? { active_status: query.status } : {}),
+    ...(query.productType ? { product_type_name: query.productType } : {}),
+    ...(query.shipmentType ? { shipment_type: query.shipmentType } : {}),
+    ...(query.vendorCode ? { vendo_code: query.vendorCode } : {}),
     page: query.page ?? 1,
     per_page: query.perPage ?? ITEM_PAGE_SIZE,
   })
@@ -109,6 +124,71 @@ export async function getProductItemOptions(): Promise<ProductItemOption[]> {
   )
 }
 
+/** ยิงเส้น -get-option หนึ่งเส้น — พังก็คืน [] ช่องนั้นแค่ไม่มีตัวเลือก ไม่ลากช่องอื่นพังไปด้วย */
+async function options<T>(path: string): Promise<T[]> {
+  try {
+    return (await post<T[]>(path, {})) ?? []
+  } catch {
+    // ห้าม console.error — ใน dev overlay จะขึ้นเต็มจอเหมือนหน้าพัง
+    return []
+  }
+}
+
+/**
+ * ตัวเลือกของทุกช่อง select ในฟอร์มสินค้า — 11 เส้นยิงพร้อมกัน ไม่รับพารามิเตอร์ ได้เฉพาะตัวที่ active
+ * ไม่มีทาง throw: เส้นไหนล้มช่องนั้นว่าง ส่วนค่าเดิมของแถวยังโชว์อยู่ (ฟอร์มเติมให้เอง)
+ */
+export async function getProductItemFormOptions(): Promise<ProductItemFormOptions> {
+  const [
+    productTypes,
+    shipmentTypes,
+    vendors,
+    channelTypes,
+    kms,
+    importantDocs,
+    tvProgramFootages,
+    mous,
+    kmProtocalls,
+    lineMyShops,
+    productCodes,
+  ] = await Promise.all([
+    options<NamedOption>("product-type-get-option"),
+    options<NamedOption>("status-shiptmenttype-get-option"),
+    options<VendorOption>("vendor-get-option"),
+    options<ChannelTypeOption>("status-channeltype-get-option"),
+    options<NamedOption>("status-km-get-option"),
+    options<NamedOption>("status-importantdoc-get-option"),
+    options<NamedOption>("status-tvprogramfootage-get-option"),
+    options<NamedOption>("status-mou-get-option"),
+    options<NamedOption>("status-kmprotocall-get-option"),
+    options<NamedOption>("status-linemyshop-get-option"),
+    options<ProductCodeOption>("product-code-get-option"),
+  ])
+  return {
+    productTypes,
+    shipmentTypes,
+    vendors,
+    channelTypes,
+    kms,
+    importantDocs,
+    tvProgramFootages,
+    mous,
+    kmProtocalls,
+    lineMyShops,
+    productCodes,
+  }
+}
+
+/** ตัวเลือกของตัวกรองในหน้ารายการ — 3 เส้นพร้อมกัน ไม่มีทาง throw (เส้นไหนล้ม ตัวกรองนั้นว่าง) */
+export async function getProductItemFilterOptions(): Promise<ProductItemFilterOptions> {
+  const [productTypes, shipmentTypes, vendors] = await Promise.all([
+    options<NamedOption>("product-type-get-option"),
+    options<NamedOption>("status-shiptmenttype-get-option"),
+    options<VendorOption>("vendor-get-option"),
+  ])
+  return { productTypes, shipmentTypes, vendors }
+}
+
 /**
  * POST /api/web/product-item-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
  *
@@ -120,13 +200,56 @@ export async function getProductItemOptions(): Promise<ProductItemOption[]> {
 export async function saveProductItem(
   action: ProductItemFormMode,
   values: ProductItemFormValues,
-  itemId?: number
+  itemId?: number,
+  /** add เท่านั้น: prefix ที่เลือก — API ออก item_code ให้เอง (item_code ใน values ถูกเขียนทับ) */
+  itemCodePrefix?: string
 ): Promise<ProductItem> {
   return (await post<ProductItem>("product-item-action", {
     action,
     id: itemId ?? 0,
     ...values,
+    ...(itemCodePrefix ? { item_code_prefix: itemCodePrefix } : {}),
   })) as ProductItem
+}
+
+/**
+ * POST /api/web/product-item-upload-image — อัปโหลดรูปสินค้า คืน path ไว้ใส่ values.image
+ * path = /uploads/products/{item_code}/thump/{ชื่อไฟล์} (ใช้เป็น src ได้ตรง ๆ ผ่าน rewrite ใน next.config.ts)
+ *
+ * ส่งเป็น multipart ไม่ใช่ JSON จึงใช้ post() ไม่ได้ — ห้ามตั้ง Content-Type เอง
+ * (browser ต้องใส่ boundary ของ FormData ให้ ตั้งเองแล้ว Flask อ่านไฟล์ไม่เจอ)
+ * item_code ต้องมีในตาราง products แล้ว (API ตอบ 404 ถ้าไม่มี) — สินค้าใหม่จึงอัปโหลดหลังบันทึกแถว
+ * ยังไม่ได้บันทึกลงสินค้า ต้องส่ง path ไปกับ -action ก่อนถึงจะลงคอลัมน์ image
+ */
+export async function uploadProductItemImage(
+  file: File,
+  itemCode: string
+): Promise<string> {
+  const url = `${API_BASE_URL}/product-item-upload-image`
+  const form = new FormData()
+  form.append("item_code", itemCode)
+  form.append("file", file)
+  let res: Response
+
+  try {
+    res = await fetch(url, { method: "POST", cache: "no-store", body: form })
+  } catch (cause) {
+    throw new ApiError(
+      API_NETWORK_ERROR,
+      `เรียก API ไม่สำเร็จ: ${url} (${String(cause)})`
+    )
+  }
+
+  const envelope = (await res.json().catch(() => null)) as ApiEnvelope<{
+    image: string
+  }> | null
+  if (!envelope) {
+    throw new ApiError(res.status, res.statusText || "Invalid response")
+  }
+  if (!envelope.status || !envelope.result?.image) {
+    throw new ApiError(envelope.resultcode ?? res.status, envelope.message)
+  }
+  return envelope.result.image
 }
 
 /**

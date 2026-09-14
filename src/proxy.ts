@@ -37,6 +37,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // ข้าม /api/web (proxy ไป Flask), ไฟล์ static และ favicon — ไม่งั้น CSS/JS โดนเด้งไปด้วย
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // ข้าม /api/web และ /uploads (proxy ไป Flask), ไฟล์ static และ favicon — ไม่งั้น CSS/JS/รูปโดนเด้งไปด้วย
+  matcher: ["/((?!api|uploads|_next/static|_next/image|favicon.ico).*)"],
 }

@@ -13,6 +13,7 @@ import {
 import { useTranslations } from "next-intl"
 
 import {
+  getProductItemFilterOptions,
   getProductItems,
   ITEM_PAGE_SIZE,
 } from "@/app/product/product_item/_components/api"
@@ -23,11 +24,15 @@ import {
   ITEM_ACTIVE,
   ITEM_INACTIVE,
   type ProductItem,
+  type ProductItemFilterOptions,
   type ProductItemFormMode,
   type ProductItemList,
 } from "@/app/product/product_item/_components/model"
 import { TablePagination } from "@/app/product/product_item/_components/pagination"
-import { SelectOption } from "@/app/product/product_item/_components/selectoption"
+import {
+  SelectOption,
+  type SelectOptionItem,
+} from "@/app/product/product_item/_components/selectoption"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -48,6 +53,21 @@ const COLUMN_COUNT = 8
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
+
+/** เงื่อนไขทั้งหมดที่ส่งไปให้ API ตัดหน้ามาให้ — null = ไม่กรองตัวนั้น */
+type Filters = {
+  code: string
+  name: string
+  status: string | null
+  /** ชื่อประเภทสินค้า */
+  productType: string | null
+  /** ชื่อประเภทการจัดส่ง */
+  shipmentType: string | null
+  /** รหัสผู้ขาย (vendor.code) */
+  vendor: string | null
+  page: number
+  pageSize: number
+}
 
 export function Tables({
   initial,
@@ -79,8 +99,28 @@ export function Tables({
   const [nameQuery, setNameQuery] = React.useState("")
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
   const [status, setStatus] = React.useState<string | null>(null)
+  const [productType, setProductType] = React.useState<string | null>(null)
+  const [shipmentType, setShipmentType] = React.useState<string | null>(null)
+  const [vendor, setVendor] = React.useState<string | null>(null)
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(ITEM_PAGE_SIZE)
+
+  /** ตัวเลือกของตัวกรองแบบ dropdown — ดึงครั้งเดียวตอนเปิดหน้า ยังไม่ได้ก็เลือกไม่ได้เฉย ๆ */
+  const [filterOptions, setFilterOptions] = React.useState<ProductItemFilterOptions>({
+    productTypes: [],
+    shipmentTypes: [],
+    vendors: [],
+  })
+  React.useEffect(() => {
+    let cancelled = false
+    // getProductItemFilterOptions ไม่มีทาง throw — เส้นไหนล้ม ตัวกรองนั้นได้ [] ไป
+    getProductItemFilterOptions().then((next) => {
+      if (!cancelled) setFilterOptions(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   /** กรอบตาราง — ใช้เลื่อนหน้าให้เห็นหัวตารางทุกครั้งที่เริ่มโหลดข้อมูลใหม่ */
   const tableRef = React.useRef<HTMLDivElement>(null)
@@ -94,20 +134,23 @@ export function Tables({
     []
   )
 
+  /** เงื่อนไขชุดปัจจุบัน — แต่ละที่ที่เปลี่ยนเงื่อนไข เอาไปทับเฉพาะตัวที่เปลี่ยนแล้วส่งเข้า load */
+  const filters: Filters = {
+    code: codeQuery,
+    name: nameQuery,
+    status,
+    productType,
+    shipmentType,
+    vendor,
+    page,
+    pageSize,
+  }
+
   /**
-   * ยิง API ใหม่ทุกครั้งที่เงื่อนไขเปลี่ยน — ค้นหา กรองสถานะ และแบ่งหน้า ทำที่เซิร์ฟเวอร์ทั้งหมด
+   * ยิง API ใหม่ทุกครั้งที่เงื่อนไขเปลี่ยน — ค้นหา กรอง และแบ่งหน้า ทำที่เซิร์ฟเวอร์ทั้งหมด
    * ต้องส่งค่าใหม่เข้ามาเป็น argument เพราะ state ที่เพิ่ง set ยังไม่อัปเดตในรอบนี้
    */
-  const load = (
-    next: {
-      code: string
-      name: string
-      status: string | null
-      page: number
-      pageSize: number
-    },
-    delay = 0
-  ) => {
+  const load = (next: Filters, delay = 0) => {
     if (timer.current) clearTimeout(timer.current)
     setLoading(true)
     // เลื่อนขึ้นมาที่หัวตารางก่อน จะได้เห็นทั้งตัวหมุนและแถวชุดใหม่ตั้งแต่แถวแรก
@@ -119,6 +162,9 @@ export function Tables({
           itemCode: next.code.trim(),
           productName: next.name.trim(),
           status: next.status,
+          productType: next.productType,
+          shipmentType: next.shipmentType,
+          vendorCode: next.vendor,
           page: next.page,
           perPage: next.pageSize,
         })
@@ -140,6 +186,46 @@ export function Tables({
     { value: ITEM_INACTIVE, label: tr("inactive") },
   ]
 
+  /** ประเภทสินค้า / การจัดส่ง ผูกกับสินค้าด้วยชื่อ — value จึงเป็นชื่อ */
+  const productTypeOptions: SelectOptionItem[] = filterOptions.productTypes.map(
+    (option) => ({ value: option.name, label: option.name })
+  )
+  const shipmentTypeOptions: SelectOptionItem[] = filterOptions.shipmentTypes.map(
+    (option) => ({ value: option.name, label: option.name })
+  )
+  /** ผู้ขายชื่อซ้ำกันได้ — value เป็นรหัส ป้ายมีรหัสนำหน้า */
+  const vendorOptions: SelectOptionItem[] = filterOptions.vendors.map((option) => ({
+    value: option.code,
+    label: `${option.code} — ${option.name}`,
+  }))
+
+  /**
+   * ตัวกรองแบบ dropdown — ป้ายไม่ผูก htmlFor (ตัวช่องเป็นปุ่ม และ Label กว้างเต็มคอลัมน์
+   * คลิกที่ว่างข้างชื่อแล้วรายการจะเด้งเปิด) · เปลี่ยนค่าแล้วกลับไปหน้า 1 เสมอ
+   */
+  const selectFilter = (
+    id: string,
+    label: string,
+    options: SelectOptionItem[],
+    value: string | null,
+    apply: (next: string | null) => Filters
+  ) => (
+    <div className="space-y-2">
+      <Label className="text-muted-foreground w-fit text-xs">{label}</Label>
+      <SelectOption
+        id={id}
+        options={options}
+        value={value}
+        onValueChange={(next) => {
+          setPage(1)
+          load(apply(next))
+        }}
+        placeholder={tall("all")}
+        label={label}
+      />
+    </div>
+  )
+
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
   const visible = list.products
 
@@ -150,8 +236,10 @@ export function Tables({
 
   return (
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
-      <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-4">
-        <div className="space-y-2">
+      {/* แถวบน: รหัส + ชื่อสินค้า (ช่องพิมพ์ค้น กินครึ่งแถวคนละครึ่ง) · แถวล่าง: dropdown 4 ตัว
+          ไม่ใช้ div ครอบแยกแถว — xl:col-span-2 ของสองช่องบนดันให้ 4 ตัวที่เหลือตกไปแถวล่างเอง */}
+      <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="space-y-2 xl:col-span-2">
           <Label htmlFor="filter-code" className="text-muted-foreground text-xs">
             {tcol("itemCode")}
           </Label>
@@ -164,17 +252,14 @@ export function Tables({
                 const code = event.target.value
                 setCodeQuery(code)
                 setPage(1)
-                load(
-                  { code, name: nameQuery, status, page: 1, pageSize },
-                  SEARCH_DELAY_MS
-                )
+                load({ ...filters, code, page: 1 }, SEARCH_DELAY_MS)
               }}
               placeholder={t("search")}
               className="bg-card/80 focus-visible:border-primary/50 pl-8"
             />
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 xl:col-span-2">
           <Label htmlFor="filter-name" className="text-muted-foreground text-xs">
             {tcol("productName")}
           </Label>
@@ -187,39 +272,53 @@ export function Tables({
                 const name = event.target.value
                 setNameQuery(name)
                 setPage(1)
-                load(
-                  { code: codeQuery, name, status, page: 1, pageSize },
-                  SEARCH_DELAY_MS
-                )
+                load({ ...filters, name, page: 1 }, SEARCH_DELAY_MS)
               }}
               placeholder={t("search")}
               className="bg-card/80 focus-visible:border-primary/50 pl-8"
             />
           </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
-            {tcol("status")}
-          </Label>
-          <SelectOption
-            id="filter-status"
-            options={statusOptions}
-            value={status}
-            onValueChange={(next) => {
-              setStatus(next)
-              setPage(1)
-              load({
-                code: codeQuery,
-                name: nameQuery,
-                status: next,
-                page: 1,
-                pageSize,
-              })
-            }}
-            placeholder={tall("all")}
-            label={tcol("status")}
-          />
-        </div>
+        {selectFilter(
+          "filter-product_type",
+          tcol("productTypeName"),
+          productTypeOptions,
+          productType,
+          (next) => {
+            setProductType(next)
+            return { ...filters, productType: next, page: 1 }
+          }
+        )}
+        {selectFilter(
+          "filter-shipment_type",
+          tcol("shipmentType"),
+          shipmentTypeOptions,
+          shipmentType,
+          (next) => {
+            setShipmentType(next)
+            return { ...filters, shipmentType: next, page: 1 }
+          }
+        )}
+        {selectFilter(
+          "filter-vendor",
+          tcol("supplierName"),
+          vendorOptions,
+          vendor,
+          (next) => {
+            setVendor(next)
+            return { ...filters, vendor: next, page: 1 }
+          }
+        )}
+        {selectFilter(
+          "filter-status",
+          tcol("status"),
+          statusOptions,
+          status,
+          (next) => {
+            setStatus(next)
+            return { ...filters, status: next, page: 1 }
+          }
+        )}
       </CardContent>
 
       <CardContent className="px-4 py-0">
@@ -371,24 +470,12 @@ export function Tables({
           total={list.total}
           onPageChange={(next) => {
             setPage(next)
-            load({
-              code: codeQuery,
-              name: nameQuery,
-              status,
-              page: next,
-              pageSize,
-            })
+            load({ ...filters, page: next })
           }}
           onPageSizeChange={(size) => {
             setPageSize(size)
             setPage(1)
-            load({
-              code: codeQuery,
-              name: nameQuery,
-              status,
-              page: 1,
-              pageSize: size,
-            })
+            load({ ...filters, page: 1, pageSize: size })
           }}
         />
       </CardContent>
@@ -402,9 +489,7 @@ export function Tables({
         mode={form?.mode ?? "add"}
         item={form?.item}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
-        onSaved={() =>
-          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
-        }
+        onSaved={() => load(filters)}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
@@ -414,9 +499,7 @@ export function Tables({
           if (!next) setRemoving(null)
         }}
         item={removing ?? undefined}
-        onDeleted={() =>
-          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
-        }
+        onDeleted={() => load(filters)}
       />
     </Card>
   )
