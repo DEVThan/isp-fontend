@@ -70,6 +70,7 @@
     "product_type": "ကုန်ပစ္စည်း အမျိုးအစားများ",
     "vendor": "ရောင်းချသူများ",
     "customer": "ဖောက်သည်များ",
+    "broadcast": "Broadcast ချန်နယ်များ",
     "product_item": "ကုန်ပစ္စည်း စာရင်း"
   },
   "dashboard": {
@@ -810,6 +811,44 @@
     "male": "ကျား",
     "female": "မ",
     "loadError": "ဖောက်သည် အချက်အလက် ရယူ၍ မရပါ"
+  },
+  "broadcasts": {
+    "title": "Broadcast ချန်နယ်များ",
+    "description": "စုစုပေါင်း ချန်နယ် {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "ချန်နယ် အမည်",
+      "logo": "လိုဂို",
+      "detail": "အသေးစိတ်",
+      "tel": "ဖုန်းနံပါတ်",
+      "email": "အီးမေးလ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "ချန်နယ် ထည့်ရန်",
+      "editTitle": "ချန်နယ် ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် ချန်နယ်၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော ချန်နယ်၏ အချက်အလက်များ ပြင်ပါ",
+      "sectionInfo": "ချန်နယ် အချက်အလက်",
+      "sectionContact": "ဆက်သွယ်ရန်",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤ ချန်နယ်ကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ",
+      "logoBrowse": "ပုံရွေးရန်",
+      "logoChange": "ပုံပြောင်းရန်",
+      "logoUploading": "တင်နေသည်…",
+      "logoUploadError": "လိုဂို တင်၍ မရပါ",
+      "logoTooLarge": "ပုံသည် 5 MB ထက် ကြီးနေသည်",
+      "logoHint": "JPG, PNG, GIF သို့မဟုတ် WEBP၊ 5 MB အထိ",
+      "logoPendingHint": "ချန်နယ် သိမ်းပြီးမှ လိုဂို တင်ပါမည်",
+      "logoSaveFailed": "ချန်နယ် သိမ်းပြီးပါပြီ၊ သို့သော် လိုဂို တင်၍ မရပါ — ပြင်ဆင်ရန် ဖွင့်ပြီး ထပ်ထည့်ပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "ချန်နယ်များ ရယူ၍ မရပါ"
   },
   "status": {
     "active": "အသုံးပြုနေဆဲ",

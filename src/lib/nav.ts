@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Store,
   Truck,
+  Tv,
   Users,
   type LucideIcon,
 } from "lucide-react"
@@ -119,12 +120,16 @@ export const iconByName: Record<string, LucideIcon> = {
   Cog,
   ReceiptText,
   Store,
+  Tv,
   // ชื่อที่ฐานข้อมูลเขียนเป็นโค้ดเมนู ไม่ใช่ชื่อไอคอนของ lucide
   vat: Percent,
   company: Building2,
   bankaccount: Landmark,
   menu: ListTree,
   userrole: ShieldCheck,
+  // หน้าช่องทาง Broadcast — รับทั้งตัวพิมพ์เล็ก (tv) และโค้ดเมนู (broadcast) เผื่อฐานข้อมูลเขียนแบบนั้น
+  tv: Tv,
+  broadcast: Tv,
 }
 
 /** ชื่อไอคอนที่ไม่มีในตาราง (หรือเมนูที่ไม่ได้ตั้งไอคอน) ใช้ตัวนี้แทน */

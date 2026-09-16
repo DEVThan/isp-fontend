@@ -70,6 +70,7 @@
     "product_type": "Product types",
     "vendor": "Vendors",
     "customer": "Customers",
+    "broadcast": "Broadcast channels",
     "product_item": "Product items"
   },
   "dashboard": {
@@ -810,6 +811,44 @@
     "male": "Male",
     "female": "Female",
     "loadError": "Could not load customers"
+  },
+  "broadcasts": {
+    "title": "Broadcast channels",
+    "description": "{count} channels in total",
+    "columns": {
+      "no": "No.",
+      "name": "Channel name",
+      "logo": "Logo",
+      "detail": "Detail",
+      "tel": "Phone",
+      "email": "Email",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add channel",
+      "editTitle": "Edit channel",
+      "addDescription": "Fill in the details of the channel to add",
+      "editDescription": "Change the details of the selected channel",
+      "sectionInfo": "Channel details",
+      "sectionContact": "Contact",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this channel?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "logoBrowse": "Browse",
+      "logoChange": "Change image",
+      "logoUploading": "Uploading…",
+      "logoUploadError": "Could not upload the logo",
+      "logoTooLarge": "Image is larger than 5 MB",
+      "logoHint": "JPG, PNG, GIF or WEBP, up to 5 MB",
+      "logoPendingHint": "The logo is uploaded after the channel is saved",
+      "logoSaveFailed": "The channel was saved but the logo upload failed — edit the channel to add it again"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load channels"
   },
   "status": {
     "active": "Active",

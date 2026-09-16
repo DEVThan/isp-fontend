@@ -70,6 +70,7 @@
     "product_type": "ประเภทสินค้า",
     "vendor": "ผู้ขาย",
     "customer": "ลูกค้า",
+    "broadcast": "ช่องทาง การออกอากาศ",
     "product_item": "รายการสินค้า"
   },
   "dashboard": {
@@ -810,6 +811,44 @@
     "male": "ชาย",
     "female": "หญิง",
     "loadError": "ดึงข้อมูลลูกค้าไม่สำเร็จ"
+  },
+  "broadcasts": {
+    "title": "ช่องทาง Broadcast",
+    "description": "ช่องทางทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อช่องทาง",
+      "logo": "โลโก้",
+      "detail": "รายละเอียด",
+      "tel": "เบอร์โทร",
+      "email": "อีเมล",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มช่องทาง",
+      "editTitle": "แก้ไขช่องทาง",
+      "addDescription": "กรอกข้อมูลช่องทางที่จะเพิ่มเข้าระบบ",
+      "editDescription": "แก้ข้อมูลของช่องทางที่เลือกไว้",
+      "sectionInfo": "ข้อมูลช่องทาง",
+      "sectionContact": "การติดต่อ",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบช่องทางนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ",
+      "logoBrowse": "เลือกรูป",
+      "logoChange": "เปลี่ยนรูป",
+      "logoUploading": "กำลังอัปโหลด…",
+      "logoUploadError": "อัปโหลดโลโก้ไม่สำเร็จ",
+      "logoTooLarge": "รูปใหญ่เกิน 5 MB",
+      "logoHint": "JPG, PNG, GIF หรือ WEBP ไม่เกิน 5 MB",
+      "logoPendingHint": "โลโก้จะถูกอัปโหลดหลังบันทึกช่องทาง",
+      "logoSaveFailed": "บันทึกช่องทางแล้ว แต่อัปโหลดโลโก้ไม่สำเร็จ — เปิดแก้ไขเพื่อใส่โลโก้อีกครั้ง"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลช่องทางไม่สำเร็จ"
   },
   "status": {
     "active": "ใช้งาน",
