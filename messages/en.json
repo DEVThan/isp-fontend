@@ -60,6 +60,7 @@
     "status_mou": "MOU statuses",
     "status_payment": "Payment statuses",
     "payment_type": "Payment types",
+    "status_po": "PO statuses",
     "status_kmprotocall": "KM Protocall statuses",
     "status_linemyshop": "Line My Shop statuses",
     "status_tvprogramfootage": "Status TV program footage",
@@ -490,6 +491,31 @@
     "active": "Active",
     "inactive": "Inactive",
     "loadError": "Could not load payment types"
+  },
+  "statuspos": {
+    "title": "PO statuses",
+    "description": "{count} PO statuses in total",
+    "columns": {
+      "no": "No.",
+      "name": "Status name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add PO status",
+      "editTitle": "Edit PO status",
+      "addDescription": "Fill in the details of the PO status to add",
+      "editDescription": "Change the details of the selected PO status",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this PO status?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load PO statuses"
   },
   "statuskmprotocalls": {
     "title": "KM Protocall statuses",
