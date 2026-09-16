@@ -401,6 +401,15 @@ export function ViewModal({
                         show(item.link_web)
                       )}
                     </Item>
+                    <Item label={tcol("detial")} wide>
+                      {isBlank(item.detial) ? (
+                        EMPTY
+                      ) : (
+                        <span className="bg-muted/40 border-border/60 block rounded-md border px-3 py-2 font-normal whitespace-pre-wrap">
+                          {item.detial}
+                        </span>
+                      )}
+                    </Item>
                     <Item label={tcol("remark")} wide>
                       {isBlank(item.remark) ? (
                         EMPTY

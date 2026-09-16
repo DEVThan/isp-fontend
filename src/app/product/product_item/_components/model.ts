@@ -50,6 +50,8 @@ export type ProductItem = {
   shipment_type: string | null
   link_web: string | null
   remark: string | null
+  /** รายละเอียดสินค้า — text เพิ่มเข้าตารางทีหลัง (2026-09-15) · ชื่อคอลัมน์สะกด detial ตามฐานข้อมูล ห้ามแก้เป็น detail */
+  detial: string | null
 
   // --- varchar จำกัดความยาว (ดู ITEM_MAX_LEN) ---
   image: string | null
@@ -245,6 +247,7 @@ export const ITEM_FIELDS = [
   "shipment_type",
   "link_web",
   "remark",
+  "detial",
   "image",
   "unit",
   "l_group",

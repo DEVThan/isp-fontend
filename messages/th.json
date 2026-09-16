@@ -577,6 +577,7 @@
       "shipmentType": "การจัดส่ง",
       "status": "สถานะ",
       "remark": "หมายเหตุ",
+      "detial": "รายละเอียด",
       "product_group": "กลุ่มสินค้า",
       "barcode": "บาร์โค้ด",
       "unit": "หน่วย",

@@ -54,10 +54,29 @@ import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 7
+const COLUMN_COUNT = 9
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
+
+/**
+ * ตัวเลขในตาราง — คั่นหลักพัน · ค่าตัวเลขมาเป็นข้อความ ("0.00") และ price เป็น varchar
+ * ว่างหรือเป็น 0 คืน null ให้ช่องว่างไปเลย (qty เป็น not null default 0 — แถวที่ไม่เคยกรอกได้ 0 มาทั้งหมด)
+ * ข้างในไม่ใช่ตัวเลขโชว์ค่าดิบตามที่เก็บ
+ */
+const formatNumber = (
+  value: string | null | undefined,
+  minimumFractionDigits: number
+) => {
+  if (value === null || value === undefined || value.trim() === "") return null
+  const parsed = Number(value.replace(/,/g, ""))
+  if (!Number.isFinite(parsed)) return value
+  if (parsed === 0) return null
+  return parsed.toLocaleString("en-US", {
+    minimumFractionDigits,
+    maximumFractionDigits: 2,
+  })
+}
 
 /** เงื่อนไขทั้งหมดที่ส่งไปให้ API ตัดหน้ามาให้ — null = ไม่กรองตัวนั้น */
 type Filters = {
@@ -424,6 +443,9 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("productTypeName")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("vendor")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("shipmentType")}</TableHead>
+                {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
+                <TableHead className="text-muted-foreground w-28 text-right text-xs font-semibold tracking-wide uppercase">{tcol("price")}</TableHead>
+                <TableHead className="text-muted-foreground w-32 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")} / {tcol("unit")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-32 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
@@ -473,6 +495,19 @@ export function Tables() {
                     {item.vendor_name ?? item.vendo_code}
                   </TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{item.shipment_type}</TableCell>
+                  <TableCell className="pt-1 pb-1 text-right font-medium tabular-nums">
+                    {formatNumber(item.price, 2)}
+                  </TableCell>
+                  {/* จำนวน (ทศนิยมโชว์เมื่อมีจริง) + หน่วยตัวจางต่อท้าย เช่น "12 ชิ้น"
+                      ไม่มีจำนวนก็ไม่โชว์หน่วย — หน่วยลอย ๆ ไม่มีความหมาย */}
+                  <TableCell className="pt-1 pb-1 text-right tabular-nums">
+                    {formatNumber(item.qty, 0) ? (
+                      <>
+                        {formatNumber(item.qty, 0)}
+                        {item.unit ? <span className="text-muted-foreground ml-1 text-xs">{item.unit}</span> : null}
+                      </>
+                    ) : null}
+                  </TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"

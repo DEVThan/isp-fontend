@@ -68,7 +68,7 @@ import { cn } from "@/lib/utils"
  * ปุ่มที่เปิดฟอร์มเป็นคนบอกโหมดมาเอง: "add" เปิดฟอร์มเปล่า "edit" เปิดพร้อมค่าของแถวนั้น
  * กดบันทึกแล้วยิง POST /api/web/product-item-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
  *
- * **ฟอร์มนี้ถือค่าครบทั้ง 43 คอลัมน์เสมอ แม้จะไม่ได้เอาขึ้นหน้าจอทุกตัว**
+ * **ฟอร์มนี้ถือค่าครบทั้ง 44 คอลัมน์เสมอ แม้จะไม่ได้เอาขึ้นหน้าจอทุกตัว**
  * เพราะเส้น -action เขียนทับทั้งแถว ไม่ได้แก้เฉพาะที่ส่งไป — ตกไปตัวเดียวของเดิมหายทันที
  * ตัวที่ไม่ได้แสดงถูกอ่านเข้ามาใน values ตาม ITEM_FIELDS แล้วส่งกลับไปเหมือนเดิม
  * (ตอนนี้ขึ้นหน้าจอครบทุกคอลัมน์แล้ว — เพิ่มช่องใหม่ได้โดยใส่คีย์ใน columns แล้วเรียก text() / num() / select())
@@ -823,6 +823,16 @@ export function FormModal({
                 />
               </Field>
             </div>
+            {/* รายละเอียดสินค้า — ข้อความยาวหลายบรรทัด วางก่อนหมายเหตุ (คอลัมน์ในฐานข้อมูลสะกด detial) */}
+            <Field id="item-detial" label={tcol("detial")}>
+              <Textarea
+                id="item-detial"
+                rows={4}
+                value={values.detial}
+                placeholder="..."
+                onChange={(event) => set("detial", event.target.value)}
+              />
+            </Field>
             <Field id="item-remark" label={tcol("remark")}>
               <Textarea
                 id="item-remark"

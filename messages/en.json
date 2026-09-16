@@ -577,6 +577,7 @@
       "shipmentType": "Shipment",
       "status": "Status",
       "remark": "Remark",
+      "detial": "Detail",
       "product_group": "Product group",
       "barcode": "Barcode",
       "unit": "Unit",
