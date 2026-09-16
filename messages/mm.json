@@ -59,6 +59,7 @@
     "importantdoc": "အရေးကြီး စာရွက်စာတမ်းများ",
     "status_mou": "MOU အခြေအနေများ",
     "status_payment": "ငွေပေးချေမှု အခြေအနေများ",
+    "payment_type": "ငွေပေးချေမှု အမျိုးအစားများ",
     "status_kmprotocall": "KM Protocall အခြေအနေများ",
     "status_linemyshop": "Line My Shop အခြေအနေများ",
     "status_tvprogramfootage": "TV Program Footage အခြေအနေများ",
@@ -464,6 +465,31 @@
     "active": "ဖွင့်ထား",
     "inactive": "ပိတ်ထား",
     "loadError": "ငွေပေးချေမှု အခြေအနေများ ရယူ၍ မရပါ"
+  },
+  "paymenttypes": {
+    "title": "ငွေပေးချေမှု အမျိုးအစားများ",
+    "description": "စုစုပေါင်း ငွေပေးချေမှု အမျိုးအစား {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "အမျိုးအစား အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "ငွေပေးချေမှု အမျိုးအစား ထည့်ရန်",
+      "editTitle": "ငွေပေးချေမှု အမျိုးအစား ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် ငွေပေးချေမှု အမျိုးအစား၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော ငွေပေးချေမှု အမျိုးအစား၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤ ငွေပေးချေမှု အမျိုးအစားကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "ငွေပေးချေမှု အမျိုးအစားများ ရယူ၍ မရပါ"
   },
   "statuskmprotocalls": {
     "title": "KM Protocall အခြေအနေများ",

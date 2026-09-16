@@ -59,6 +59,7 @@
     "importantdoc": "Important documents",
     "status_mou": "MOU statuses",
     "status_payment": "Payment statuses",
+    "payment_type": "Payment types",
     "status_kmprotocall": "KM Protocall statuses",
     "status_linemyshop": "Line My Shop statuses",
     "status_tvprogramfootage": "Status TV program footage",
@@ -464,6 +465,31 @@
     "active": "Active",
     "inactive": "Inactive",
     "loadError": "Could not load payment statuses"
+  },
+  "paymenttypes": {
+    "title": "Payment types",
+    "description": "{count} payment types in total",
+    "columns": {
+      "no": "No.",
+      "name": "Type name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add payment type",
+      "editTitle": "Edit payment type",
+      "addDescription": "Fill in the details of the payment type to add",
+      "editDescription": "Change the details of the selected payment type",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this payment type?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load payment types"
   },
   "statuskmprotocalls": {
     "title": "KM Protocall statuses",
