@@ -1,22 +1,26 @@
 "use client"
 
 import * as React from "react"
-import { CircleCheck, LoaderCircle, Plus, Trash2, TriangleAlert } from "lucide-react"
+import {
+  CircleCheck,
+  LoaderCircle,
+  MapPin,
+  TriangleAlert,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { saveVendor } from "@/app/vendor/_components/api"
+import { saveCustomer } from "@/app/customer/_components/api"
 import {
-  parseSenderCodes,
-  serializeSenderCodes,
-  VENDOR_ACTIVE,
-  VENDOR_INACTIVE,
-  VENDOR_MAX_LEN,
-  type SenderCode,
-  type Vendor,
-  type VendorFormMode,
-  type VendorFormValues,
-} from "@/app/vendor/_components/model"
-import { SelectOption } from "@/app/vendor/_components/selectoption"
+  CUSTOMER_FEMALE,
+  CUSTOMER_MALE,
+  normalizeGender,
+  type Customer,
+  type CustomerFormMode,
+  type CustomerFormValues,
+} from "@/app/customer/_components/model"
+import { SelectOption } from "@/app/customer/_components/selectoption"
 import {
   Alert,
   AlertContent,
@@ -35,88 +39,105 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 /**
- * form_modal.tsx — ฟอร์มเพิ่ม/แก้ไขผู้ขายในกล่องซ้อน
+ * form_modal.tsx — ฟอร์มเพิ่ม/แก้ไขลูกค้าในกล่องซ้อน
  *
  * ปุ่มที่เปิดฟอร์มเป็นคนบอกโหมดมาเอง: "add" เปิดฟอร์มเปล่า "edit" เปิดพร้อมค่าของแถวนั้น
- * กดบันทึกแล้วยิง POST /api/web/vendor-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
+ * กดบันทึกแล้วยิง POST /api/web/customer-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
+ * ส่งไปครบทุกคอลัมน์ที่แก้ได้เสมอ — เส้น -action เขียนทับทั้งแถว ตกไปตัวไหนตัวนั้นกลายเป็น NULL
+ * ยอดสรุปคำสั่งซื้อ (order_count / total_amount / …) อ่านอย่างเดียว โชว์ในโหมด edit แต่ไม่ส่งไป
  */
 // คลาสขอบแดง — ต้องสลับคลาสเอง ไม่ใช้ variant aria-invalid: เพราะ Tailwind v4 ห่อ variant
 // ด้วย :where() ความจำเพาะจึงเท่ากับ border-input แล้วแพ้ลำดับใน stylesheet
 const INVALID_FIELD =
   "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
 
-const emptyValues: VendorFormValues = {
-  code: "",
-  name: "",
-  email: "",
-  tel: "",
-  address: "",
-  remark: "",
-  sender_code: "",
-  active_status: VENDOR_ACTIVE,
-}
+/**
+ * สีประจำกลุ่มข้อมูล — ข้อมูลลูกค้า = blue · ที่อยู่ = aqua · ช่องยอดสั่งซื้อ = แถบซ้ายคนละสี
+ * ใช้ชุด chart-1..5 แบบเดียวกับไล่เฉดของโลโก้/ปุ่มหลัก เป็นสีตกแต่งอย่างเดียว ไม่ได้สื่อความหมาย
+ * ไม่ใช้ success/warning/danger/info เพราะสงวนไว้บอกสถานะ (กรอบแดงช่องบังคับ ข้อความบันทึกสำเร็จ)
+ * ตัวหนังสือยังเป็นสีปกติ สีอยู่แค่ แถบ ไอคอน และพื้นจาง ๆ · Tailwind ต้องเห็นชื่อคลาสเต็ม ห้ามประกอบจากสตริง
+ * (ชุดเดียวกับ product_item/_components/accents.ts — คัดมาเท่าที่ใช้ ไฟล์ของหน้าอยู่ในโฟลเดอร์ของหน้า)
+ */
+const ACCENTS = {
+  blue: {
+    bar: "bg-chart-1",
+    header: "from-chart-1/14",
+    chip: "bg-chart-1/15 text-chart-1",
+    tile: "border-l-chart-1 bg-chart-1/6",
+  },
+  orange: {
+    bar: "bg-chart-2",
+    header: "from-chart-2/14",
+    chip: "bg-chart-2/15 text-chart-2",
+    tile: "border-l-chart-2 bg-chart-2/6",
+  },
+  aqua: {
+    bar: "bg-chart-3",
+    header: "from-chart-3/14",
+    chip: "bg-chart-3/15 text-chart-3",
+    tile: "border-l-chart-3 bg-chart-3/6",
+  },
+  yellow: {
+    bar: "bg-chart-4",
+    header: "from-chart-4/16",
+    chip: "bg-chart-4/20 text-chart-4",
+    tile: "border-l-chart-4 bg-chart-4/8",
+  },
+  magenta: {
+    bar: "bg-chart-5",
+    header: "from-chart-5/14",
+    chip: "bg-chart-5/15 text-chart-5",
+    tile: "border-l-chart-5 bg-chart-5/6",
+  },
+} as const
 
-const toValues = (vendor: Vendor | undefined): VendorFormValues =>
-  vendor
-    ? {
-        code: vendor.code,
-        name: vendor.name,
-        // คอลัมน์พวกนี้ nullable ในฐานข้อมูล แต่ฟอร์มถือเป็นสตริงเสมอ
-        email: vendor.email ?? "",
-        tel: vendor.tel ?? "",
-        address: vendor.address ?? "",
-        remark: vendor.remark ?? "",
-        sender_code: vendor.sender_code ?? "",
-        active_status: vendor.active_status,
-      }
-    : emptyValues
+type Accent = keyof typeof ACCENTS
+
+const toValues = (customer: Customer | undefined): CustomerFormValues => ({
+  tel: customer?.tel ?? "",
+  // คอลัมน์พวกนี้ nullable ในฐานข้อมูล แต่ฟอร์มถือเป็นสตริงเสมอ
+  name: customer?.name ?? "",
+  address: customer?.address ?? "",
+  subdistrict: customer?.subdistrict ?? "",
+  district: customer?.district ?? "",
+  province: customer?.province ?? "",
+  zipcode: customer?.zipcode ?? "",
+  // แถวเก่าเป็น "ชาย" / "หญิง" — แปลงเป็นค่าอังกฤษตั้งแต่เปิดฟอร์ม บันทึกแล้วแถวนั้นจะเป็นอังกฤษ
+  gender: normalizeGender(customer?.gender),
+  email: customer?.email ?? "",
+})
 
 export function FormModal({
   open,
   onOpenChange,
   mode,
-  vendor,
+  customer,
   onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** ปุ่มไหนเป็นคนเปิด — "add" หรือ "edit" */
-  mode: VendorFormMode
+  mode: CustomerFormMode
   /** แถวที่กำลังแก้ (โหมด edit เท่านั้น) */
-  vendor?: Vendor
+  customer?: Customer
   /** บันทึกสำเร็จแล้ว — ตารางเอาไปโหลดข้อมูลใหม่ */
   onSaved?: () => void
 }) {
   const t = useTranslations("common")
-  const tr = useTranslations("vendors")
-  const tform = useTranslations("vendors.form")
-  const tcol = useTranslations("vendors.columns")
+  const tr = useTranslations("customer")
+  const tform = useTranslations("customer.form")
+  const tcol = useTranslations("customer.columns")
 
-  const [values, setValues] = React.useState(() => toValues(vendor))
+  const [values, setValues] = React.useState(() => toValues(customer))
   const [saving, setSaving] = React.useState(false)
-  /** รหัสผู้ขายยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
-  const [codeError, setCodeError] = React.useState(false)
-  /** ชื่อผู้ขายยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
+  /** เบอร์โทรยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
+  const [telError, setTelError] = React.useState(false)
+  /** ชื่อลูกค้ายังว่างตอนกดบันทึก — บังคับฝั่งหน้าจอเท่านั้น (API ยังรับชื่อว่างได้ เก็บเป็น NULL) */
   const [nameError, setNameError] = React.useState(false)
-  /**
-   * แถวรหัสผู้ส่งที่กำลังแก้อยู่ — ถือเป็นความจริงของ UI ส่วน values.sender_code เป็นเงาไว้ส่ง API
-   * แยกกันเพราะ serializeSenderCodes() ตัดแถวที่ยังว่างทิ้ง ถ้า UI อ่านจากสตริงนั้นตรง ๆ
-   * แถวที่เพิ่งกดเพิ่มจะหายไปทันทีก่อนได้พิมพ์
-   */
-  const [senderRows, setSenderRows] = React.useState<SenderCode[]>(() =>
-    parseSenderCodes(vendor?.sender_code)
-  )
   /** ผลของการกดบันทึกครั้งล่าสุด — null คือยังไม่ได้กด */
   const [result, setResult] = React.useState<{
     ok: boolean
@@ -128,47 +149,69 @@ export function FormModal({
    * ปรับ state ระหว่าง render ตามแบบที่ React แนะนำ ไม่ใช้ useEffect ไป setState
    * (กฎ react-hooks/set-state-in-effect ของ eslint-config-next 16 ห้ามไว้)
    */
-  const formKey = `${mode}-${vendor?.id ?? "new"}-${String(open)}`
+  const formKey = `${mode}-${customer?.id ?? "new"}-${String(open)}`
   const [lastKey, setLastKey] = React.useState(formKey)
   if (formKey !== lastKey) {
     setLastKey(formKey)
-    setValues(toValues(vendor))
+    setValues(toValues(customer))
     setResult(null)
     setSaving(false)
-    setCodeError(false)
+    setTelError(false)
     setNameError(false)
-    setSenderRows(parseSenderCodes(vendor?.sender_code))
   }
 
-  const set = <K extends keyof VendorFormValues>(
+  const set = <K extends keyof CustomerFormValues>(
     key: K,
-    value: VendorFormValues[K]
+    value: CustomerFormValues[K]
   ) => setValues((current) => ({ ...current, [key]: value }))
 
-  /** แก้แถวรหัสผู้ส่งทีเดียวทั้งสองที่ — ตาราง (ที่ผู้ใช้เห็น) กับค่าที่จะส่งไปบันทึก */
-  const setSenders = (next: SenderCode[]) => {
-    setSenderRows(next)
-    set("sender_code", serializeSenderCodes(next))
-  }
-
-  const statusOptions = [
-    { value: VENDOR_ACTIVE, label: tr("active") },
-    { value: VENDOR_INACTIVE, label: tr("inactive") },
+  /** ค่าเก็บเป็นภาษาอังกฤษตาม _GENDERS ฝั่ง API — ป้ายแปลตามภาษา */
+  const genderOptions = [
+    { value: CUSTOMER_MALE, label: tr("male") },
+    { value: CUSTOMER_FEMALE, label: tr("female") },
   ]
+
+  /** ช่องข้อความธรรมดา — ไม่บังคับทุกช่อง (tel / name แยกเขียนเองเพราะบังคับ) */
+  const text = (
+    key: Exclude<keyof CustomerFormValues, "tel" | "name" | "gender" | "address">,
+    extra?: React.ComponentProps<typeof Input>
+  ) => (
+    <Field id={`customer-${key}`} label={tcol(key)}>
+      <Input
+        id={`customer-${key}`}
+        value={values[key]}
+        placeholder="..."
+        onChange={(event) => set(key, event.target.value)}
+        {...extra}
+      />
+    </Field>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        {/* แถบหัวไล่เฉดชุดเดียวกับแถบตัวกรองในตาราง */}
-        <DialogHeader className="from-primary/12 border-border/60 -mx-4 -mt-4 rounded-t-xl border-b bg-gradient-to-r via-transparent to-transparent p-4">
-          <DialogTitle>
-            {mode === "add" ? tform("addTitle") : tform("editTitle")}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === "add"
-              ? tform("addDescription")
-              : tform("editDescription")}
-          </DialogDescription>
+      {/* ฟอร์มสูงเกินจอเตี้ยได้ — ให้ทั้งกล่องเลื่อนได้แทนที่จะล้นจอ */}
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+        {/* แถบหัวไล่เฉดสีโลโก้ + แถบสีบางด้านบนสุด ชุดเดียวกับฟอร์มสินค้า */}
+        <DialogHeader className="from-chart-1/14 to-chart-5/10 border-border/60 relative -mx-4 -mt-4 overflow-hidden rounded-t-xl border-b bg-gradient-to-r via-transparent p-4 pt-5">
+          <span
+            aria-hidden
+            className="from-chart-1 via-chart-5 to-chart-2 absolute inset-x-0 top-0 h-1 bg-gradient-to-r"
+          />
+          <div className="flex items-center gap-3">
+            <span className="from-chart-1 to-chart-5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm">
+              <UserRound className="size-5" />
+            </span>
+            <div className="grid gap-1">
+              <DialogTitle>
+                {mode === "add" ? tform("addTitle") : tform("editTitle")}
+              </DialogTitle>
+              <DialogDescription>
+                {mode === "add"
+                  ? tform("addDescription")
+                  : tform("editDescription")}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         <form
@@ -176,22 +219,22 @@ export function FormModal({
             event.preventDefault()
             if (saving) return
             // เช็คทั้งสองช่องที่บังคับก่อน ให้ขึ้นกรอบแดงพร้อมกัน ไม่ใช่ทีละช่อง
-            const missingCode = !values.code.trim()
+            const missingTel = !values.tel.trim()
             const missingName = !values.name.trim()
-            setCodeError(missingCode)
+            setTelError(missingTel)
             setNameError(missingName)
-            if (missingCode || missingName) return
+            if (missingTel || missingName) return
             setSaving(true)
             setResult(null)
             try {
               // โหมดของฟอร์มคือ action ที่ API ใช้ตัดสินใจ ("add" / "edit")
-              await saveVendor(mode, values, vendor?.id)
+              await saveCustomer(mode, values, customer?.id)
               setResult({ ok: true })
               onSaved?.()
               // ให้เห็นข้อความว่าสำเร็จสักครู่ก่อนปิด ไม่งั้นกล่องหายไปเลยเหมือนไม่มีอะไรเกิดขึ้น
               setTimeout(() => onOpenChange(false), 1400)
             } catch (error) {
-              // ข้อความจาก API บอกสาเหตุตรง ๆ (เช่น "name already exists") เอามาแสดงต่อ
+              // ข้อความจาก API บอกสาเหตุตรง ๆ (เช่น "tel already exists") เอามาแสดงต่อ
               setResult({
                 ok: false,
                 message: error instanceof Error ? error.message : undefined,
@@ -202,223 +245,96 @@ export function FormModal({
           }}
           className="grid gap-4"
         >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field
-              id="vendor-code"
-              label={tcol("code")}
-              required
-              error={codeError ? t("required") : undefined}
-            >
-              <Input
-                id="vendor-code"
-                value={values.code}
-                maxLength={VENDOR_MAX_LEN}
-                onChange={(event) => {
-                  set("code", event.target.value)
-                  if (event.target.value.trim()) setCodeError(false)
-                }}
-                placeholder="V001"
-                aria-required
-                aria-invalid={codeError || undefined}
-                className={codeError ? INVALID_FIELD : undefined}
-              />
-            </Field>
-            {/* ชื่อผู้ขายยาวกว่ารหัสมาก กินสองช่องที่เหลือของแถว */}
-            <div className="sm:col-span-2">
+          {/* ยอดสรุปจากคำสั่งซื้อ — อ่านอย่างเดียว มีแต่ตอนแก้ไข */}
+          {mode === "edit" && customer ? <OrderSummary customer={customer} /> : null}
+
+          <Section icon={UserRound} label={tform("sectionInfo")} accent="blue">
+            <div className="grid gap-4 sm:grid-cols-3">
               <Field
-                id="vendor-name"
-                label={tcol("name")}
+                id="customer-tel"
+                label={tcol("tel")}
                 required
-                error={nameError ? t("required") : undefined}
+                error={telError ? t("required") : undefined}
               >
                 <Input
-                  id="vendor-name"
-                  value={values.name}
-                  maxLength={VENDOR_MAX_LEN}
+                  id="customer-tel"
+                  value={values.tel}
+                  inputMode="tel"
                   onChange={(event) => {
-                    set("name", event.target.value)
-                    if (event.target.value.trim()) setNameError(false)
+                    set("tel", event.target.value)
+                    if (event.target.value.trim()) setTelError(false)
                   }}
-                  placeholder="..."
+                  placeholder="0812345678"
                   aria-required
-                  aria-invalid={nameError || undefined}
-                  className={nameError ? INVALID_FIELD : undefined}
+                  aria-invalid={telError || undefined}
+                  className={telError ? INVALID_FIELD : undefined}
                 />
               </Field>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field id="vendor-email" label={tcol("email")}>
-              <Input
-                id="vendor-email"
-                // ไม่ใช้ type="email" — ช่องนี้ไม่บังคับ และ API ไม่ได้ตรวจรูปแบบ
-                // ปล่อยให้เบราว์เซอร์ block การ submit จะกลายเป็นกฎที่หลังบ้านไม่มี
-                value={values.email}
-                maxLength={VENDOR_MAX_LEN}
-                placeholder="..."
-                onChange={(event) => set("email", event.target.value)}
-              />
-            </Field>
-            <Field id="vendor-tel" label={tcol("tel")}>
-              <Input
-                id="vendor-tel"
-                value={values.tel}
-                maxLength={VENDOR_MAX_LEN}
-                placeholder="..."
-                onChange={(event) => set("tel", event.target.value)}
-              />
-            </Field>
-          </div>
-
-          <Field id="vendor-address" label={tcol("address")}>
-            <Textarea
-              id="vendor-address"
-              rows={2}
-              value={values.address}
-              placeholder="..."
-              onChange={(event) => set("address", event.target.value)}
-            />
-          </Field>
-
-          {/* รหัสผู้ส่ง — ผู้ขายหนึ่งรายมีได้หลายขนส่ง เก็บรวมเป็น JSON string ในคอลัมน์เดียว */}
-          <div className="space-y-2">
-            <Label className="text-muted-foreground text-xs">
-              {tcol("senderCode")}
-            </Label>
-            <div className="border-border/60 overflow-hidden rounded-lg border">
-              <Table>
-                <TableHeader className="bg-muted/60">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-muted-foreground pl-3 text-xs font-semibold tracking-wide uppercase">
-                      {tcol("shipping")}
-                    </TableHead>
-                    <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                      {tcol("senderCode")}
-                    </TableHead>
-                    <TableHead className="w-12 pr-3">
-                      <span className="sr-only">{t("delete")}</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {senderRows.map((row, index) => (
-                    // แถวไม่มี id ของตัวเอง คีย์จึงต้องเป็นตำแหน่ง — ลบแถวกลางแล้ว React
-                    // จะ reuse ช่องกรอกของแถวถัดไป ซึ่งถูกต้องอยู่แล้วเพราะค่ามาจาก state ทั้งหมด
-                    <TableRow
-                      key={index}
-                      className="border-border/50 hover:bg-transparent"
-                    >
-                      <TableCell className="py-1 pl-3">
-                        <Input
-                          value={row.shipping}
-                          placeholder="..."
-                          aria-label={`${tcol("shipping")} ${index + 1}`}
-                          onChange={(event) =>
-                            setSenders(
-                              senderRows.map((current, i) =>
-                                i === index
-                                  ? { ...current, shipping: event.target.value }
-                                  : current
-                              )
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <Input
-                          value={row.sendercode}
-                          placeholder="..."
-                          aria-label={`${tcol("senderCode")} ${index + 1}`}
-                          onChange={(event) =>
-                            setSenders(
-                              senderRows.map((current, i) =>
-                                i === index
-                                  ? {
-                                      ...current,
-                                      sendercode: event.target.value,
-                                    }
-                                  : current
-                              )
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="py-1 pr-3 text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t("delete")}
-                          onClick={() =>
-                            setSenders(
-                              senderRows.filter((_, i) => i !== index)
-                            )
-                          }
-                          className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
-                        >
-                          <Trash2 />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-
-                  {senderRows.length === 0 ? (
-                    <TableRow className="hover:bg-transparent">
-                      <TableCell
-                        colSpan={3}
-                        className="text-muted-foreground py-4 text-center text-xs"
-                      >
-                        {tform("noSenderCode")}
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </TableBody>
-              </Table>
-
-              <div className="border-border/50 border-t p-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setSenders([
-                      ...senderRows,
-                      { shipping: "", sendercode: "" },
-                    ])
-                  }
+              {/* ชื่อยาวกว่าเบอร์มาก กินสองช่องที่เหลือของแถว */}
+              <div className="sm:col-span-2">
+                <Field
+                  id="customer-name"
+                  label={tcol("name")}
+                  required
+                  error={nameError ? t("required") : undefined}
                 >
-                  <Plus /> {tform("addSenderCode")}
-                </Button>
+                  <Input
+                    id="customer-name"
+                    value={values.name}
+                    onChange={(event) => {
+                      set("name", event.target.value)
+                      if (event.target.value.trim()) setNameError(false)
+                    }}
+                    placeholder="..."
+                    aria-required
+                    aria-invalid={nameError || undefined}
+                    className={nameError ? INVALID_FIELD : undefined}
+                  />
+                </Field>
               </div>
             </div>
-          </div>
 
-          {/* สถานะอยู่แถวของตัวเอง — กินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field id="vendor-status" label={tcol("status")}>
-              <SelectOption
-                id="vendor-status"
-                options={statusOptions}
-                value={values.active_status}
-                onValueChange={(next) =>
-                  set("active_status", next ?? VENDOR_ACTIVE)
-                }
-                placeholder={tr("active")}
-                label={tcol("status")}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field id="customer-gender" label={tcol("gender")} select>
+                <SelectOption
+                  id="customer-gender"
+                  options={genderOptions}
+                  value={values.gender || null}
+                  // ล้างค่าได้ — ส่งสตริงว่างไป API เก็บเป็น NULL
+                  onValueChange={(next) => set("gender", next ?? "")}
+                  placeholder="..."
+                  label={tcol("gender")}
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                {/* ไม่ใช้ type="email" — ช่องนี้ไม่บังคับ และ API ไม่ได้ตรวจรูปแบบ
+                    ปล่อยให้เบราว์เซอร์ block การ submit จะกลายเป็นกฎที่หลังบ้านไม่มี */}
+                {text("email", { inputMode: "email" })}
+              </div>
+            </div>
+          </Section>
+
+          <Section icon={MapPin} label={tform("sectionAddress")} accent="aqua">
+            <Field id="customer-address" label={tcol("address")}>
+              <Textarea
+                id="customer-address"
+                rows={2}
+                value={values.address}
+                placeholder="..."
+                onChange={(event) => set("address", event.target.value)}
               />
             </Field>
-          </div>
 
-          <Field id="vendor-remark" label={tcol("remark")}>
-            <Textarea
-              id="vendor-remark"
-              rows={2}
-              value={values.remark}
-              placeholder="..."
-              onChange={(event) => set("remark", event.target.value)}
-            />
-          </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {text("subdistrict")}
+              {text("district")}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="sm:col-span-2">{text("province")}</div>
+              {text("zipcode", { inputMode: "numeric" })}
+            </div>
+          </Section>
 
           {result ? (
             <Alert variant={result.ok ? "success" : "destructive"}>
@@ -458,12 +374,94 @@ export function FormModal({
   )
 }
 
+/** ยอดสรุปคำสั่งซื้อของลูกค้า (อ่านอย่างเดียว) — ช่องเรียงกันเฉย ๆ ไม่มีกรอบการ์ดครอบ
+ *  แต่ละช่องมีแถบสีซ้ายของตัวเอง · ค่าว่างโชว์ขีดจาง ๆ ให้รู้ว่ายังไม่เคยสั่ง */
+function OrderSummary({ customer }: { customer: Customer }) {
+  const tcol = useTranslations("customer.columns")
+
+  const amount = Number(customer.total_amount)
+  const stats: {
+    key: "order_count" | "line_count" | "total_amount" | "first_order_date" | "last_order_date"
+    value: string | null | undefined
+    accent: Accent
+  }[] = [
+    {
+      key: "order_count",
+      value: customer.order_count?.toLocaleString("en-US"),
+      accent: "blue",
+    },
+    {
+      key: "line_count",
+      value: customer.line_count?.toLocaleString("en-US"),
+      accent: "aqua",
+    },
+    {
+      key: "total_amount",
+      value:
+        customer.total_amount && Number.isFinite(amount)
+          ? amount.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+          : customer.total_amount,
+      accent: "orange",
+    },
+    // ปิดไว้ก่อน — สั่งซื้อครั้งแรก (เปิดกลับให้แก้ sm:grid-cols-4 ด้านล่างเป็น 5 ด้วย)
+    // { key: "first_order_date", value: customer.first_order_date?.slice(0, 10), accent: "yellow" },
+    { key: "last_order_date", value: customer.last_order_date?.slice(0, 10), accent: "magenta" },
+  ]
+
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {stats.map((stat) => (
+        <div
+          key={stat.key}
+          className={cn("min-w-0 rounded-md border-l-4 px-2.5 py-1.5", ACCENTS[stat.accent].tile)}
+        >
+          <div className="text-muted-foreground truncate text-xs">{tcol(stat.key)}</div>
+          <div className="truncate font-semibold tabular-nums">
+            {stat.value ?? <span className="text-muted-foreground/60 font-normal">—</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** การ์ดหนึ่งกลุ่มข้อมูล — แถบสีบนสุด หัวไล่เฉดพร้อมไอคอนในชิปสี แล้วตามด้วยช่องกรอก */
+function Section({
+  icon: Icon,
+  label,
+  accent,
+  children,
+}: {
+  icon: LucideIcon
+  label: string
+  accent: Accent
+  children: React.ReactNode
+}) {
+  const colors = ACCENTS[accent]
+  return (
+    <section className="border-border/60 bg-card relative overflow-hidden rounded-lg border shadow-xs">
+      <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", colors.bar)} />
+      <div className={cn("border-border/50 flex items-center gap-2 border-b bg-gradient-to-r to-transparent px-3 pt-3 pb-2", colors.header)}>
+        <span className={cn("flex size-6 items-center justify-center rounded-md", colors.chip)}>
+          <Icon className="size-3.5" />
+        </span>
+        <h3 className="text-xs font-semibold tracking-wide uppercase">{label}</h3>
+      </div>
+      <div className="grid gap-4 p-3">{children}</div>
+    </section>
+  )
+}
+
 /** ป้ายกำกับ + ช่องกรอก วางแบบเดียวกันทุกช่อง */
 function Field({
   id,
   label,
   required,
   error,
+  select,
   children,
 }: {
   id: string
@@ -472,11 +470,14 @@ function Field({
   required?: boolean
   /** ข้อความผิดพลาดใต้ช่อง — ขึ้นตอนกดบันทึกแล้วยังไม่ได้กรอก */
   error?: string
+  /** ช่องเป็น SelectOption — ตัวเปิดเป็น <button> ถ้าผูก htmlFor ไว้ คลิกที่ว่างข้างป้ายจะเปิดกล่องเลือกเอง
+   *  จึงไม่ผูก (ชื่อช่องมาจาก aria-label ของตัวเปิดแทน) */
+  select?: boolean
   children: React.ReactNode
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-muted-foreground text-xs">
+      <Label htmlFor={select ? undefined : id} className="text-muted-foreground w-fit text-xs">
         {label}
         {required ? (
           <span aria-hidden className="text-destructive -ml-1.5">

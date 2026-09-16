@@ -66,6 +66,7 @@
     "product_code": "รหัสสินค้า",
     "product_type": "ประเภทสินค้า",
     "vendor": "ผู้ขาย",
+    "customer": "ลูกค้า",
     "product_item": "รายการสินค้า"
   },
   "dashboard": {
@@ -691,6 +692,46 @@
     "active": "เปิดใช้งาน",
     "inactive": "ปิดใช้งาน",
     "loadError": "ดึงข้อมูลผู้ขายไม่สำเร็จ"
+  },
+  "customer": {
+    "title": "ลูกค้า",
+    "description": "ลูกค้าทั้งหมด {count} ราย",
+    "columns": {
+      "no": "ลำดับ",
+      "tel": "เบอร์โทร",
+      "name": "ชื่อลูกค้า",
+      "gender": "เพศ",
+      "email": "อีเมล",
+      "address": "ที่อยู่",
+      "subdistrict": "ตำบล/แขวง",
+      "district": "อำเภอ/เขต",
+      "province": "จังหวัด",
+      "zipcode": "รหัสไปรษณีย์",
+      "area": "พื้นที่",
+      "order_count": "จำนวนคำสั่งซื้อ",
+      "line_count": "จำนวนรายการ",
+      "total_amount": "ยอดซื้อรวม",
+      "first_order_date": "สั่งซื้อครั้งแรก",
+      "last_order_date": "สั่งซื้อล่าสุด"
+    },
+    "form": {
+      "addTitle": "เพิ่มลูกค้า",
+      "editTitle": "แก้ไขลูกค้า",
+      "addDescription": "กรอกข้อมูลลูกค้าที่จะเพิ่มเข้าระบบ",
+      "editDescription": "แก้ข้อมูลของลูกค้าที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบลูกค้ารายนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleteWarning": "ลูกค้าที่มีคำสั่งซื้ออยู่แล้วจะลบไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ",
+      "sectionInfo": "ข้อมูลลูกค้า",
+      "sectionAddress": "ที่อยู่"
+    },
+    "male": "ชาย",
+    "female": "หญิง",
+    "loadError": "ดึงข้อมูลลูกค้าไม่สำเร็จ"
   },
   "status": {
     "active": "ใช้งาน",

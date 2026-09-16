@@ -66,6 +66,7 @@
     "product_code": "Product codes",
     "product_type": "Product types",
     "vendor": "Vendors",
+    "customer": "Customers",
     "product_item": "Product items"
   },
   "dashboard": {
@@ -691,6 +692,46 @@
     "active": "Active",
     "inactive": "Inactive",
     "loadError": "Could not load vendors"
+  },
+  "customer": {
+    "title": "Customers",
+    "description": "{count} customers in total",
+    "columns": {
+      "no": "No.",
+      "tel": "Phone",
+      "name": "Customer name",
+      "gender": "Gender",
+      "email": "Email",
+      "address": "Address",
+      "subdistrict": "Subdistrict",
+      "district": "District",
+      "province": "Province",
+      "zipcode": "Postal code",
+      "area": "Area",
+      "order_count": "Orders",
+      "line_count": "Order lines",
+      "total_amount": "Total spent",
+      "first_order_date": "First order",
+      "last_order_date": "Last order"
+    },
+    "form": {
+      "addTitle": "Add customer",
+      "editTitle": "Edit customer",
+      "addDescription": "Fill in the details of the customer to add",
+      "editDescription": "Change the details of the selected customer",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this customer?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleteWarning": "Customers who already have orders cannot be deleted",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "sectionInfo": "Customer details",
+      "sectionAddress": "Address"
+    },
+    "male": "Male",
+    "female": "Female",
+    "loadError": "Could not load customers"
   },
   "status": {
     "active": "Active",

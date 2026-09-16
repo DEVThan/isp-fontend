@@ -4,19 +4,20 @@ import {
   type ApiEnvelope,
 } from "@/app/login/components/api"
 import type {
-  Vendor,
-  VendorDeleted,
-  VendorFormMode,
-  VendorFormValues,
-  VendorList,
-  VendorOption,
-} from "@/app/vendor/_components/model"
+  Customer,
+  CustomerDeleted,
+  CustomerFormMode,
+  CustomerFormValues,
+  CustomerList,
+} from "@/app/customer/_components/model"
 
 /**
- * api.ts — เส้น API ของหน้าจัดการผู้ขาย (ตาราง vendor)
+ * api.ts — เส้น API ของหน้าจัดการลูกค้า (ตาราง customer)
  *
  * ฝั่ง browser ยิง "/api/web" แล้วให้ rewrite ใน next.config.ts ส่งต่อไป Flask (เลี่ยง CORS)
  * ฝั่ง server ไม่มี origin ให้อ้าง path สัมพัทธ์จึงใช้ไม่ได้ ต้องใช้ URL เต็มจาก API_BASE_URL
+ *
+ * ไม่มี customer-get-option — ฝั่ง API ตั้งใจไม่ทำ (ตารางราว 99,000 แถว ใหญ่เกินกว่าจะเป็น dropdown)
  */
 const API_BASE_URL =
   typeof window === "undefined"
@@ -24,10 +25,10 @@ const API_BASE_URL =
     : (process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/web")
 
 /** ขอทีเดียวได้มากสุดเท่าที่ API ยอม (_PER_PAGE_MAX ฝั่ง Flask) */
-export const VENDOR_PER_PAGE_MAX = 100
+export const CUSTOMER_PER_PAGE_MAX = 100
 
 /** จำนวนแถวต่อหน้าที่หน้านี้ใช้ตอนเปิดครั้งแรก */
-export const VENDOR_PAGE_SIZE = 30
+export const CUSTOMER_PAGE_SIZE = 30
 
 /** ยิง POST พร้อม body แล้วแกะ envelope มาตรฐานของ /api/web ให้ — ผิดพลาดจะโยน ApiError */
 async function post<T>(path: string, body: unknown): Promise<T | undefined> {
@@ -60,36 +61,35 @@ async function post<T>(path: string, body: unknown): Promise<T | undefined> {
   return envelope.result
 }
 
-export type VendorQuery = {
-  /** ค้นจาก vendor.code ฝั่งเซิร์ฟเวอร์ (ilike ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ไม่ส่ง = ไม่กรอง */
-  code?: string
-  /** ค้นจาก vendor.name ฝั่งเซิร์ฟเวอร์ (ilike) — ไม่ส่ง = ไม่กรอง */
+export type CustomerQuery = {
+  /** ค้นจาก customer.name ฝั่งเซิร์ฟเวอร์ (ilike "มีคำนี้อยู่") — ไม่ส่ง = ไม่กรอง */
   name?: string
-  /** "active" / "inactive" — null หรือไม่ส่ง = ไม่กรองสถานะ */
-  status?: string | null
+  /** ค้นจาก customer.tel (ilike) */
+  tel?: string
+  /** ค้นจาก customer.province (ilike) */
+  province?: string
   page?: number
   perPage?: number
 }
 
 /**
- * POST /api/web/vendor-get-list — ผู้ขายทั้งหมด (รวมที่ปิดอยู่)
+ * POST /api/web/customer-get-list — ลูกค้าทั้งหมด เรียง updated_at ล่าสุดก่อน
  *
- * ค้นหา/กรองสถานะ/แบ่งหน้า ทำที่ฝั่งเซิร์ฟเวอร์ทั้งหมด ตารางแค่ส่งเงื่อนไขไปแล้วแสดงผลที่ได้
- * ตารางว่าง API ตอบ 200 พร้อม vendors = [] — ไม่ใช่ error
+ * ค้นหา/แบ่งหน้า ทำที่ฝั่งเซิร์ฟเวอร์ทั้งหมด ตารางแค่ส่งเงื่อนไขไปแล้วแสดงผลที่ได้
+ * ไม่เจอเลย API ตอบ 200 พร้อม customers = [] — ไม่ใช่ error
  */
-export async function getVendors(
-  query: VendorQuery = {}
-): Promise<VendorList> {
-  const result = await post<VendorList>("vendor-get-list", {
-    code: query.code ?? "",
+export async function getCustomers(
+  query: CustomerQuery = {}
+): Promise<CustomerList> {
+  const result = await post<CustomerList>("customer-get-list", {
     name: query.name ?? "",
-    // ไม่ส่ง active_status เลยเมื่อไม่ได้กรอง — ส่งสตริงว่างไปก็ได้ แต่ไม่ส่งอ่านง่ายกว่าตอน debug
-    ...(query.status ? { active_status: query.status } : {}),
+    tel: query.tel ?? "",
+    province: query.province ?? "",
     page: query.page ?? 1,
-    per_page: query.perPage ?? VENDOR_PAGE_SIZE,
+    per_page: query.perPage ?? CUSTOMER_PAGE_SIZE,
   })
   return {
-    vendors: result?.vendors ?? [],
+    customers: result?.customers ?? [],
     total: result?.total ?? 0,
     page: result?.page ?? 1,
     per_page: result?.per_page ?? 0,
@@ -98,45 +98,34 @@ export async function getVendors(
 }
 
 /**
- * POST /api/web/vendor-get-option — ตัวเลือกผู้ขายที่ active (id + code + name)
- * ไม่รับพารามิเตอร์ ไม่แบ่งหน้า
- */
-export async function getVendorOptions(): Promise<VendorOption[]> {
-  return (
-    (await post<VendorOption[]>("vendor-get-option", {})) ??
-    []
-  )
-}
-
-/**
- * POST /api/web/vendor-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
+ * POST /api/web/customer-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
  *
- * "add" ส่ง id เป็น 0 (คอลัมน์ id เป็น identity ฐานข้อมูลออกเลขให้เอง) · "edit" ต้องส่ง id ของแถวที่แก้
- * ทั้งสองแบบส่งไปทุกฟิลด์ ไม่ใช่เฉพาะที่แก้ และคืนแถวหลังบันทึกกลับมา
- * code ซ้ำกับแถวอื่น API ตอบ 400 "code already exists" · ยาวเกิน 100 ตัวตอบ 400 เหมือนกัน
+ * "add" ส่ง id เป็น 0 (ฐานข้อมูลออกเลขให้จาก sequence) · "edit" ต้องส่ง id ของแถวที่แก้
+ * ทั้งสองแบบส่งไปทุกฟิลด์ ไม่ใช่เฉพาะที่แก้ และคืนแถวหลังบันทึกกลับมา (รวมยอดสรุปคำสั่งซื้อ)
+ * tel ซ้ำกับแถวอื่น API ตอบ 400 "tel already exists" · gender นอกเหนือ ชาย/หญิง ตอบ 400
  * ข้อความจาก API ถูกโชว์ในฟอร์มตรง ๆ ไม่ได้แปลใหม่
  */
-export async function saveVendor(
-  action: VendorFormMode,
-  values: VendorFormValues,
-  vendorId?: number
-): Promise<Vendor> {
-  return (await post<Vendor>("vendor-action", {
+export async function saveCustomer(
+  action: CustomerFormMode,
+  values: CustomerFormValues,
+  customerId?: number
+): Promise<Customer> {
+  return (await post<Customer>("customer-action", {
     action,
-    id: vendorId ?? 0,
+    id: customerId ?? 0,
     ...values,
-  })) as Vendor
+  })) as Customer
 }
 
 /**
- * POST /api/web/vendor-delete — ลบผู้ขายตาม id (ส่งไปแค่ id เท่านั้น)
+ * POST /api/web/customer-delete — ลบลูกค้าตาม id (ส่งไปแค่ id เท่านั้น)
  *
- * ลบออกจากตารางจริง กู้คืนไม่ได้ · ผลลัพธ์คือแถวที่หายไป (ตารางนี้ไม่มีใครอ้างแถวจากมัน)
+ * ลบออกจากตารางจริง กู้คืนไม่ได้ · ลูกค้าที่มี SO อ้างถึงอยู่ API ตอบ 400 ไม่ลบให้
  */
-export async function deleteVendor(
+export async function deleteCustomer(
   id: number
-): Promise<VendorDeleted> {
-  return (await post<VendorDeleted>("vendor-delete", {
+): Promise<CustomerDeleted> {
+  return (await post<CustomerDeleted>("customer-delete", {
     id,
-  })) as VendorDeleted
+  })) as CustomerDeleted
 }

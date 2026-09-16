@@ -7,30 +7,26 @@ import {
   Plus,
   Search,
   SearchX,
-  Truck,
-  Trash2,
+  // Trash2, — ปุ่มลบปิดไว้ก่อน
   TriangleAlert,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import {
-  getVendors,
-  VENDOR_PAGE_SIZE,
-} from "@/app/vendor/_components/api"
-import { DeleteModal } from "@/app/vendor/_components/delete_modal"
-import { FormModal } from "@/app/vendor/_components/form_modal"
+  getCustomers,
+  CUSTOMER_PAGE_SIZE,
+} from "@/app/customer/_components/api"
+import { DeleteModal } from "@/app/customer/_components/delete_modal"
+import { FormModal } from "@/app/customer/_components/form_modal"
 import {
-  isVendorActive,
-  parseSenderCodes,
-  VENDOR_ACTIVE,
-  VENDOR_INACTIVE,
-  type Vendor,
-  type VendorFormMode,
-  type VendorList,
-} from "@/app/vendor/_components/model"
-import { TablePagination } from "@/app/vendor/_components/pagination"
-import { SelectOption } from "@/app/vendor/_components/selectoption"
-import { SenderModal } from "@/app/vendor/_components/sender_modal"
+  CUSTOMER_FEMALE,
+  CUSTOMER_MALE,
+  normalizeGender,
+  type Customer,
+  type CustomerFormMode,
+  type CustomerList,
+} from "@/app/customer/_components/model"
+import { TablePagination } from "@/app/customer/_components/pagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -48,22 +44,39 @@ import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 8
+const COLUMN_COUNT = 9
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
 
-/** ผู้ขายรายนี้มีรหัสผู้ส่งกี่รายการ — 0 คือไม่ต้องโชว์ปุ่มในตาราง */
-const senderCount = (vendor: Vendor) =>
-  parseSenderCodes(vendor.sender_code).length
+/** ช่องค้นหาของตาราง — ชื่อตรงกับพารามิเตอร์ที่ customer-get-list รับ */
+type Filters = { name: string; tel: string; province: string }
+
+const EMPTY_FILTERS: Filters = { name: "", tel: "", province: "" }
+
+/** ยอดเงิน — numeric มาเป็นข้อความ ("999.0") · ว่าง/ไม่ใช่ตัวเลขไม่โชว์อะไร */
+const formatAmount = (value: string | null) => {
+  if (value === null || value.trim() === "") return null
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return value
+  return parsed.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+/** "2026-09-16 15:01:18" → "16/09/2026" — เอาแค่วันที่ เวลาไม่จำเป็นในตาราง */
+const formatDate = (value: string | null) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value ?? "")
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value
+}
 
 /**
- * รายการว่างตอนเริ่ม — ตารางดึงหน้าแรกเองตอนเปิดหน้า (page.tsx ไม่ดึงให้แล้ว)
- * page.tsx เคยดึงให้บน server แต่ทุกครั้งที่เปลี่ยนภาษา (router.refresh) server เรนเดอร์หน้าใหม่ = ยิง API ซ้ำ
- * ทั้งที่ข้อมูลไม่ได้ขึ้นกับภาษาเลย · ตอนนี้ refresh เรนเดอร์ใหม่แค่ข้อความ ตารางตัวเดิมอยู่ต่อ ไม่ยิง API และตัวกรองไม่รีเซ็ต
+ * รายการว่างตอนเริ่ม — ตารางดึงหน้าแรกเองตอนเปิดหน้า (page.tsx ไม่ดึงให้)
+ * ทุกครั้งที่เปลี่ยนภาษา (router.refresh) server เรนเดอร์ใหม่แค่ข้อความ ตารางตัวเดิมอยู่ต่อ ไม่ยิง API และตัวกรองไม่รีเซ็ต
  */
-const EMPTY_LIST: VendorList = {
-  vendors: [],
+const EMPTY_LIST: CustomerList = {
+  customers: [],
   total: 0,
   page: 1,
   per_page: 0,
@@ -72,14 +85,12 @@ const EMPTY_LIST: VendorList = {
 
 export function Tables() {
   const t = useTranslations("common.table")
-  /** ชื่อหน้า + จำนวนรายการในหัวหน้า — อยู่ในตารางเพราะจำนวนมาจากข้อมูลที่ตารางดึงเอง */
-  const tpage = useTranslations("vendors")
-  const tall = useTranslations("common")
-  const tr = useTranslations("vendors")
-  const tcol = useTranslations("vendors.columns")
-  const tform = useTranslations("vendors.form")
+  // ใช้แค่ป้ายปุ่มลบ — ปิดไว้ก่อนพร้อมปุ่ม
+  // const tall = useTranslations("common")
+  const tr = useTranslations("customer")
+  const tcol = useTranslations("customer.columns")
 
-  const [list, setList] = React.useState<VendorList>(EMPTY_LIST)
+  const [list, setList] = React.useState<CustomerList>(EMPTY_LIST)
   const [failed, setFailed] = React.useState(false)
   // เริ่มที่ true — หน้าแรกกำลังดึงอยู่ตั้งแต่เปิดหน้า (ดู effect ใต้ load)
   const [loading, setLoading] = React.useState(true)
@@ -88,21 +99,16 @@ export function Tables() {
 
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
   const [form, setForm] = React.useState<{
-    mode: VendorFormMode
-    vendor?: Vendor
+    mode: CustomerFormMode
+    customer?: Customer
   } | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
-  const [removing, setRemoving] = React.useState<Vendor | null>(null)
-  /** แถวที่กดดูรหัสผู้ส่ง — null คือปิดกล่อง */
-  const [viewingSender, setViewingSender] = React.useState<Vendor | null>(null)
+  const [removing, setRemoving] = React.useState<Customer | null>(null)
 
-  /** ค้นจากรหัสผู้ขาย — แยกช่องจากชื่อ เพราะ API รับคนละพารามิเตอร์ */
-  const [codeQuery, setCodeQuery] = React.useState("")
-  const [nameQuery, setNameQuery] = React.useState("")
-  /** null = ไม่กรองสถานะ (ทั้งหมด) */
-  const [status, setStatus] = React.useState<string | null>(null)
+  /** ตัวกรองทั้งหมดถือเป็นก้อนเดียว — load() ทุกจุดส่งก้อนนี้ไปทั้งก้อน */
+  const [filters, setFilters] = React.useState<Filters>(EMPTY_FILTERS)
   const [page, setPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(VENDOR_PAGE_SIZE)
+  const [pageSize, setPageSize] = React.useState(CUSTOMER_PAGE_SIZE)
 
   /** กรอบตาราง — ใช้เลื่อนหน้าให้เห็นหัวตารางทุกครั้งที่เริ่มโหลดข้อมูลใหม่ */
   const tableRef = React.useRef<HTMLDivElement>(null)
@@ -117,17 +123,11 @@ export function Tables() {
   )
 
   /**
-   * ยิง API ใหม่ทุกครั้งที่เงื่อนไขเปลี่ยน — ค้นหา กรองสถานะ และแบ่งหน้า ทำที่เซิร์ฟเวอร์ทั้งหมด
+   * ยิง API ใหม่ทุกครั้งที่เงื่อนไขเปลี่ยน — ค้นหาและแบ่งหน้า ทำที่เซิร์ฟเวอร์ทั้งหมด
    * ต้องส่งค่าใหม่เข้ามาเป็น argument เพราะ state ที่เพิ่ง set ยังไม่อัปเดตในรอบนี้
    */
   const load = (
-    next: {
-      code: string
-      name: string
-      status: string | null
-      page: number
-      pageSize: number
-    },
+    next: Filters & { page: number; pageSize: number },
     delay = 0
   ) => {
     if (timer.current) clearTimeout(timer.current)
@@ -138,10 +138,10 @@ export function Tables() {
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
-        const result = await getVendors({
-          code: next.code.trim(),
+        const result = await getCustomers({
           name: next.name.trim(),
-          status: next.status,
+          tel: next.tel.trim(),
+          province: next.province.trim(),
           page: next.page,
           perPage: next.pageSize,
         })
@@ -162,107 +162,79 @@ export function Tables() {
   }
 
   /**
-   * ดึงหน้าแรกครั้งเดียวตอนเปิดหน้า ด้วยเงื่อนไขเริ่มต้น (ชุดเดียวกับที่ลบเสร็จแล้วใช้โหลดใหม่)
+   * ดึงหน้าแรกครั้งเดียวตอนเปิดหน้า ด้วยเงื่อนไขเริ่มต้น
    * เรียกผ่าน setTimeout — set state ตรง ๆ ใน effect ผิดกฎ react-hooks/set-state-in-effect
    * dev (StrictMode) mount ซ้ำ: cleanup ยกเลิกรอบแรกก่อนยิง จึงยิงจริงครั้งเดียว
    */
   React.useEffect(() => {
-    const start = setTimeout(() => load({ code: codeQuery, name: nameQuery, status, page, pageSize }))
+    const start = setTimeout(() => load({ ...filters, page, pageSize }))
     return () => clearTimeout(start)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ตั้งใจดึงแค่ตอนเปิดหน้า ที่เหลือ load ถูกเรียกจากตัวกรอง/แบ่งหน้าเอง
   }, [])
 
-  const statusOptions = [
-    { value: VENDOR_ACTIVE, label: tr("active") },
-    { value: VENDOR_INACTIVE, label: tr("inactive") },
-  ]
+  /** พิมพ์ในช่องค้นหาช่องไหนก็ตาม — กลับไปหน้า 1 แล้วค่อยยิงหลังหยุดพิมพ์ */
+  const search = (key: keyof Filters, value: string) => {
+    const next = { ...filters, [key]: value }
+    setFilters(next)
+    setPage(1)
+    load({ ...next, page: 1, pageSize }, SEARCH_DELAY_MS)
+  }
+
+  /** ค่าในฐานข้อมูลเป็นอังกฤษ (แถวเก่าเป็นไทย) — แปลตอนแสดงผล ค่าอื่นที่ไม่รู้จักโชว์ตามที่เก็บ */
+  const genderLabel = (gender: string | null) => {
+    const value = normalizeGender(gender)
+    return value === CUSTOMER_MALE
+      ? tr("male")
+      : value === CUSTOMER_FEMALE
+        ? tr("female")
+        : gender
+  }
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
-  const visible = list.vendors
+  const visible = list.customers
 
   /** ลำดับที่โชว์แทนรหัส — นับต่อจากหน้าก่อนหน้า (หน้า 2 แถวแรกได้ 31 เมื่อหน้าละ 30)
    *  ใช้ page/per_page ที่ API ตอบกลับมา ไม่ใช่ state ของตัวกรอง เลขจึงตรงกับแถวที่เห็นจริง */
   const rowNumber = (index: number) =>
     ((list.page || 1) - 1) * (list.per_page || pageSize) + index + 1
 
+  const filterFields: { key: keyof Filters; label: string }[] = [
+    { key: "name", label: tcol("name") },
+    { key: "tel", label: tcol("tel") },
+    { key: "province", label: tcol("province") },
+  ]
+
   return (
     <>
       <PageHeader
-        title={tpage("title")}
-        description={loaded ? tpage("description", { count: list.total }) : t("loading")}
+        title={tr("title")}
+        description={
+          loaded
+            ? tr("description", { count: list.total.toLocaleString("en-US") })
+            : t("loading")
+        }
       />
 
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
-      <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="filter-code" className="text-muted-foreground text-xs">
-            {tcol("code")}
-          </Label>
-          <div className="group relative">
-            <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
-            <Input
-              id="filter-code"
-              value={codeQuery}
-              onChange={(event) => {
-                const code = event.target.value
-                setCodeQuery(code)
-                setPage(1)
-                load(
-                  { code, name: nameQuery, status, page: 1, pageSize },
-                  SEARCH_DELAY_MS
-                )
-              }}
-              placeholder={t("search")}
-              className="bg-card/80 focus-visible:border-primary/50 pl-8"
-            />
+      <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-3">
+        {filterFields.map((field) => (
+          <div key={field.key} className="space-y-2">
+            <Label htmlFor={`filter-${field.key}`} className="text-muted-foreground w-fit text-xs">
+              {field.label}
+            </Label>
+            <div className="group relative">
+              <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
+              <Input
+                id={`filter-${field.key}`}
+                value={filters[field.key]}
+                inputMode={field.key === "tel" ? "tel" : undefined}
+                onChange={(event) => search(field.key, event.target.value)}
+                placeholder={t("search")}
+                className="bg-card/80 focus-visible:border-primary/50 pl-8"
+              />
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="filter-name" className="text-muted-foreground text-xs">
-            {tcol("name")}
-          </Label>
-          <div className="group relative">
-            <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
-            <Input
-              id="filter-name"
-              value={nameQuery}
-              onChange={(event) => {
-                const name = event.target.value
-                setNameQuery(name)
-                setPage(1)
-                load(
-                  { code: codeQuery, name, status, page: 1, pageSize },
-                  SEARCH_DELAY_MS
-                )
-              }}
-              placeholder={t("search")}
-              className="bg-card/80 focus-visible:border-primary/50 pl-8"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
-            {tcol("status")}
-          </Label>
-          <SelectOption
-            id="filter-status"
-            options={statusOptions}
-            value={status}
-            onValueChange={(next) => {
-              setStatus(next)
-              setPage(1)
-              load({
-                code: codeQuery,
-                name: nameQuery,
-                status: next,
-                page: 1,
-                pageSize,
-              })
-            }}
-            placeholder={tall("all")}
-            label={tcol("status")}
-          />
-        </div>
+        ))}
       </CardContent>
 
       <CardContent className="px-4 py-0">
@@ -311,19 +283,21 @@ export function Tables() {
               <TableRow className="hover:bg-transparent">
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
                 <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("code")}</TableHead>
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("tel")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("email")}</TableHead>
-                <TableHead className="text-muted-foreground w-36 text-xs font-semibold tracking-wide uppercase">{tcol("tel")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("senderCode")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
+                <TableHead className="text-muted-foreground w-16 text-xs font-semibold tracking-wide uppercase">{tcol("gender")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("area")}</TableHead>
+                {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
+                <TableHead className="text-muted-foreground w-24 text-right text-xs font-semibold tracking-wide uppercase">{tcol("order_count")}</TableHead>
+                <TableHead className="text-muted-foreground w-32 text-right text-xs font-semibold tracking-wide uppercase">{tcol("total_amount")}</TableHead>
+                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("last_order_date")}</TableHead>
                 <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visible.map((vendor, index) => (
+              {visible.map((customer, index) => (
                 <TableRow
-                  key={vendor.id}
+                  key={customer.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
                   <TableCell className="pt-1 pb-1 relative pl-6">
@@ -336,38 +310,35 @@ export function Tables() {
                   </TableCell>
                   <TableCell className="pt-1 pb-1">
                     <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
-                      {vendor.code}
+                      {customer.tel}
                     </span>
                   </TableCell>
-                  <TableCell className="pt-1 pb-1 font-medium">{vendor.name}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{vendor.email}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground font-mono text-xs">{vendor.tel}</TableCell>
-                  <TableCell className="pt-1 pb-1">
-                    {/* ผู้ขายที่ยังไม่มีรหัสผู้ส่ง ปล่อยช่องว่างไว้ ไม่ต้องมีปุ่มให้กด กดไปก็เจอตารางเปล่า */}
-                    {senderCount(vendor) > 0 ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={tform("viewSenderCode")}
-                        onClick={() => setViewingSender(vendor)}
-                        className="bg-primary/10 text-primary hover:bg-primary/20 h-7 gap-1.5 px-2 text-xs font-medium"
-                      >
-                        <Truck className="size-3.5" />
-                        {senderCount(vendor)}
-                      </Button>
+                  {/* ชื่อ + อีเมลตัวจางบรรทัดล่าง — อีเมลมีน้อยแถว ไม่คุ้มเปิดคอลัมน์ของตัวเอง */}
+                  <TableCell className="pt-1 pb-1 max-w-[260px]">
+                    <div className="truncate font-medium" title={customer.name ?? undefined}>{customer.name}</div>
+                    {customer.email ? (
+                      <div className="text-muted-foreground truncate text-xs" title={customer.email}>{customer.email}</div>
                     ) : null}
                   </TableCell>
                   <TableCell className="pt-1 pb-1">
-                    <Badge
-                      variant="secondary"
-                      className={`border-transparent font-medium ${
-                        isVendorActive(vendor)
-                          ? "bg-success/12 text-success-ink hover:bg-success/12"
-                          : "bg-muted text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {isVendorActive(vendor) ? tr("active") : tr("inactive")}
-                    </Badge>
+                    {customer.gender ? (
+                      <Badge variant="secondary" className="bg-muted text-muted-foreground border-transparent font-medium">
+                        {genderLabel(customer.gender)}
+                      </Badge>
+                    ) : null}
+                  </TableCell>
+                  {/* อำเภอ • จังหวัด — ที่อยู่เต็มดูในฟอร์ม */}
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">
+                    {[customer.district, customer.province].filter(Boolean).join(" • ")}
+                  </TableCell>
+                  <TableCell className="pt-1 pb-1 text-right tabular-nums">
+                    {customer.order_count ? customer.order_count.toLocaleString("en-US") : null}
+                  </TableCell>
+                  <TableCell className="pt-1 pb-1 text-right font-medium tabular-nums">
+                    {formatAmount(customer.total_amount)}
+                  </TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground font-mono text-xs">
+                    {formatDate(customer.last_order_date)}
                   </TableCell>
                   <TableCell className="pt-1 pb-1 pr-6 text-right">
                     <div className="flex justify-end gap-0.5">
@@ -375,20 +346,22 @@ export function Tables() {
                         variant="ghost"
                         size="icon"
                         aria-label={t("edit")}
-                        onClick={() => setForm({ mode: "edit", vendor })}
+                        onClick={() => setForm({ mode: "edit", customer })}
                         className="bg-warning/18 text-warning-ink hover:bg-orange-50 hover:text-orange-300"
                       >
                         <Pencil />
                       </Button>
-                      <Button
+                      {/* ปิดปุ่มลบไว้ก่อน — เปิดกลับให้เอา Trash2 ใน import ออกจาก comment ด้วย
+                          (DeleteModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด) */}
+                      {/* <Button
                         variant="ghost"
                         size="icon"
                         aria-label={tall("delete")}
-                        onClick={() => setRemoving(vendor)}
+                        onClick={() => setRemoving(customer)}
                         className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
                       >
                         <Trash2 />
-                      </Button>
+                      </Button> */}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -427,24 +400,12 @@ export function Tables() {
           total={list.total}
           onPageChange={(next) => {
             setPage(next)
-            load({
-              code: codeQuery,
-              name: nameQuery,
-              status,
-              page: next,
-              pageSize,
-            })
+            load({ ...filters, page: next, pageSize })
           }}
           onPageSizeChange={(size) => {
             setPageSize(size)
             setPage(1)
-            load({
-              code: codeQuery,
-              name: nameQuery,
-              status,
-              page: 1,
-              pageSize: size,
-            })
+            load({ ...filters, page: 1, pageSize: size })
           }}
         />
       </CardContent>
@@ -456,20 +417,9 @@ export function Tables() {
           if (!next) setForm(null)
         }}
         mode={form?.mode ?? "add"}
-        vendor={form?.vendor}
-        // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
-        onSaved={() =>
-          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
-        }
-      />
-
-      {/* ดูรหัสผู้ส่งของแถวนั้น — อ่านอย่างเดียว แก้ไขทำที่ฟอร์ม */}
-      <SenderModal
-        open={viewingSender !== null}
-        onOpenChange={(next) => {
-          if (!next) setViewingSender(null)
-        }}
-        vendor={viewingSender ?? undefined}
+        customer={form?.customer}
+        // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหาเดิม
+        onSaved={() => load({ ...filters, page, pageSize })}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
@@ -478,10 +428,8 @@ export function Tables() {
         onOpenChange={(next) => {
           if (!next) setRemoving(null)
         }}
-        vendor={removing ?? undefined}
-        onDeleted={() =>
-          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
-        }
+        customer={removing ?? undefined}
+        onDeleted={() => load({ ...filters, page, pageSize })}
       />
     </Card>
     </>

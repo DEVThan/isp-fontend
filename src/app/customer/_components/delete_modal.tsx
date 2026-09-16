@@ -4,8 +4,8 @@ import * as React from "react"
 import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { deleteVendor } from "@/app/vendor/_components/api"
-import type { Vendor } from "@/app/vendor/_components/model"
+import { deleteCustomer } from "@/app/customer/_components/api"
+import type { Customer } from "@/app/customer/_components/model"
 import {
   Alert,
   AlertContent,
@@ -24,26 +24,27 @@ import {
 } from "@/components/ui/dialog"
 
 /**
- * delete_modal.tsx — ถามยืนยันก่อนลบผู้ขายแล้วค่อยยิง POST /api/web/vendor-delete
+ * delete_modal.tsx — ถามยืนยันก่อนลบลูกค้าแล้วค่อยยิง POST /api/web/customer-delete
  *
  * ลบสำเร็จเท่านั้นถึงจะเรียก onDeleted ให้ตารางโหลดใหม่ · ลบไม่สำเร็จกล่องยังเปิดค้าง
  * พร้อมข้อความจาก API และตารางไม่ถูกแตะต้อง
+ * ลูกค้าที่มี SO อ้างถึงอยู่ API ไม่ลบให้ — เตือนไว้ก่อนกดเลย เพราะลูกค้าส่วนใหญ่มีคำสั่งซื้อ
  */
 export function DeleteModal({
   open,
   onOpenChange,
-  vendor,
+  customer,
   onDeleted,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** แถวที่กำลังจะลบ */
-  vendor?: Vendor
+  customer?: Customer
   /** ลบสำเร็จแล้ว — ตารางเอาไปโหลดข้อมูลใหม่ */
   onDeleted?: () => void
 }) {
   const t = useTranslations("common")
-  const tform = useTranslations("vendors.form")
+  const tform = useTranslations("customer.form")
 
   const [deleting, setDeleting] = React.useState(false)
   /** ผลของการกดลบครั้งล่าสุด — null คือยังไม่ได้กด */
@@ -53,7 +54,7 @@ export function DeleteModal({
   } | null>(null)
 
   // เปิดใหม่หรือสลับแถวเมื่อไหร่ ให้ล้างผลของรอบก่อนทิ้ง (ปรับ state ระหว่าง render)
-  const key = `${vendor?.id ?? "none"}-${String(open)}`
+  const key = `${customer?.id ?? "none"}-${String(open)}`
   const [lastKey, setLastKey] = React.useState(key)
   if (key !== lastKey) {
     setLastKey(key)
@@ -70,8 +71,13 @@ export function DeleteModal({
         </DialogHeader>
 
         <DialogDescription>
-          {tform("deleteDescription", { name: vendor?.name ?? "" })}
+          {/* ลูกค้าบางคนไม่มีชื่อ — ใช้เบอร์โทรแทน */}
+          {tform("deleteDescription", {
+            name: customer?.name || customer?.tel || "",
+          })}
         </DialogDescription>
+
+        <p className="text-muted-foreground text-xs">{tform("deleteWarning")}</p>
 
         {result ? (
           <Alert variant={result.ok ? "success" : "destructive"}>
@@ -98,20 +104,19 @@ export function DeleteModal({
           </DialogClose>
           <Button
             variant="destructive"
-            disabled={deleting || !vendor}
+            disabled={deleting || !customer}
             onClick={async () => {
-              if (!vendor || deleting) return
+              if (!customer || deleting) return
               setDeleting(true)
               setResult(null)
               try {
                 // ส่งไปแค่ id ตามที่เส้นนี้ต้องการ
-                // ตารางนี้ไม่มีใครอ้างชื่อจากมัน เส้นลบจึงคืนมาแค่แถวที่หายไป ไม่มีอะไรต้องเตือนต่อ
-                await deleteVendor(vendor.id)
+                await deleteCustomer(customer.id)
                 setResult({ ok: true })
                 onDeleted?.()
                 setTimeout(() => onOpenChange(false), 1400)
               } catch (error) {
-                // ล้มเหลว = ไม่เรียก onDeleted ตารางจึงไม่ถูกโหลดใหม่
+                // ล้มเหลว (เช่น "Customer is used by 3 sales order(s)") = ไม่เรียก onDeleted ตารางจึงไม่ถูกโหลดใหม่
                 setResult({
                   ok: false,
                   message: error instanceof Error ? error.message : undefined,
