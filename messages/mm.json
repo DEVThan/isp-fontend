@@ -58,6 +58,7 @@
     "status_km": "KM အခြေအနေများ",
     "importantdoc": "အရေးကြီး စာရွက်စာတမ်းများ",
     "status_mou": "MOU အခြေအနေများ",
+    "status_payment": "ငွေပေးချေမှု အခြေအနေများ",
     "status_kmprotocall": "KM Protocall အခြေအနေများ",
     "status_linemyshop": "Line My Shop အခြေအနေများ",
     "status_tvprogramfootage": "TV Program Footage အခြေအနေများ",
@@ -438,6 +439,31 @@
     "active": "ဖွင့်ထား",
     "inactive": "ပိတ်ထား",
     "loadError": "MOU အခြေအနေများ ရယူ၍ မရပါ"
+  },
+  "statuspayments": {
+    "title": "ငွေပေးချေမှု အခြေအနေများ",
+    "description": "စုစုပေါင်း ငွေပေးချေမှု အခြေအနေ {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "အခြေအနေ အမည်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "ငွေပေးချေမှု အခြေအနေ ထည့်ရန်",
+      "editTitle": "ငွေပေးချေမှု အခြေအနေ ပြင်ဆင်ရန်",
+      "addDescription": "ထည့်မည့် ငွေပေးချေမှု အခြေအနေ၏ အချက်အလက်များ ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော ငွေပေးချေမှု အခြေအနေ၏ အချက်အလက်များ ပြင်ပါ",
+      "saved": "သိမ်းဆည်းပြီးပါပြီ",
+      "saveError": "သိမ်းဆည်း၍ မရပါ",
+      "deleteTitle": "ဤ ငွေပေးချေမှု အခြေအနေကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးအပိုင် ဖျက်ပါမည် ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ"
+    },
+    "active": "ဖွင့်ထား",
+    "inactive": "ပိတ်ထား",
+    "loadError": "ငွေပေးချေမှု အခြေအနေများ ရယူ၍ မရပါ"
   },
   "statuskmprotocalls": {
     "title": "KM Protocall အခြေအနေများ",

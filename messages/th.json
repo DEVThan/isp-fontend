@@ -58,6 +58,7 @@
     "status_km": "สถานะ KM",
     "importantdoc": "เอกสารสำคัญ",
     "status_mou": "สถานะ MOU",
+    "status_payment": "สถานะการชำระเงิน",
     "status_kmprotocall": "สถานะ KM Protocall",
     "status_linemyshop": "สถานะ Line My Shop",
     "status_tvprogramfootage": "สถานะหนังสือยินยอมให้ใช้สิทธิ์ในเทปรายการโทรทัศน์",
@@ -438,6 +439,31 @@
     "active": "เปิดใช้งาน",
     "inactive": "ปิดใช้งาน",
     "loadError": "ดึงข้อมูลสถานะ MOU ไม่สำเร็จ"
+  },
+  "statuspayments": {
+    "title": "สถานะการชำระเงิน",
+    "description": "สถานะการชำระเงินทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อสถานะ",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มสถานะการชำระเงิน",
+      "editTitle": "แก้ไขสถานะการชำระเงิน",
+      "addDescription": "กรอกข้อมูลสถานะการชำระเงินที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของสถานะการชำระเงินที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบสถานะการชำระเงินนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลสถานะการชำระเงินไม่สำเร็จ"
   },
   "statuskmprotocalls": {
     "title": "สถานะ KM Protocall",

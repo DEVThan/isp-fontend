@@ -58,6 +58,7 @@
     "status_km": "KM statuses",
     "importantdoc": "Important documents",
     "status_mou": "MOU statuses",
+    "status_payment": "Payment statuses",
     "status_kmprotocall": "KM Protocall statuses",
     "status_linemyshop": "Line My Shop statuses",
     "status_tvprogramfootage": "Status TV program footage",
@@ -438,6 +439,31 @@
     "active": "Active",
     "inactive": "Inactive",
     "loadError": "Could not load MOU statuses"
+  },
+  "statuspayments": {
+    "title": "Payment statuses",
+    "description": "{count} payment statuses in total",
+    "columns": {
+      "no": "No.",
+      "name": "Status name",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add payment status",
+      "editTitle": "Edit payment status",
+      "addDescription": "Fill in the details of the payment status to add",
+      "editDescription": "Change the details of the selected payment status",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this payment status?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load payment statuses"
   },
   "statuskmprotocalls": {
     "title": "KM Protocall statuses",
