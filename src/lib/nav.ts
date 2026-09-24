@@ -1,8 +1,10 @@
 import {
   Building2,
   Circle,
+  CircleDollarSign,
   Cog,
   CreditCard,
+  DollarSign,
   Import,
   Landmark,
   LayoutDashboard,
@@ -121,6 +123,8 @@ export const iconByName: Record<string, LucideIcon> = {
   ReceiptText,
   Store,
   Tv,
+  DollarSign,
+  CircleDollarSign,
   // ชื่อที่ฐานข้อมูลเขียนเป็นโค้ดเมนู ไม่ใช่ชื่อไอคอนของ lucide
   vat: Percent,
   company: Building2,
@@ -130,6 +134,12 @@ export const iconByName: Record<string, LucideIcon> = {
   // หน้าช่องทาง Broadcast — รับทั้งตัวพิมพ์เล็ก (tv) และโค้ดเมนู (broadcast) เผื่อฐานข้อมูลเขียนแบบนั้น
   tv: Tv,
   broadcast: Tv,
+  // เมนูใบสั่งขาย — แถว so ในตาราง menus เขียน icon ไว้ว่า "Dollar" ซึ่งไม่ใช่ชื่อไอคอนของ lucide
+  // (ของจริงชื่อ DollarSign) ไม่ map ไว้ที่นี่จะตกไปใช้ fallbackIcon = วงกลมเปล่า
+  Dollar: DollarSign,
+  dollar: DollarSign,
+  sale: DollarSign,
+  so: DollarSign,
 }
 
 /** ชื่อไอคอนที่ไม่มีในตาราง (หรือเมนูที่ไม่ได้ตั้งไอคอน) ใช้ตัวนี้แทน */
