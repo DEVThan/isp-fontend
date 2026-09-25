@@ -2,9 +2,7 @@
 
 import * as React from "react"
 import {
-  CheckCircle2,
-  CircleDot,
-  Clock,
+  Eye,
   LoaderCircle,
   Pencil,
   // Plus, — ปุ่มเพิ่มปิดไว้ก่อน
@@ -12,8 +10,6 @@ import {
   SearchX,
   // Trash2, — ปุ่มลบปิดไว้ก่อน
   TriangleAlert,
-  XCircle,
-  type LucideIcon,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -22,9 +18,10 @@ import {
   getSoOptions,
   SO_PAGE_SIZE,
 } from "@/app/sale/so/_components/api"
+import { DateRangeFilter } from "@/app/sale/so/_components/daterange"
 import { DeleteModal } from "@/app/sale/so/_components/delete_modal"
 import { FormModal } from "@/app/sale/so/_components/form_modal"
-import { BroadcastLogo } from "@/app/sale/so/_components/logo"
+// import { BroadcastLogo } from "@/app/sale/so/_components/logo" — ใช้แค่ในคอลัมน์ช่องทางที่ซ่อนอยู่
 import {
   NO_SO_OPTIONS,
   type So,
@@ -32,6 +29,12 @@ import {
   type SoList,
 } from "@/app/sale/so/_components/model"
 import { TablePagination } from "@/app/sale/so/_components/pagination"
+import {
+  NEUTRAL_STYLE,
+  PAYMENT_STYLE,
+  STATUS_STYLE,
+} from "@/app/sale/so/_components/status_style"
+import { ViewModal } from "@/app/sale/so/_components/view_modal"
 import {
   SelectOption,
   type SelectOptionItem,
@@ -59,25 +62,7 @@ const COLUMN_COUNT = 10
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
 
-/**
- * สีป้ายสถานะออเดอร์ — คีย์คือค่าที่เก็บในคอลัมน์ status (= ชื่อในทะเบียน status_po)
- * ใช้ตระกูลสีสถานะเป็นพื้นจาง + ตัวหนังสือสี -ink คู่กับไอคอนเสมอ สีจึงไม่ใช่ช่องทางสื่อความหมายเดียว
- * ค่าที่ไม่รู้จัก (ทะเบียนเพิ่มใหม่ หรือ sync เขียนค่าใหม่มา) ได้สีกลาง ไม่ใช่ไม่โชว์
- */
-const STATUS_STYLE: Record<string, { className: string; icon: LucideIcon }> = {
-  "ออเดอร์ใหม่": { className: "bg-info/12 text-info-ink", icon: CircleDot },
-  "กำลังจัดส่ง": { className: "bg-warning/18 text-warning-ink", icon: Clock },
-  "ลูกค้าได้รับสินค้าแล้ว": {
-    className: "bg-success/12 text-success-ink",
-    icon: CheckCircle2,
-  },
-  "ยกเลิก": { className: "bg-danger/12 text-danger-ink", icon: XCircle },
-}
-
-/** สีป้ายสถานะการชำระเงิน — ชำระแล้วเขียว ที่เหลือกลาง (รอชำระเงินคือค่าปกติของ 98% ของแถว) */
-const PAYMENT_STYLE: Record<string, string> = {
-  "ชำระเงินแล้ว": "bg-success/12 text-success-ink",
-}
+// สีป้ายสถานะ (STATUS_STYLE / PAYMENT_STYLE) ย้ายไป status_style.ts — กล่องดูข้อมูลใช้ร่วมกัน
 
 /** เงื่อนไขทั้งหมดที่ส่งไปให้ API ตัดหน้ามาให้ — ชื่อตรงกับพารามิเตอร์ของ so-get-list */
 type Filters = {
@@ -88,6 +73,8 @@ type Filters = {
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
   status: string | null
   channel: string | null
+  /** null = ไม่กรองผู้ขาย · ค่าคือชื่อผู้ขาย (so เก็บแค่ vendor_name) */
+  vendor: string | null
   /** YYYY-MM-DD จากช่อง type="date" — ว่าง = ไม่กรอง */
   dateFrom: string
   dateTo: string
@@ -145,15 +132,20 @@ export function Tables() {
     mode: SoFormMode
     so?: So
   } | null>(null)
+  /** แถวที่กำลังดูข้อมูล (กล่องอ่านอย่างเดียว ปุ่มรูปตา) — null คือปิดกล่อง */
+  const [viewing, setViewing] = React.useState<So | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
   const [removing, setRemoving] = React.useState<So | null>(null)
 
   const [soCode, setSoCode] = React.useState("")
   const [name, setName] = React.useState("")
-  const [tel, setTel] = React.useState("")
+  // setTel ปิดไว้คู่กับช่องค้นหาเบอร์โทรที่ซ่อนอยู่ — tel คงเป็นค่าว่างตลอด (ไม่กรอง)
+  const [tel /* , setTel */] = React.useState("")
   const [productName, setProductName] = React.useState("")
   const [status, setStatus] = React.useState<string | null>(null)
-  const [channel, setChannel] = React.useState<string | null>(null)
+  // setChannel ปิดไว้คู่กับตัวกรองช่องทางที่ซ่อนอยู่ — channel คงเป็น null (ไม่กรอง)
+  const [channel /* , setChannel */] = React.useState<string | null>(null)
+  const [vendor, setVendor] = React.useState<string | null>(null)
   const [dateFrom, setDateFrom] = React.useState("")
   const [dateTo, setDateTo] = React.useState("")
   const [page, setPage] = React.useState(1)
@@ -197,6 +189,7 @@ export function Tables() {
     productName,
     status,
     channel,
+    vendor,
     dateFrom,
     dateTo,
     page,
@@ -223,6 +216,7 @@ export function Tables() {
           productName: next.productName.trim(),
           status: next.status ?? "",
           channel: next.channel ?? "",
+          vendorName: next.vendor ?? "",
           dateFrom: next.dateFrom,
           dateTo: next.dateTo,
           page: next.page,
@@ -266,10 +260,17 @@ export function Tables() {
     label: option.name,
   }))
 
-  /** ช่องทางออกอากาศ — ทะเบียน broadcast (ชื่อตรงกับที่เก็บใน so.channel) */
-  const channelOptions: SelectOptionItem[] = options.broadcasts.map((option) => ({
+  // ใช้แค่ในตัวกรองช่องทางที่ซ่อนอยู่ — เปิดตัวกรองกลับให้เอา comment ตรงนี้ + setChannel ออกด้วย
+  // /** ช่องทางออกอากาศ — ทะเบียน broadcast (ชื่อตรงกับที่เก็บใน so.channel) */
+  // const channelOptions: SelectOptionItem[] = options.broadcasts.map((option) => ({
+  //   value: option.name,
+  //   label: option.name,
+  // }))
+
+  /** ผู้ขาย — ทะเบียน vendor · ค่าคือชื่อ (ตรงกับ so.vendor_name) ป้ายมีรหัสนำหน้า ค้นด้วยรหัสก็ได้ (ชุดเดียวกับฟอร์ม) */
+  const vendorOptions: SelectOptionItem[] = options.vendors.map((option) => ({
     value: option.name,
-    label: option.name,
+    label: `${option.code} — ${option.name}`,
   }))
 
   /**
@@ -277,9 +278,23 @@ export function Tables() {
    * จึงจับคู่ด้วยชื่อตรง ๆ · ชื่อที่ไม่มีในทะเบียน (outbound call, Retail, Line OA, …) ไม่มีโลโก้
    * ตัวเลือกถูกดึงหลังรายการโหลดเสร็จ (ดู effect ของ options) โลโก้จึงขึ้นช้ากว่าแถวเล็กน้อย
    */
-  const channelLogos = new Map(
-    options.broadcasts.map((option) => [option.name, option.logo])
-  )
+  // ใช้แค่ในคอลัมน์ช่องทางที่ซ่อนอยู่ — เปิดคอลัมน์กลับให้เอา comment ตรงนี้ + import BroadcastLogo ออกด้วย
+  // const channelLogos = new Map(
+  //   options.broadcasts.map((option) => [option.name, option.logo])
+  // )
+
+  /**
+   * ชื่อผู้ขาย -> รหัส · so เก็บแค่ vendor_name จึงจับคู่กับทะเบียน vendor ด้วยชื่อ
+   * ชื่อที่ซ้ำกันในทะเบียนไม่ใส่รหัส (เดาไม่ได้ว่าคนไหน) · ชื่อที่ไม่มีในทะเบียนก็ไม่มีรหัส
+   * ตัวเลือกถูกดึงหลังรายการโหลดเสร็จ รหัสจึงขึ้นช้ากว่าแถวเล็กน้อย
+   */
+  const vendorCodes = new Map<string, string>()
+  const duplicateVendors = new Set<string>()
+  for (const vendor of options.vendors) {
+    if (vendorCodes.has(vendor.name)) duplicateVendors.add(vendor.name)
+    vendorCodes.set(vendor.name, vendor.code)
+  }
+  for (const name of duplicateVendors) vendorCodes.delete(name)
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
   const visible = list.so
@@ -346,31 +361,32 @@ export function Tables() {
     </div>
   )
 
-  /** ช่วงวันที่ — เทียบกับ create_date ฝั่ง API (10 ตัวแรกของข้อความ) ไม่มีหน่วง ยิงทันทีที่เลือก */
-  const dateFilter = (
-    key: "dateFrom" | "dateTo",
-    label: string,
-    value: string,
-    setValue: (next: string) => void
-  ) => (
-    <div className="space-y-2">
-      <Label htmlFor={`filter-${key}`} className="text-muted-foreground w-fit text-xs">
-        {label}
-      </Label>
-      <Input
-        id={`filter-${key}`}
-        type="date"
-        value={value}
-        onChange={(event) => {
-          const next = event.target.value
-          setValue(next)
-          setPage(1)
-          load({ ...filters, [key]: next, page: 1 })
-        }}
-        className="bg-card/80 focus-visible:border-primary/50"
-      />
-    </div>
-  )
+  // ตัวกรองวันที่แบบสองช่องเดิม — แทนด้วย DateRangeFilter แล้ว เก็บไว้เผื่อกลับไปใช้
+  // /** ช่วงวันที่ — เทียบกับ create_date ฝั่ง API (10 ตัวแรกของข้อความ) ไม่มีหน่วง ยิงทันทีที่เลือก */
+  // const dateFilter = (
+  //   key: "dateFrom" | "dateTo",
+  //   label: string,
+  //   value: string,
+  //   setValue: (next: string) => void
+  // ) => (
+  //   <div className="space-y-2">
+  //     <Label htmlFor={`filter-${key}`} className="text-muted-foreground w-fit text-xs">
+  //       {label}
+  //     </Label>
+  //     <Input
+  //       id={`filter-${key}`}
+  //       type="date"
+  //       value={value}
+  //       onChange={(event) => {
+  //         const next = event.target.value
+  //         setValue(next)
+  //         setPage(1)
+  //         load({ ...filters, [key]: next, page: 1 })
+  //       }}
+  //       className="bg-card/80 focus-visible:border-primary/50"
+  //     />
+  //   </div>
+  // )
 
   return (
     <>
@@ -384,22 +400,44 @@ export function Tables() {
       />
 
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
-      {/* แถวบน: เลขที่ SO / ชื่อผู้สั่ง / เบอร์โทร / ชื่อสินค้า · แถวล่าง: สถานะ ช่องทาง และช่วงวันที่ */}
+      {/* แถวบน: เลขที่ SO / ชื่อผู้สั่ง / ชื่อสินค้า / สถานะ · แถวล่าง: ผู้ขาย และช่วงวันที่สั่งซื้อ */}
       <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-2 xl:grid-cols-4">
         {searchFilter("soCode", tcol("so_code"), soCode, setSoCode)}
         {searchFilter("name", tcol("name"), name, setName)}
-        {searchFilter("tel", tcol("tel"), tel, setTel)}
+        {/* เบอร์โทร — ซ่อนไว้ (เปิดกลับ: เอา comment ออก · state/ตัวกรอง tel ยังอยู่ครบ ส่งค่าว่างไป API) */}
+        {/* {searchFilter("tel", tcol("tel"), tel, setTel)} */}
         {searchFilter("productName", tcol("product_name"), productName, setProductName)}
         {selectFilter("filter-status", tcol("status"), statusOptions, status, (next) => {
           setStatus(next)
           return { ...filters, status: next, page: 1 }
         })}
-        {selectFilter("filter-channel", tcol("channel"), channelOptions, channel, (next) => {
+        {/* ช่องทางออกอากาศ — ซ่อนไว้ก่อน (เปิดกลับ: เอา comment ออก + channelOptions / setChannel ด้านบน) */}
+        {/* {selectFilter("filter-channel", tcol("channel"), channelOptions, channel, (next) => {
           setChannel(next)
           return { ...filters, channel: next, page: 1 }
+        })} */}
+        {selectFilter("filter-vendor", tcol("vendor_name"), vendorOptions, vendor, (next) => {
+          setVendor(next)
+          return { ...filters, vendor: next, page: 1 }
         })}
-        {dateFilter("dateFrom", tr("dateFrom"), dateFrom, setDateFrom)}
-        {dateFilter("dateTo", tr("dateTo"), dateTo, setDateTo)}
+        {/* วันที่สั่งซื้อ (po_date) — เดิมกรองวันที่สร้าง · ช่วงวันที่ช่องเดียว (ปฏิทินในป๊อปอัป) แทนสองช่อง ตั้งแต่/ถึง แบบเดิม
+            ค่าที่ส่ง API ยังเป็น date_from / date_to (YYYY-MM-DD) — ฝั่ง API เทียบกับ po_date แล้ว (so.py) · กว้างคอลัมน์เดียวเท่าช่องอื่น (ข้อความช่วงวันที่ยังพอดี) */}
+        <div className="space-y-2">
+          {/* ป้ายไม่ผูก htmlFor — ตัวช่องเป็นปุ่มเปิดปฏิทิน (แบบเดียวกับตัวกรอง dropdown) */}
+          <Label className="text-muted-foreground w-fit text-xs">{tr("dateRange.label")}</Label>
+          <DateRangeFilter
+            id="filter-dateRange"
+            from={dateFrom}
+            to={dateTo}
+            placeholder={tr("dateRange.placeholder")}
+            onChange={(nextFrom, nextTo) => {
+              setDateFrom(nextFrom)
+              setDateTo(nextTo)
+              setPage(1)
+              load({ ...filters, dateFrom: nextFrom, dateTo: nextTo, page: 1 })
+            }}
+          />
+        </div>
       </CardContent>
 
       <CardContent className="px-4 py-0">
@@ -462,13 +500,16 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("so_code")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("product_name")}</TableHead>
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("channel")}</TableHead>
+                {/* ช่องทางออกอากาศ — ซ่อนไว้ แสดงผู้ขายแทน (เปิดกลับ: เอา comment ออก ทั้งหัวคอลัมน์และเซลล์) */}
+                {/* <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("channel")}</TableHead> */}
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("vendor_name")}</TableHead>
                 {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
                 <TableHead className="text-muted-foreground w-16 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-right text-xs font-semibold tracking-wide uppercase">{tcol("amount")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
-                <TableHead className="w-16 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
+                {/* สองปุ่ม (ดู + แก้ไข) — w-24 · 32px ที่เพิ่มขึ้นเอามาจากคอลัมน์ชื่อสินค้า */}
+                <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -488,13 +529,13 @@ export function Tables() {
                     />
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
-                  {/* เลขที่ใบ + วันที่สร้าง — เรียงตามวันที่สร้าง วันที่จึงอยู่คู่กับเลขที่ใบ */}
+                  {/* เลขที่ใบ + วันที่สั่งซื้อ (po_date) — API เรียงตาม po_date วันที่จึงอยู่คู่กับเลขที่ใบ (เดิมโชว์ create_date) */}
                   <TableCell className="pt-1 pb-1">
                     <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
                       {row.so_code}
                     </span>
                     <div className="text-muted-foreground mt-0.5 font-mono text-xs">
-                      {formatDateTime(row.create_date)}
+                      {formatDateTime(row.po_date)}
                     </div>
                   </TableCell>
                   {/* ชื่อผู้สั่ง + เบอร์โทรตัวจางบรรทัดล่าง */}
@@ -505,14 +546,14 @@ export function Tables() {
                   {/* ชื่อสินค้า + รหัสสินค้าตัวจางบรรทัดล่าง
                       max-w คุมความกว้างของทั้งคอลัมน์ (คอลัมน์ตารางไม่มี w ก็จะกินตามข้อความ)
                       ชื่อสินค้ายาวที่สุดในตาราง จึงเป็นคอลัมน์ที่ปรับเวลาต้องแบ่งที่ให้คอลัมน์อื่น
-                      (ได้คืน 32px ตอนปิดปุ่มลบ — ช่องปุ่มเหลือปุ่มเดียวจึงแคบลงเป็น w-16) */}
-                  <TableCell className="pt-1 pb-1 max-w-[182px]">
+                      (ได้คืน 32px ตอนปิดปุ่มลบ แล้วคืนให้ปุ่มดูข้อมูลไป — ช่องปุ่มเป็น w-24 สองปุ่ม) */}
+                  <TableCell className="pt-1 pb-1 max-w-[150px]">
                     <div className="truncate" title={row.product_name ?? undefined}>{row.product_name}</div>
                     <div className="text-muted-foreground truncate font-mono text-xs">{row.item_code}</div>
                   </TableCell>
-                  {/* โลโก้จากทะเบียนช่องทางออกอากาศ + ชื่อที่เก็บในแถว
+                  {/* โลโก้จากทะเบียนช่องทางออกอากาศ + ชื่อที่เก็บในแถว — ซ่อนไว้ แสดงผู้ขายแทน
                       ชื่อที่ไม่มีโลโก้ (หรือไฟล์เปิดไม่ขึ้น) BroadcastLogo คืน null ชื่อจึงเลื่อนมาชิดซ้ายเอง */}
-                  <TableCell className="pt-1 pb-1 max-w-[116px]">
+                  {/* <TableCell className="pt-1 pb-1 max-w-[116px]">
                     <div className="flex items-center gap-1.5">
                       <BroadcastLogo
                         src={row.channel ? channelLogos.get(row.channel) : null}
@@ -522,6 +563,14 @@ export function Tables() {
                       <span className="text-muted-foreground truncate" title={row.channel ?? undefined}>
                         {row.channel}
                       </span>
+                    </div>
+                  </TableCell> */}
+                  {/* ผู้ขาย — ชื่อ + รหัสตัวจางบรรทัดล่าง (รหัสหาจากทะเบียนด้วยชื่อ ดู vendorCodes)
+                      ชื่อบริษัทยาว ตัดด้วย truncate ข้อความเต็มอยู่ใน title · กว้างเท่าคอลัมน์ช่องทางเดิม */}
+                  <TableCell className="pt-1 pb-1 max-w-[116px]">
+                    <div className="truncate" title={row.vendor_name ?? undefined}>{row.vendor_name}</div>
+                    <div className="text-muted-foreground truncate font-mono text-xs">
+                      {row.vendor_name ? vendorCodes.get(row.vendor_name) : null}
                     </div>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 text-right tabular-nums">
@@ -540,7 +589,7 @@ export function Tables() {
                         title={row.status}
                         className={cn(
                           "max-w-full gap-1 border-transparent font-medium",
-                          statusStyle?.className ?? "bg-muted text-muted-foreground"
+                          statusStyle?.className ?? NEUTRAL_STYLE
                         )}
                       >
                         {StatusIcon ? <StatusIcon className="size-3 shrink-0" /> : null}
@@ -556,7 +605,7 @@ export function Tables() {
                         title={row.is_payment}
                         className={cn(
                           "max-w-full border-transparent font-medium",
-                          PAYMENT_STYLE[row.is_payment] ?? "bg-muted text-muted-foreground"
+                          PAYMENT_STYLE[row.is_payment] ?? NEUTRAL_STYLE
                         )}
                       >
                         <span className="truncate">{row.is_payment}</span>
@@ -566,6 +615,16 @@ export function Tables() {
                   </TableCell>
                   <TableCell className="pt-1 pb-1 pr-6 text-right">
                     <div className="flex justify-end gap-0.5">
+                      {/* ดูข้อมูลทั้งหมดแบบอ่านอย่างเดียว — สี info แยกจากส้ม (แก้ไข) เหมือนหน้าสินค้า */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("view")}
+                        onClick={() => setViewing(row)}
+                        className="bg-info/12 text-info-ink hover:bg-info/20"
+                      >
+                        <Eye />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -645,6 +704,16 @@ export function Tables() {
         so={form?.so}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหาเดิม
         onSaved={() => load(filters)}
+      />
+
+      {/* ดูข้อมูลอย่างเดียว — ใช้ตัวเลือกที่ตารางดึงไว้แล้ว (รหัสผู้ขาย โลโก้ช่องทาง) ไม่ยิง API เพิ่ม */}
+      <ViewModal
+        open={viewing !== null}
+        onOpenChange={(next) => {
+          if (!next) setViewing(null)
+        }}
+        so={viewing ?? undefined}
+        options={options}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}

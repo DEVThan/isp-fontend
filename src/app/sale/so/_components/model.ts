@@ -165,6 +165,9 @@ export type SoDeleted = {
 /** รูปแบบที่ทุกเส้น -get-option คืนมา (id + ชื่อ) — ใช้เป็นตัวเลือกของช่อง select */
 export type NamedOption = { id: number; name: string }
 
+/** ลูกค้าจาก /customer-get-option — ค้นฝั่งเซิร์ฟเวอร์ ได้ไม่เกิน 20 คนต่อครั้ง (ดู getCustomerOptions) */
+export type CustomerOption = { id: number; name: string | null; tel: string }
+
 /** ผู้ขาย — ชื่อซ้ำกันได้ จึงมี code มาด้วย */
 export type VendorOption = NamedOption & { code: string }
 

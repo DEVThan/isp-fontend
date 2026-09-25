@@ -819,6 +819,16 @@
     "description": "{count} sales order lines in total",
     "dateFrom": "Created from",
     "dateTo": "Created to",
+    "dateRange": {
+      "label": "PO date",
+      "placeholder": "Select a date range",
+      "pick": "Pick a start and end date",
+      "today": "Today",
+      "last7": "Last 7 days",
+      "last30": "Last 30 days",
+      "thisMonth": "This month",
+      "apply": "Apply"
+    },
     "loadError": "Could not load sales orders",
     "columns": {
       "no": "No.",
@@ -872,6 +882,8 @@
       "editTitle": "Edit sales order line",
       "addDescription": "Fill in the details of the line to add",
       "editDescription": "Change the details of the selected line",
+      "viewTitle": "Sales order line",
+      "viewDescription": "Everything recorded for the selected line (read-only)",
       "saved": "Saved",
       "saveError": "Could not save",
       "deleteTitle": "Delete this line?",
@@ -888,7 +900,9 @@
       "soCodeReadonlyHint": "The SO number is already issued and cannot be changed here",
       "productNameReadonlyHint": "The product name is tied to the issued line and cannot be changed here",
       "syncReadonlyHint": "This value comes from the daily sync and cannot be changed here",
-      "customerIdHint": "Customer ID from the customer registry · leave blank for no link"
+      "customerIdHint": "Customer ID from the customer registry · leave blank for no link",
+      "customerSearch": "Search by name or phone",
+      "customerSearchError": "Could not search customers"
     }
   },
   "broadcasts": {

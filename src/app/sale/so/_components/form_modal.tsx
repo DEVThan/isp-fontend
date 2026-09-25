@@ -13,14 +13,17 @@ import {
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { ACCENTS, type Accent } from "@/app/sale/so/_components/accents"
+// type Accent ใช้แค่ใน SyncInfo ที่ซ่อนอยู่ — เปิด SyncInfo กลับให้ใส่ ", type Accent" คืนด้วย
+import { ACCENTS } from "@/app/sale/so/_components/accents"
 import { getSoOptions, saveSo } from "@/app/sale/so/_components/api"
+import { CustomerSelect } from "@/app/sale/so/_components/customerselect"
 import { BroadcastLogo } from "@/app/sale/so/_components/logo"
 import {
   NO_SO_OPTIONS,
   SO_FIELDS,
   SO_IS_PAYMENTS,
   SO_PAY_BYS,
+  type CustomerOption,
   type NamedOption,
   type So,
   type SoFormMode,
@@ -94,6 +97,19 @@ import { cn } from "@/lib/utils"
 const INVALID_FIELD =
   "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
 
+/**
+ * พื้นของช่องที่กรอกได้ — ขาวปกติ (--card) ไม่โปร่งใส ไม่งั้นพื้นไล่สีของแท็บทะลุขึ้นมาในช่อง
+ * ช่องอ่านอย่างเดียวยังเป็นเทา (bg-muted/60) จึงแยกออกได้ด้วยตาว่าช่องไหนแก้ได้ · ธีมมืดคงพื้นเดิม
+ */
+const EDITABLE = "bg-card dark:bg-input/30"
+
+/** หน้าตาช่องตัวเลข — ชิดขวา เลขกว้างเท่ากัน (ทั้งช่องกรอกและช่องอ่านอย่างเดียว) */
+const NUMERIC = "text-right font-mono tabular-nums"
+
+/** พื้นของช่องอ่านอย่างเดียว — เทา ตัวหนังสือจาง ไม่มีวงโฟกัส (ใช้ทั้ง Input และ Textarea) */
+const READONLY =
+  "bg-muted/60 text-muted-foreground cursor-default focus-visible:ring-0"
+
 /** ปุ่มแท็บ — ไอคอนสีประจำกลุ่มอยู่หน้าชื่อ แท็บที่เลือกอยู่ได้พื้นจาง + ขอบ + เส้นใต้สีเดียวกัน */
 const TAB_TRIGGER = "shrink-0 gap-1.5 data-active:font-semibold data-active:shadow-sm"
 
@@ -156,14 +172,15 @@ const onlyNumber = (raw: string, decimal: boolean) => {
  * ให้อ่านเทียบกับ create_date ได้ (sync เขียน create_date เป็นเวลาไทยอยู่แล้ว)
  * อ่านไม่ออกก็โชว์ค่าดิบ ไม่เดาแทน
  */
-const formatStamp = (value: string | null) => {
-  if (!value) return null
-  const time = Date.parse(value)
-  if (Number.isNaN(time)) return value
-  const at = new Date(time)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${pad(at.getDate())}/${pad(at.getMonth() + 1)}/${at.getFullYear()} ${pad(at.getHours())}:${pad(at.getMinutes())}`
-}
+// ซ่อนไว้คู่กับ SyncInfo (ไฟล์ต้นทาง / ซิงก์เมื่อ / แก้ไขล่าสุด) — เปิดกลับพร้อมกันทั้งสองตัว
+// const formatStamp = (value: string | null) => {
+//   if (!value) return null
+//   const time = Date.parse(value)
+//   if (Number.isNaN(time)) return value
+//   const at = new Date(time)
+//   const pad = (n: number) => String(n).padStart(2, "0")
+//   return `${pad(at.getDate())}/${pad(at.getMonth() + 1)}/${at.getFullYear()} ${pad(at.getHours())}:${pad(at.getMinutes())}`
+// }
 
 /** ค่าว่างของทุกคอลัมน์ — สร้างจาก SO_FIELDS จะได้ไม่มีทางตกหล่น */
 const emptyValues: SoFormValues = Object.fromEntries(
@@ -303,6 +320,28 @@ export function FormModal({
     }))
   }
 
+  /**
+   * ผู้สั่งซื้อ — เลือกจากทะเบียนลูกค้า (/customer-get-option) แล้วเขียนสามคอลัมน์พร้อมกัน:
+   * name, tel และ customer_id (foreign key ไป customer) ให้ชื่อ เบอร์ และรหัสเป็นคนเดียวกันเสมอ
+   * ชื่อว่างในทะเบียนไม่ทับชื่อเดิมของแถวทิ้ง
+   */
+  const pickCustomer = (customer: CustomerOption) => {
+    setValues((current) => ({
+      ...current,
+      name: customer.name ?? current.name,
+      tel: customer.tel,
+      customer_id: String(customer.id),
+    }))
+  }
+
+  /**
+   * พิมพ์ชื่อผู้สั่งเอง — ชื่อที่พิมพ์ไม่ใช่คนในทะเบียนที่เคยเลือกไว้แล้ว จึงตัด customer_id ทิ้ง
+   * (ไม่งั้นชื่อบอกคนหนึ่ง แต่ foreign key ชี้อีกคน) · เบอร์โทรไม่แตะ แก้เองได้ที่ช่องข้าง ๆ
+   */
+  const typeCustomer = (name: string) => {
+    setValues((current) => ({ ...current, name, customer_id: "" }))
+  }
+
   /** ช่องทาง — สองคอลัมน์เก็บค่าเดียวกันทั้ง 43,000 แถว (ตรวจแล้วไม่มีแถวไหนต่างกัน) เขียนพร้อมกัน */
   const pickChannel = (next: string | null) => {
     const name = next ?? ""
@@ -317,7 +356,7 @@ export function FormModal({
         value={values[field]}
         placeholder={DATE_FIELDS.has(field) ? DATE_PLACEHOLDER : "..."}
         onChange={(event) => set(field, event.target.value)}
-        className={DATE_FIELDS.has(field) ? "font-mono" : undefined}
+        className={cn(EDITABLE, DATE_FIELDS.has(field) && "font-mono")}
       />
     </Field>
   )
@@ -326,22 +365,45 @@ export function FormModal({
    * ช่องข้อความอ่านอย่างเดียว — ใช้กับค่าที่งาน sync เป็นเจ้าของ ไม่ให้แก้จากหน้านี้
    * ค่ายังอยู่ใน values และถูกส่งไปกับ -action ทุกครั้งเหมือนช่องปกติ (ไม่ได้หายไปเพราะอ่านอย่างเดียว)
    * ไม่มีคำอธิบายใต้ช่อง (hint ถูกสั่งให้ซ่อน — คำแปลยังอยู่ที่ so.form.syncReadonlyHint)
-   * ใช้กับ: พนักงานขาย (sell_by), เบอร์รับสาย (did) · เดิมใช้กับวันที่สั่งซื้อที่ซ่อนไปแล้ว
+   * ใช้กับ: พนักงานขาย (sell_by), เบอร์รับสาย (did), รหัสสินค้า (item_code) · เดิมใช้กับวันที่สั่งซื้อที่ซ่อนไปแล้ว
    */
-  const readonlyText = (field: SoField) => (
+  const readonlyText = (field: SoField, className?: string, display?: string) => (
     <Field id={`so-${field}`} label={tcol(field)}>
       <Input
         id={`so-${field}`}
-        value={values[field]}
+        value={display ?? values[field]}
         readOnly
         aria-readonly
-        className={cn(
-          "bg-muted/60 text-muted-foreground cursor-default focus-visible:ring-0",
-          DATE_FIELDS.has(field) && "font-mono"
-        )}
+        className={cn(READONLY, DATE_FIELDS.has(field) && "font-mono", className)}
       />
     </Field>
   )
+
+  /** แท็บลูกค้าอ่านอย่างเดียวในโหมดแก้ไข (ขอไว้ก่อน) — เปลี่ยนเป็น false เพื่อให้แก้ได้อีก */
+  const customerLocked = mode === "edit"
+
+  /** ช่องข้อความของแท็บลูกค้า — ล็อกอยู่เป็นช่องอ่านอย่างเดียว ไม่ล็อกเป็นช่องกรอกปกติ */
+  const customerText = (field: SoField) =>
+    customerLocked ? readonlyText(field) : text(field)
+
+  /** แท็บสินค้าอ่านอย่างเดียวในโหมดแก้ไข (ขอไว้ก่อน) — เปลี่ยนเป็น false เพื่อให้แก้ได้อีก */
+  const productLocked = mode === "edit"
+
+  /** ช่องข้อความของแท็บสินค้า — ล็อกอยู่เป็นช่องอ่านอย่างเดียว ไม่ล็อกเป็นช่องกรอกปกติ */
+  const productText = (field: SoField) =>
+    productLocked ? readonlyText(field) : text(field)
+
+  /** แท็บการชำระเงินอ่านอย่างเดียวในโหมดแก้ไข (ขอไว้ก่อน) — เปลี่ยนเป็น false เพื่อให้แก้ได้อีก */
+  const paymentLocked = mode === "edit"
+
+  /** ช่องตัวเลขของแท็บการชำระเงิน — ล็อกอยู่ยังชิดขวา/เลขกว้างเท่ากันเหมือนช่องตัวเลขปกติ */
+  const paymentNum = (field: SoField) =>
+    paymentLocked
+      ? readonlyText(field, NUMERIC)
+      : num(field)
+
+  /** แท็บการจัดส่งอ่านอย่างเดียวในโหมดแก้ไข (ขอไว้ก่อน) ยกเว้นเลขพัสดุ — เปลี่ยนเป็น false เพื่อให้แก้ได้อีก */
+  const shippingLocked = mode === "edit"
 
   /**
    * ช่องตัวเลข — พิมพ์ได้แค่ตัวเลข (ดู onlyNumber) ชิดขวาและเลขความกว้างเท่ากัน
@@ -358,7 +420,7 @@ export function FormModal({
         inputMode={integer ? "numeric" : "decimal"}
         placeholder={integer ? "" : "0.00"}
         onChange={(event) => set(field, onlyNumber(event.target.value, !integer))}
-        className="text-right font-mono tabular-nums"
+        className={cn(EDITABLE, NUMERIC)}
       />
     </Field>
   )
@@ -396,6 +458,20 @@ export function FormModal({
   const channelLogo = options.broadcasts.find(
     (option) => option.name === values.channel
   )?.logo
+
+  /**
+   * ผู้ขายของแถวนี้แบบมีรหัส ("code — name") — ใช้ตอนช่องผู้ขายอ่านอย่างเดียว ให้ตรงกับป้ายใน dropdown
+   * ตาราง so เก็บแค่ vendor_name (ไม่มีรหัส) จึงหารหัสจากทะเบียนด้วยชื่อ · ชื่อผู้ขายซ้ำกันได้
+   * เจอชื่อนี้คนเดียวถึงใส่รหัส — ไม่เจอหรือเจอหลายคน (เดาไม่ได้ว่าคนไหน) โชว์ชื่อเปล่าตามที่เก็บ
+   * ค่าที่ส่งไปกับ -action ยังเป็น vendor_name เดิม ป้ายนี้แค่แสดงผล
+   */
+  const vendorMatches = options.vendors.filter(
+    (vendor) => vendor.name === values.vendor_name
+  )
+  const vendorLabel =
+    vendorMatches.length === 1
+      ? `${vendorMatches[0].code} — ${vendorMatches[0].name}`
+      : values.vendor_name
 
   /** ผู้ขาย: ป้ายมี code นำหน้า เพราะชื่อผู้ขายซ้ำกันได้ และค้นด้วย code ก็ได้ */
   const vendorOptions: SelectOptionItem[] = options.vendors.map((vendor) => ({
@@ -464,7 +540,9 @@ export function FormModal({
               กว้างขั้นต่ำเกินจอมือถือ ให้แถบแท็บเลื่อนแนวนอนเองแทนที่จะดันทั้งฟอร์มล้นขอบ */}
           <div className="grid min-h-0 flex-1 auto-rows-max grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto p-4">
             {/* so_code + ชื่อสินค้า อยู่นอกแท็บเสมอ — คู่นี้ (กับ product_group) คือ unique key ของแถว
-                ข้อความ 400 "so_code with this product already exists" ชี้มาที่สองช่องนี้ */}
+                ข้อความ 400 "so_code with this product already exists" ชี้มาที่สองช่องนี้
+                รหัสสินค้า (item_code) ย้ายออกมาจากแท็บสินค้า · จัดเป็นสองแถวบนตาราง 3 ช่อง:
+                แถวบน เลขที่ใบ (ช่องเดียว) · แถวล่าง รหัสสินค้า + ชื่อสินค้ากินสองช่อง */}
             <div className="border-border/60 bg-card from-chart-1/6 to-chart-5/6 relative grid gap-4 overflow-hidden rounded-lg border bg-gradient-to-br via-transparent p-3 pt-4 sm:grid-cols-3">
               <span
                 aria-hidden
@@ -486,6 +564,7 @@ export function FormModal({
                     aria-required
                     aria-invalid={errorOf("so_code") ? true : undefined}
                     className={cn(
+                      EDITABLE,
                       "font-mono",
                       errorOf("so_code") ? INVALID_FIELD : undefined
                     )}
@@ -495,7 +574,8 @@ export function FormModal({
                 // edit: แสดงอย่างเดียว แก้ไม่ได้ — เลขที่ใบผูกกับใบที่ออกไปแล้วและเป็นส่วนหนึ่งของ
                 // unique key ของแถว (so_code, product_name, product_group) · ค่ายังถูกส่งไปกับ
                 // -action ทุกครั้งเหมือนเดิม (อยู่ใน values) ไม่ได้หายไปเพราะช่องอ่านอย่างเดียว
-                <Field id="so-so_code" label={tcol("so_code")} hint={tform("soCodeReadonlyHint")}>
+                // คำอธิบายใต้ช่อง ("เลขที่ใบออกไปแล้ว…") ซ่อนไว้ — เปิดกลับ: ใส่ hint={tform("soCodeReadonlyHint")}
+                <Field id="so-so_code" label={tcol("so_code")}>
                   <Input
                     id="so-so_code"
                     value={values.so_code}
@@ -505,6 +585,11 @@ export function FormModal({
                   />
                 </Field>
               )}
+              {/* รหัสสินค้า — ขึ้นแถวใหม่เสมอ (col-start-1) ช่องที่เหลือของแถวบนปล่อยว่างไว้
+                  โหมดแก้ไขอ่านอย่างเดียว (ค่ายังถูกส่งไปกับ -action ตามเดิม) · โหมดเพิ่มยังพิมพ์ได้ */}
+              <div className="sm:col-start-1">
+                {mode === "add" ? text("item_code") : readonlyText("item_code")}
+              </div>
               {/* ชื่อสินค้ายาวมาก กินสองช่องที่เหลือของแถว
                   โหมดแก้ไข: อ่านอย่างเดียวเหมือน so_code — เป็นอีกส่วนของ unique key
                   (so_code, product_name, product_group) ของแถว · ค่ายังถูกส่งไปกับ -action ตามเดิม */}
@@ -515,7 +600,8 @@ export function FormModal({
                   <Field
                     id="so-product_name"
                     label={tcol("product_name")}
-                    hint={tform("productNameReadonlyHint")}
+                    // คำอธิบายใต้ช่อง ("ชื่อสินค้าผูกกับรายการ…") ซ่อนไว้ — เปิดกลับด้วยการเอา comment ออก
+                    // hint={tform("productNameReadonlyHint")}
                   >
                     <Input
                       id="so-product_name"
@@ -612,103 +698,159 @@ export function FormModal({
                     value={values.remark}
                     placeholder="..."
                     onChange={(event) => set("remark", event.target.value)}
+                    className={EDITABLE}
                   />
                 </Field>
               </TabsContent>
 
+              {/* แท็บลูกค้า — โหมดแก้ไขอ่านอย่างเดียวทั้งแท็บไว้ก่อน (customerLocked) · โหมดเพิ่มยังกรอกได้
+                  ค่าทุกช่องยังอยู่ใน values และถูกส่งไปกับ -action เหมือนเดิม · ปลดล็อก: ให้ customerLocked เป็น false */}
               <TabsContent value="customer" className={cn(TAB_PANEL, ACCENTS.aqua.panel)}>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {/* ชื่อผู้สั่งยาวกว่าเบอร์ กินสองช่องของแถว */}
-                  <div className="sm:col-span-2">{text("name")}</div>
-                  {text("tel")}
+                  {/* ชื่อผู้สั่งยาวกว่าเบอร์ กินสองช่องของแถว
+                      พิมพ์เองได้ หรือเลือกจากทะเบียนลูกค้าที่ค้นขึ้นมาระหว่างพิมพ์ — เลือกแล้วเบอร์โทร
+                      (และรหัสลูกค้าที่ซ่อนอยู่) เปลี่ยนตาม · ช่องนี้เป็น input จริง ป้ายจึงผูก htmlFor ได้ */}
+                  <div className="sm:col-span-2">
+                    {customerLocked ? (
+                      readonlyText("name")
+                    ) : (
+                      <Field id="so-name" label={tcol("name")}>
+                        <CustomerSelect
+                          id="so-name"
+                          placeholder={tform("customerSearch")}
+                          value={values.name}
+                          onType={typeCustomer}
+                          onPick={pickCustomer}
+                        />
+                      </Field>
+                    )}
+                  </div>
+                  {customerText("tel")}
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
+                {/* ซ่อนรหัสลูกค้า — ค่ายังอยู่ใน values และยังส่งไปกับ -action ตามเดิม (ไม่งั้นคอลัมน์จะถูกล้างเป็น NULL) */}
+                {/* <div className="grid gap-4 sm:grid-cols-3">
                   {/* ลูกค้าในทะเบียนมี ~99,000 ราย ไม่มีเส้น -get-option ให้ทำ dropdown จึงกรอกเลขเอง
-                      (ว่างหรือ 0 = ไม่เชื่อมโยง · เลขที่ไม่มีจริง API ตอบ 400 "customer_id not found") */}
+                      (ว่างหรือ 0 = ไม่เชื่อมโยง · เลขที่ไม่มีจริง API ตอบ 400 "customer_id not found") *\/}
                   {num("customer_id", { integer: true, hint: tform("customerIdHint") })}
-                </div>
+                </div> */}
                 <Field id="so-address" label={tcol("address")}>
                   <Textarea
                     id="so-address"
                     rows={2}
                     value={values.address}
-                    placeholder="..."
-                    onChange={(event) => set("address", event.target.value)}
+                    placeholder={customerLocked ? undefined : "..."}
+                    readOnly={customerLocked}
+                    aria-readonly={customerLocked || undefined}
+                    // ล็อกแล้วไม่ผูก onChange เลย — readOnly กันแค่การพิมพ์ ไม่ได้กันโค้ดที่ยิง input event
+                    onChange={
+                      customerLocked
+                        ? undefined
+                        : (event) => set("address", event.target.value)
+                    }
+                    className={customerLocked ? READONLY : EDITABLE}
                   />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {text("subdistrict")}
-                  {text("district")}
+                  {customerText("subdistrict")}
+                  {customerText("district")}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="sm:col-span-2">{text("province")}</div>
-                  {text("zipcode")}
+                  <div className="sm:col-span-2">{customerText("province")}</div>
+                  {customerText("zipcode")}
                 </div>
               </TabsContent>
 
+              {/* แท็บสินค้า — โหมดแก้ไขอ่านอย่างเดียวทั้งแท็บไว้ก่อน (productLocked) · โหมดเพิ่มยังกรอกได้
+                  ค่าทุกช่องยังอยู่ใน values และถูกส่งไปกับ -action เหมือนเดิม · ปลดล็อก: ให้ productLocked เป็น false */}
               <TabsContent value="product" className={cn(TAB_PANEL, ACCENTS.yellow.panel)}>
+                {/* ผู้ขาย — แถวบนสุด เต็มความกว้างแถวเดียว (ชื่อบริษัทยาว) */}
+                {productLocked
+                  ? readonlyText("vendor_name", undefined, vendorLabel)
+                  : select("vendor_name", vendorOptions)}
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {text("item_code")}
-                  {text("product_group")}
-                  {text("barcode")}
+                  {/* รหัสสินค้าย้ายไปอยู่แถวบนสุดคู่กับชื่อสินค้าแล้ว (นอกแท็บ) */}
+                  {productText("product_group")}
+                  {productText("barcode")}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {select("product_type_name", byName(options.productTypes))}
-                  {text("supplier_name")}
-                  {select("vendor_name", vendorOptions)}
+                  {productLocked
+                    ? readonlyText("product_type_name")
+                    : select("product_type_name", byName(options.productTypes))}
+                  {productText("supplier_name")}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {num("qty")}
-                  {num("price_per_unit")}
+                  {productLocked ? readonlyText("qty", NUMERIC) : num("qty")}
+                  {productLocked
+                    ? readonlyText("price_per_unit", NUMERIC)
+                    : num("price_per_unit")}
                 </div>
               </TabsContent>
 
+              {/* แท็บการชำระเงิน — โหมดแก้ไขอ่านอย่างเดียวทั้งแท็บไว้ก่อน (paymentLocked) · โหมดเพิ่มยังกรอกได้
+                  select สองตัวกลายเป็นกล่องข้อความอ่านอย่างเดียว (ไม่มีรูปในตัวเลือก ใช้ <Input readOnly> ได้)
+                  ค่าทุกช่องยังอยู่ใน values และถูกส่งไปกับ -action เหมือนเดิม · ปลดล็อก: ให้ paymentLocked เป็น false */}
               <TabsContent value="payment" className={cn(TAB_PANEL, ACCENTS.orange.panel)}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {/* วิธีชำระ: ทะเบียน payment_type + ค่าที่งาน sync เขียนจริง */}
-                  {select(
-                    "pay_by",
-                    merge(fromValues(SO_PAY_BYS), byName(options.payTypes))
-                  )}
+                  {paymentLocked
+                    ? readonlyText("pay_by")
+                    : select(
+                        "pay_by",
+                        merge(fromValues(SO_PAY_BYS), byName(options.payTypes))
+                      )}
                   {/* สถานะชำระ: ทะเบียน status_payment + ค่าที่งาน sync เขียนจริง */}
-                  {select(
-                    "is_payment",
-                    merge(fromValues(SO_IS_PAYMENTS), byName(options.paymentStatuses))
-                  )}
-                  {text("payment_date")}
+                  {paymentLocked
+                    ? readonlyText("is_payment")
+                    : select(
+                        "is_payment",
+                        merge(fromValues(SO_IS_PAYMENTS), byName(options.paymentStatuses))
+                      )}
+                  {/* วันที่ชำระเงิน — ซ่อนไว้ (ค่ายังอยู่ใน values และถูกส่งไปกับ -action เหมือนเดิม
+                      ไม่ได้กลายเป็น NULL) · เปิดกลับได้ด้วยการเอา comment ออก */}
+                  {/* {text("payment_date")} */}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {num("amount")}
-                  {num("pay_amount")}
-                  {num("discount")}
+                  {paymentNum("amount")}
+                  {paymentNum("pay_amount")}
+                  {paymentNum("discount")}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {num("shipping")}
-                  {text("cash_in")}
+                  {paymentNum("shipping")}
+                  {paymentLocked ? readonlyText("cash_in") : text("cash_in")}
                 </div>
               </TabsContent>
 
+              {/* แท็บการจัดส่ง — โหมดแก้ไขอ่านอย่างเดียวไว้ก่อน (shippingLocked) ยกเว้นเลขพัสดุที่ยังกรอกได้
+                  โหมดเพิ่มยังกรอกได้ทุกช่อง · ค่าทุกช่องยังถูกส่งไปกับ -action เหมือนเดิม (รวม shipment_type_id)
+                  ปลดล็อก: ให้ shippingLocked เป็น false */}
               <TabsContent value="shipping" className={cn(TAB_PANEL, ACCENTS.magenta.panel)}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {/* ประเภทการจัดส่ง: เลือกแล้วเขียน shipment_type_id ให้ด้วย (ดู pickShipmentType) */}
-                  {select(
-                    "shipment_type",
-                    byName(options.shipmentTypes),
-                    pickShipmentType
-                  )}
-                  {text("shipping_by")}
+                  {shippingLocked
+                    ? readonlyText("shipment_type")
+                    : select(
+                        "shipment_type",
+                        byName(options.shipmentTypes),
+                        pickShipmentType
+                      )}
+                  {shippingLocked ? readonlyText("shipping_by") : text("shipping_by")}
+                  {/* เลขพัสดุ — ช่องเดียวในแท็บที่แก้ได้เสมอ */}
                   {text("shipping_code")}
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
+                {/* วันที่จัดส่ง / วันที่รับสินค้า / วันที่นัดหมาย — ซ่อนไว้ทั้งแถว (ค่ายังอยู่ใน values
+                    และถูกส่งไปกับ -action เหมือนเดิม ไม่ได้กลายเป็น NULL) · เปิดกลับได้ด้วยการเอา comment ออก */}
+                {/* <div className="grid gap-4 sm:grid-cols-3">
                   {text("shipping_date")}
                   {text("receive_date")}
                   {text("appointment_date")}
-                </div>
+                </div> */}
               </TabsContent>
             </Tabs>
 
             {/* คอลัมน์ของงาน sync — อ่านอย่างเดียว มีแต่ตอนแก้ไข วางใต้แท็บ เห็นได้ตลอด */}
-            {mode === "edit" && so ? <SyncInfo so={so} /> : null}
+            {/* ไฟล์ต้นทาง / ซิงก์เมื่อ / แก้ไขล่าสุด — ซ่อนไว้ก่อน (แค่แสดงผล ไม่ได้อยู่ใน values ไม่มีผลกับการบันทึก)
+                เปิดกลับ: เอา comment ออก (และเอา comment ของ SyncInfo / formatStamp ท้ายไฟล์ออกด้วยถ้า eslint บ่น) */}
+            {/* {mode === "edit" && so ? <SyncInfo so={so} /> : null} */}
           </div>
 
           {/* ผลการบันทึก — อยู่นอกกล่องเลื่อน ติดเหนือปุ่มเสมอ (ในกล่องเลื่อนแล้วมักอยู่ใต้ขอบล่าง
@@ -757,43 +899,44 @@ export function FormModal({
 
 /** คอลัมน์ที่งาน sync เป็นคนเขียน — อ่านอย่างเดียว ช่องเรียงกันเฉย ๆ มีแถบสีซ้ายของตัวเอง
  *  แถวที่เพิ่มจากหน้านี้ไม่มี source_file (โชว์ขีดจาง ๆ ให้รู้ว่าไม่ได้มาจากไฟล์) */
-function SyncInfo({ so }: { so: So }) {
-  const tcol = useTranslations("so.columns")
-
-  const info: {
-    key: "source_file" | "synced_at" | "updated_at"
-    value: string | null
-    accent: Accent
-  }[] = [
-    // ชื่อไฟล์โชว์ตามที่เก็บ ส่วนสองตัวที่เป็นเวลาแปลงรูปให้อ่านง่าย (ดู formatStamp)
-    { key: "source_file", value: so.source_file, accent: "blue" },
-    { key: "synced_at", value: formatStamp(so.synced_at), accent: "aqua" },
-    { key: "updated_at", value: formatStamp(so.updated_at), accent: "magenta" },
-  ]
-
-  return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-      {info.map((item) => (
-        <div
-          key={item.key}
-          className={cn(
-            "min-w-0 rounded-md border-l-4 px-2.5 py-1.5",
-            ACCENTS[item.accent].tile
-          )}
-        >
-          <div className="text-muted-foreground truncate text-xs">
-            {tcol(item.key)}
-          </div>
-          <div className="truncate text-sm font-medium" title={item.value ?? undefined}>
-            {item.value ?? (
-              <span className="text-muted-foreground/60 font-normal">—</span>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
+// ซ่อนไว้ก่อน (ตามที่สั่ง) — เปิดกลับ: เอา comment ของฟังก์ชันนี้ + formatStamp + จุดที่เรียกในฟอร์มออก
+// function SyncInfo({ so }: { so: So }) {
+//   const tcol = useTranslations("so.columns")
+//
+//   const info: {
+//     key: "source_file" | "synced_at" | "updated_at"
+//     value: string | null
+//     accent: Accent
+//   }[] = [
+//     // ชื่อไฟล์โชว์ตามที่เก็บ ส่วนสองตัวที่เป็นเวลาแปลงรูปให้อ่านง่าย (ดู formatStamp)
+//     { key: "source_file", value: so.source_file, accent: "blue" },
+//     { key: "synced_at", value: formatStamp(so.synced_at), accent: "aqua" },
+//     { key: "updated_at", value: formatStamp(so.updated_at), accent: "magenta" },
+//   ]
+//
+//   return (
+//     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+//       {info.map((item) => (
+//         <div
+//           key={item.key}
+//           className={cn(
+//             "min-w-0 rounded-md border-l-4 px-2.5 py-1.5",
+//             ACCENTS[item.accent].tile
+//           )}
+//         >
+//           <div className="text-muted-foreground truncate text-xs">
+//             {tcol(item.key)}
+//           </div>
+//           <div className="truncate text-sm font-medium" title={item.value ?? undefined}>
+//             {item.value ?? (
+//               <span className="text-muted-foreground/60 font-normal">—</span>
+//             )}
+//           </div>
+//         </div>
+//       ))}
+//     </div>
+//   )
+// }
 
 /** ป้ายกำกับ + ช่องกรอก วางแบบเดียวกันทุกช่อง */
 function Field({

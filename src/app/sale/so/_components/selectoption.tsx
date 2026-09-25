@@ -68,7 +68,7 @@ export function SelectOption({
           aria-invalid={invalid || undefined}
           // cn (tailwind-merge) ให้ border-destructive ทับ border-input จริง — ต่อสตริงเฉย ๆ ตัวไหนชนะขึ้นกับลำดับใน stylesheet
           className={cn(
-            "border-input bg-card/80 data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-between gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30",
+            "border-input bg-card data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-between gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30",
             invalid &&
               "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
           )}

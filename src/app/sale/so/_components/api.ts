@@ -5,6 +5,7 @@ import {
 } from "@/app/login/components/api"
 import type {
   BroadcastOption,
+  CustomerOption,
   NamedOption,
   So,
   SoDeleted,
@@ -79,7 +80,9 @@ export type SoQuery = {
   itemCode?: string
   productName?: string
   sellBy?: string
-  /** create_date ตั้งแต่วันนี้ — รูปแบบ YYYY-MM-DD เท่านั้น ผิดรูป API ตอบ 400 */
+  /** ค้นจาก so.vendor_name — ตัวกรองผู้ขายส่งชื่อเต็มจาก /vendor-get-option (API ค้นแบบมีคำนี้อยู่) */
+  vendorName?: string
+  /** po_date (วันที่สั่งซื้อ) ตั้งแต่วันนี้ — รูปแบบ YYYY-MM-DD เท่านั้น ผิดรูป API ตอบ 400 */
   dateFrom?: string
   dateTo?: string
   page?: number
@@ -91,11 +94,11 @@ const dateParam = (value: string | undefined) =>
   value && /^\d{4}-\d{2}-\d{2}$/.test(value.trim()) ? value.trim() : ""
 
 /**
- * POST /api/web/so-get-list — ใบสั่งขายทั้งหมด เรียง create_date ใหม่สุดก่อน
+ * POST /api/web/so-get-list — ใบสั่งขายทั้งหมด ออเดอร์ใหม่ขึ้นก่อน แล้ว po_date ใหม่สุดก่อน
  *
  * ค้นหา/กรองช่วงวันที่/แบ่งหน้า ทำที่ฝั่งเซิร์ฟเวอร์ทั้งหมด ตารางแค่ส่งเงื่อนไขไปแล้วแสดงผลที่ได้
  * ไม่เจอเลย API ตอบ 200 พร้อม so = [] — ไม่ใช่ error
- * (เรียงด้วย create_date ไม่ใช่ updated_at เพราะงาน sync เขียน updated_at เท่ากันทั้งรอบ)
+ * (เรียงด้วย po_date ไม่ใช่ updated_at เพราะงาน sync เขียน updated_at เท่ากันทั้งรอบ)
  */
 export async function getSoList(query: SoQuery = {}): Promise<SoList> {
   const result = await post<SoList>("so-get-list", {
@@ -107,6 +110,7 @@ export async function getSoList(query: SoQuery = {}): Promise<SoList> {
     item_code: query.itemCode ?? "",
     product_name: query.productName ?? "",
     sell_by: query.sellBy ?? "",
+    vendor_name: query.vendorName ?? "",
     date_from: dateParam(query.dateFrom),
     date_to: dateParam(query.dateTo),
     page: query.page ?? 1,
@@ -199,4 +203,26 @@ export async function getSoOptions(): Promise<SoOptions> {
     productTypes,
     vendors,
   }
+}
+
+/**
+ * POST /api/web/customer-get-option — ค้นลูกค้าสำหรับช่องผู้สั่งซื้อ
+ *
+ * ทะเบียนลูกค้ามี ~99,000 คน เส้นนี้จึงไม่คืนทั้งตาราง: ค้นด้วย name หรือ tel (ilike "มีคำนี้อยู่")
+ * แล้วได้ไม่เกิน 20 คน · ไม่ส่งคำค้น = ลูกค้าล่าสุด 20 คน
+ * คำค้นที่เป็นตัวเลขล้วน (ยอมขีด/เว้นวรรค) ถือเป็นเบอร์โทร นอกนั้นค้นจากชื่อ
+ * ต่างจาก getSoOptions ตรงที่ throw ได้ — ช่องค้นหาต้องบอกผู้ใช้ว่าค้นไม่สำเร็จ ไม่ใช่ "ไม่พบ"
+ */
+export async function getCustomerOptions(
+  search: string
+): Promise<CustomerOption[]> {
+  const text = search.trim()
+  const digits = text.replace(/[\s-]/g, "")
+  const byTel = /^\d+$/.test(digits)
+  return (
+    (await post<CustomerOption[]>("customer-get-option", {
+      name: byTel ? "" : text,
+      tel: byTel ? digits : "",
+    })) ?? []
+  )
 }
