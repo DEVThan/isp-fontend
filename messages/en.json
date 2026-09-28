@@ -777,6 +777,42 @@
     "inactive": "Inactive",
     "loadError": "Could not load vendors"
   },
+  "vendorexporttemplates": {
+    "title": "Vendor export templates",
+    "description": "{count} export templates in total",
+    "columns": {
+      "no": "No.",
+      "name": "Template name",
+      "path": "Template file",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "form": {
+      "addTitle": "Add export template",
+      "editTitle": "Edit export template",
+      "addDescription": "Fill in the details of the export template to add",
+      "editDescription": "Change the details of the selected export template",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this export template?",
+      "deleteDescription": "“{name}” will be removed permanently and cannot be restored",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete",
+      "fileBrowse": "Choose file",
+      "fileChange": "Change file",
+      "fileUploading": "Uploading…",
+      "fileEmpty": "No file yet",
+      "fileUploadError": "Could not upload the file",
+      "fileNotExcel": "Only Excel files (.xlsx, .xlsm, .xls)",
+      "fileTooLarge": "File is larger than 10 MB",
+      "fileHint": "Excel .xlsx, .xlsm or .xls, up to 10 MB",
+      "filePendingHint": "The file will be uploaded after the template is saved",
+      "fileSaveFailed": "Template saved, but the file could not be uploaded — open Edit to add the file again"
+    },
+    "active": "Active",
+    "inactive": "Inactive",
+    "loadError": "Could not load export templates"
+  },
   "customer": {
     "title": "Customers",
     "description": "{count} customers in total",

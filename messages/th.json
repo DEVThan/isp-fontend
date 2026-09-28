@@ -777,6 +777,42 @@
     "inactive": "ปิดใช้งาน",
     "loadError": "ดึงข้อมูลผู้ขายไม่สำเร็จ"
   },
+  "vendorexporttemplates": {
+    "title": "เทมเพลตส่งออกผู้ขาย",
+    "description": "เทมเพลตส่งออกทั้งหมด {count} รายการ",
+    "columns": {
+      "no": "ลำดับ",
+      "name": "ชื่อเทมเพลต",
+      "path": "ไฟล์เทมเพลต",
+      "detail": "รายละเอียด",
+      "status": "สถานะ"
+    },
+    "form": {
+      "addTitle": "เพิ่มเทมเพลตส่งออก",
+      "editTitle": "แก้ไขเทมเพลตส่งออก",
+      "addDescription": "กรอกข้อมูลเทมเพลตส่งออกที่จะเพิ่มเข้าตาราง",
+      "editDescription": "แก้ข้อมูลของเทมเพลตส่งออกที่เลือกไว้",
+      "saved": "บันทึกเรียบร้อย",
+      "saveError": "บันทึกไม่สำเร็จ",
+      "deleteTitle": "ลบเทมเพลตส่งออกนี้?",
+      "deleteDescription": "กำลังจะลบ “{name}” ออกจากระบบถาวร กู้คืนไม่ได้",
+      "deleted": "ลบเรียบร้อย",
+      "deleteError": "ลบไม่สำเร็จ",
+      "fileBrowse": "เลือกไฟล์",
+      "fileChange": "เปลี่ยนไฟล์",
+      "fileUploading": "กำลังอัปโหลด…",
+      "fileEmpty": "ยังไม่มีไฟล์",
+      "fileUploadError": "อัปโหลดไฟล์ไม่สำเร็จ",
+      "fileNotExcel": "เลือกได้เฉพาะไฟล์ Excel (.xlsx, .xlsm, .xls)",
+      "fileTooLarge": "ไฟล์ใหญ่เกิน 10 MB",
+      "fileHint": "ไฟล์ Excel .xlsx, .xlsm หรือ .xls ไม่เกิน 10 MB",
+      "filePendingHint": "ไฟล์จะถูกอัปโหลดหลังบันทึกเทมเพลต",
+      "fileSaveFailed": "บันทึกเทมเพลตแล้ว แต่อัปโหลดไฟล์ไม่สำเร็จ — เปิดแก้ไขเพื่อใส่ไฟล์อีกครั้ง"
+    },
+    "active": "เปิดใช้งาน",
+    "inactive": "ปิดใช้งาน",
+    "loadError": "ดึงข้อมูลเทมเพลตส่งออกไม่สำเร็จ"
+  },
   "customer": {
     "title": "ลูกค้า",
     "description": "ลูกค้าทั้งหมด {count} ราย",

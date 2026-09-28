@@ -777,6 +777,42 @@
     "inactive": "ပိတ်ထား",
     "loadError": "ရောင်းချသူများ ရယူ၍ မရပါ"
   },
+  "vendorexporttemplates": {
+    "title": "ရောင်းချသူ ထုတ်ယူမှု ပုံစံများ",
+    "description": "ထုတ်ယူမှု ပုံစံ စုစုပေါင်း {count} ခု",
+    "columns": {
+      "no": "စဉ်",
+      "name": "ပုံစံ အမည်",
+      "path": "ပုံစံ ဖိုင်",
+      "detail": "အသေးစိတ်",
+      "status": "အခြေအနေ"
+    },
+    "form": {
+      "addTitle": "ထုတ်ယူမှု ပုံစံ ထည့်ရန်",
+      "editTitle": "ထုတ်ယူမှု ပုံစံ ပြင်ရန်",
+      "addDescription": "ထည့်မည့် ထုတ်ယူမှု ပုံစံ၏ အချက်အလက်ကို ဖြည့်ပါ",
+      "editDescription": "ရွေးထားသော ထုတ်ယူမှု ပုံစံ၏ အချက်အလက်ကို ပြင်ပါ",
+      "saved": "သိမ်းပြီးပါပြီ",
+      "saveError": "သိမ်း၍ မရပါ",
+      "deleteTitle": "ဤထုတ်ယူမှု ပုံစံကို ဖျက်မလား?",
+      "deleteDescription": "“{name}” ကို အပြီးတိုင် ဖျက်ပါမည်၊ ပြန်ယူ၍ မရပါ",
+      "deleted": "ဖျက်ပြီးပါပြီ",
+      "deleteError": "ဖျက်၍ မရပါ",
+      "fileBrowse": "ဖိုင် ရွေးရန်",
+      "fileChange": "ဖိုင် ပြောင်းရန်",
+      "fileUploading": "တင်နေသည်…",
+      "fileEmpty": "ဖိုင် မရှိသေးပါ",
+      "fileUploadError": "ဖိုင် တင်၍ မရပါ",
+      "fileNotExcel": "Excel ဖိုင်သာ (.xlsx, .xlsm, .xls)",
+      "fileTooLarge": "ဖိုင် 10 MB ထက် ကြီးနေသည်",
+      "fileHint": "Excel .xlsx, .xlsm သို့မဟုတ် .xls၊ 10 MB အထိ",
+      "filePendingHint": "ပုံစံကို သိမ်းပြီးမှ ဖိုင်ကို တင်ပါမည်",
+      "fileSaveFailed": "ပုံစံကို သိမ်းပြီးပါပြီ၊ သို့သော် ဖိုင် တင်၍ မရပါ — ပြင်ရန် ဖွင့်၍ ဖိုင်ကို ထပ်ထည့်ပါ"
+    },
+    "active": "အသုံးပြုနေသည်",
+    "inactive": "ပိတ်ထားသည်",
+    "loadError": "ထုတ်ယူမှု ပုံစံများကို ယူ၍ မရပါ"
+  },
   "customer": {
     "title": "ဖောက်သည်",
     "description": "ဖောက်သည် စုစုပေါင်း {count} ဦး",

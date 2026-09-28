@@ -4,16 +4,16 @@ import {
   type ApiEnvelope,
 } from "@/app/login/components/api"
 import type {
-  Vendor,
-  VendorDeleted,
-  VendorFormMode,
-  VendorFormValues,
-  VendorList,
-  VendorOption,
+  VendorExportTemplate,
+  VendorExportTemplateDeleted,
+  VendorExportTemplateFormMode,
+  VendorExportTemplateFormValues,
+  VendorExportTemplateList,
+  VendorExportTemplateOption,
 } from "@/app/vendor/vendor_export_template/_components/model"
 
 /**
- * api.ts — เส้น API ของหน้าจัดการผู้ขาย (ตาราง vendor)
+ * api.ts — เส้น API ของหน้าเทมเพลตส่งออกผู้ขาย (ตาราง vendor_export_template)
  *
  * ฝั่ง browser ยิง "/api/web" แล้วให้ rewrite ใน next.config.ts ส่งต่อไป Flask (เลี่ยง CORS)
  * ฝั่ง server ไม่มี origin ให้อ้าง path สัมพัทธ์จึงใช้ไม่ได้ ต้องใช้ URL เต็มจาก API_BASE_URL
@@ -24,10 +24,10 @@ const API_BASE_URL =
     : (process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/web")
 
 /** ขอทีเดียวได้มากสุดเท่าที่ API ยอม (_PER_PAGE_MAX ฝั่ง Flask) */
-export const VENDOR_PER_PAGE_MAX = 100
+export const TEMPLATE_PER_PAGE_MAX = 100
 
 /** จำนวนแถวต่อหน้าที่หน้านี้ใช้ตอนเปิดครั้งแรก */
-export const VENDOR_PAGE_SIZE = 30
+export const TEMPLATE_PAGE_SIZE = 30
 
 /** ยิง POST พร้อม body แล้วแกะ envelope มาตรฐานของ /api/web ให้ — ผิดพลาดจะโยน ApiError */
 async function post<T>(path: string, body: unknown): Promise<T | undefined> {
@@ -60,10 +60,8 @@ async function post<T>(path: string, body: unknown): Promise<T | undefined> {
   return envelope.result
 }
 
-export type VendorQuery = {
-  /** ค้นจาก vendor.code ฝั่งเซิร์ฟเวอร์ (ilike ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ไม่ส่ง = ไม่กรอง */
-  code?: string
-  /** ค้นจาก vendor.name ฝั่งเซิร์ฟเวอร์ (ilike) — ไม่ส่ง = ไม่กรอง */
+export type VendorExportTemplateQuery = {
+  /** ค้นจาก vendor_export_template.name ฝั่งเซิร์ฟเวอร์ (ilike ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ไม่ส่ง = ไม่กรอง */
   name?: string
   /** "active" / "inactive" — null หรือไม่ส่ง = ไม่กรองสถานะ */
   status?: string | null
@@ -72,24 +70,26 @@ export type VendorQuery = {
 }
 
 /**
- * POST /api/web/vendor-get-list — ผู้ขายทั้งหมด (รวมที่ปิดอยู่)
+ * POST /api/web/vendor-export-template-get-list — เทมเพลตทั้งหมด (รวมที่ปิดอยู่)
  *
  * ค้นหา/กรองสถานะ/แบ่งหน้า ทำที่ฝั่งเซิร์ฟเวอร์ทั้งหมด ตารางแค่ส่งเงื่อนไขไปแล้วแสดงผลที่ได้
- * ตารางว่าง API ตอบ 200 พร้อม vendors = [] — ไม่ใช่ error
+ * ตารางว่าง API ตอบ 200 พร้อม vendorexporttemplates = [] — ไม่ใช่ error
  */
-export async function getVendors(
-  query: VendorQuery = {}
-): Promise<VendorList> {
-  const result = await post<VendorList>("vendor-get-list", {
-    code: query.code ?? "",
-    name: query.name ?? "",
-    // ไม่ส่ง active_status เลยเมื่อไม่ได้กรอง — ส่งสตริงว่างไปก็ได้ แต่ไม่ส่งอ่านง่ายกว่าตอน debug
-    ...(query.status ? { active_status: query.status } : {}),
-    page: query.page ?? 1,
-    per_page: query.perPage ?? VENDOR_PAGE_SIZE,
-  })
+export async function getVendorExportTemplates(
+  query: VendorExportTemplateQuery = {}
+): Promise<VendorExportTemplateList> {
+  const result = await post<VendorExportTemplateList>(
+    "vendor-export-template-get-list",
+    {
+      name: query.name ?? "",
+      // ไม่ส่ง active_status เลยเมื่อไม่ได้กรอง — ส่งสตริงว่างไปก็ได้ แต่ไม่ส่งอ่านง่ายกว่าตอน debug
+      ...(query.status ? { active_status: query.status } : {}),
+      page: query.page ?? 1,
+      per_page: query.perPage ?? TEMPLATE_PAGE_SIZE,
+    }
+  )
   return {
-    vendors: result?.vendors ?? [],
+    vendorexporttemplates: result?.vendorexporttemplates ?? [],
     total: result?.total ?? 0,
     page: result?.page ?? 1,
     per_page: result?.per_page ?? 0,
@@ -98,45 +98,89 @@ export async function getVendors(
 }
 
 /**
- * POST /api/web/vendor-get-option — ตัวเลือกผู้ขายที่ active (id + code + name)
+ * POST /api/web/vendor-export-template-get-option — ตัวเลือกเทมเพลตที่ active (id + name + path)
  * ไม่รับพารามิเตอร์ ไม่แบ่งหน้า
  */
-export async function getVendorOptions(): Promise<VendorOption[]> {
+export async function getVendorExportTemplateOptions(): Promise<
+  VendorExportTemplateOption[]
+> {
   return (
-    (await post<VendorOption[]>("vendor-get-option", {})) ??
-    []
+    (await post<VendorExportTemplateOption[]>(
+      "vendor-export-template-get-option",
+      {}
+    )) ?? []
   )
 }
 
 /**
- * POST /api/web/vendor-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
+ * POST /api/web/vendor-export-template-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
  *
  * "add" ส่ง id เป็น 0 (คอลัมน์ id เป็น identity ฐานข้อมูลออกเลขให้เอง) · "edit" ต้องส่ง id ของแถวที่แก้
  * ทั้งสองแบบส่งไปทุกฟิลด์ ไม่ใช่เฉพาะที่แก้ และคืนแถวหลังบันทึกกลับมา
- * code ซ้ำกับแถวอื่น API ตอบ 400 "code already exists" · ยาวเกิน 100 ตัวตอบ 400 เหมือนกัน
+ * ชื่อซ้ำกับแถวอื่น API ตอบ 400 "name already exists" · name/path ยาวเกินตอบ 400 เหมือนกัน
+ * path ส่งว่างได้ (ตอน add ยังไม่มีไฟล์) — path จริงมาจาก uploadVendorExportTemplateFile() ซึ่งเขียนคอลัมน์ให้เอง
  * ข้อความจาก API ถูกโชว์ในฟอร์มตรง ๆ ไม่ได้แปลใหม่
  */
-export async function saveVendor(
-  action: VendorFormMode,
-  values: VendorFormValues,
-  vendorId?: number
-): Promise<Vendor> {
-  return (await post<Vendor>("vendor-action", {
+export async function saveVendorExportTemplate(
+  action: VendorExportTemplateFormMode,
+  values: VendorExportTemplateFormValues,
+  templateId?: number
+): Promise<VendorExportTemplate> {
+  return (await post<VendorExportTemplate>("vendor-export-template-action", {
     action,
-    id: vendorId ?? 0,
+    id: templateId ?? 0,
     ...values,
-  })) as Vendor
+  })) as VendorExportTemplate
 }
 
 /**
- * POST /api/web/vendor-delete — ลบผู้ขายตาม id (ส่งไปแค่ id เท่านั้น)
+ * POST /api/web/vendor-export-template-upload — อัปโหลดไฟล์เทมเพลต Excel (multipart: id + file) คืน path ที่เก็บในคอลัมน์ path
  *
- * ลบออกจากตารางจริง กู้คืนไม่ได้ · ผลลัพธ์คือแถวที่หายไป (ตารางนี้ไม่มีใครอ้างแถวจากมัน)
+ * เก็บที่ /uploads/vendor_export_template/{id}/template/{ชื่อไฟล์} — API ลบไฟล์เดิมทิ้งและเขียน path ลงคอลัมน์ให้เลย
+ * ต้องมีแถวอยู่แล้ว (มี id) ฟอร์มเพิ่มจึงอัปโหลดหลังบันทึกแถวเสร็จ
+ * ไม่ใช้ post() ข้างบน เพราะ body เป็น FormData ไม่ใช่ JSON (ห้ามตั้ง Content-Type เอง ให้ browser ใส่ boundary)
  */
-export async function deleteVendor(
+export async function uploadVendorExportTemplateFile(
+  file: File,
+  templateId: number
+): Promise<string> {
+  const url = `${API_BASE_URL}/vendor-export-template-upload`
+  const form = new FormData()
+  form.append("id", String(templateId))
+  form.append("file", file)
+  let res: Response
+
+  try {
+    res = await fetch(url, { method: "POST", cache: "no-store", body: form })
+  } catch (cause) {
+    throw new ApiError(
+      API_NETWORK_ERROR,
+      `เรียก API ไม่สำเร็จ: ${url} (${String(cause)})`
+    )
+  }
+
+  const envelope = (await res.json().catch(() => null)) as ApiEnvelope<{
+    path: string
+  }> | null
+  if (!envelope) {
+    throw new ApiError(res.status, res.statusText || "Invalid response")
+  }
+  if (!envelope.status || !envelope.result?.path) {
+    throw new ApiError(envelope.resultcode ?? res.status, envelope.message)
+  }
+  return envelope.result.path
+}
+
+/**
+ * POST /api/web/vendor-export-template-delete — ลบเทมเพลตตาม id (ส่งไปแค่ id เท่านั้น)
+ *
+ * ลบออกจากตารางจริง กู้คืนไม่ได้ · ผลลัพธ์คือแถวที่หายไป
+ */
+export async function deleteVendorExportTemplate(
   id: number
-): Promise<VendorDeleted> {
-  return (await post<VendorDeleted>("vendor-delete", {
-    id,
-  })) as VendorDeleted
+): Promise<VendorExportTemplateDeleted> {
+  return (await post<VendorExportTemplateDeleted>(
+    "vendor-export-template-delete",
+    { id }
+  )) as VendorExportTemplateDeleted
 }

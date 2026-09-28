@@ -2,35 +2,34 @@
 
 import * as React from "react"
 import {
+  FileSpreadsheet,
   LoaderCircle,
   Pencil,
   Plus,
   Search,
   SearchX,
-  Truck,
   Trash2,
   TriangleAlert,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import {
-  getVendors,
-  VENDOR_PAGE_SIZE,
+  getVendorExportTemplates,
+  TEMPLATE_PAGE_SIZE,
 } from "@/app/vendor/vendor_export_template/_components/api"
 import { DeleteModal } from "@/app/vendor/vendor_export_template/_components/delete_modal"
 import { FormModal } from "@/app/vendor/vendor_export_template/_components/form_modal"
 import {
-  isVendorActive,
-  parseSenderCodes,
-  VENDOR_ACTIVE,
-  VENDOR_INACTIVE,
-  type Vendor,
-  type VendorFormMode,
-  type VendorList,
+  isTemplateActive,
+  templateFileName,
+  TEMPLATE_ACTIVE,
+  TEMPLATE_INACTIVE,
+  type VendorExportTemplate,
+  type VendorExportTemplateFormMode,
+  type VendorExportTemplateList,
 } from "@/app/vendor/vendor_export_template/_components/model"
 import { TablePagination } from "@/app/vendor/vendor_export_template/_components/pagination"
 import { SelectOption } from "@/app/vendor/vendor_export_template/_components/selectoption"
-import { SenderModal } from "@/app/vendor/vendor_export_template/_components/sender_modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -48,22 +47,18 @@ import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 8
+const COLUMN_COUNT = 6
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
-
-/** ผู้ขายรายนี้มีรหัสผู้ส่งกี่รายการ — 0 คือไม่ต้องโชว์ปุ่มในตาราง */
-const senderCount = (vendor: Vendor) =>
-  parseSenderCodes(vendor.sender_code).length
 
 /**
  * รายการว่างตอนเริ่ม — ตารางดึงหน้าแรกเองตอนเปิดหน้า (page.tsx ไม่ดึงให้แล้ว)
  * page.tsx เคยดึงให้บน server แต่ทุกครั้งที่เปลี่ยนภาษา (router.refresh) server เรนเดอร์หน้าใหม่ = ยิง API ซ้ำ
  * ทั้งที่ข้อมูลไม่ได้ขึ้นกับภาษาเลย · ตอนนี้ refresh เรนเดอร์ใหม่แค่ข้อความ ตารางตัวเดิมอยู่ต่อ ไม่ยิง API และตัวกรองไม่รีเซ็ต
  */
-const EMPTY_LIST: VendorList = {
-  vendors: [],
+const EMPTY_LIST: VendorExportTemplateList = {
+  vendorexporttemplates: [],
   total: 0,
   page: 1,
   per_page: 0,
@@ -73,13 +68,12 @@ const EMPTY_LIST: VendorList = {
 export function Tables() {
   const t = useTranslations("common.table")
   /** ชื่อหน้า + จำนวนรายการในหัวหน้า — อยู่ในตารางเพราะจำนวนมาจากข้อมูลที่ตารางดึงเอง */
-  const tpage = useTranslations("vendors")
+  const tpage = useTranslations("vendorexporttemplates")
   const tall = useTranslations("common")
-  const tr = useTranslations("vendors")
-  const tcol = useTranslations("vendors.columns")
-  const tform = useTranslations("vendors.form")
+  const tr = useTranslations("vendorexporttemplates")
+  const tcol = useTranslations("vendorexporttemplates.columns")
 
-  const [list, setList] = React.useState<VendorList>(EMPTY_LIST)
+  const [list, setList] = React.useState<VendorExportTemplateList>(EMPTY_LIST)
   const [failed, setFailed] = React.useState(false)
   // เริ่มที่ true — หน้าแรกกำลังดึงอยู่ตั้งแต่เปิดหน้า (ดู effect ใต้ load)
   const [loading, setLoading] = React.useState(true)
@@ -88,21 +82,17 @@ export function Tables() {
 
   /** ฟอร์มที่เปิดอยู่ — null คือปิด · โหมดมาจากปุ่มที่กด (เพิ่ม/แก้ไข) */
   const [form, setForm] = React.useState<{
-    mode: VendorFormMode
-    vendor?: Vendor
+    mode: VendorExportTemplateFormMode
+    template?: VendorExportTemplate
   } | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
-  const [removing, setRemoving] = React.useState<Vendor | null>(null)
-  /** แถวที่กดดูรหัสผู้ส่ง — null คือปิดกล่อง */
-  const [viewingSender, setViewingSender] = React.useState<Vendor | null>(null)
+  const [removing, setRemoving] = React.useState<VendorExportTemplate | null>(null)
 
-  /** ค้นจากรหัสผู้ขาย — แยกช่องจากชื่อ เพราะ API รับคนละพารามิเตอร์ */
-  const [codeQuery, setCodeQuery] = React.useState("")
   const [nameQuery, setNameQuery] = React.useState("")
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
   const [status, setStatus] = React.useState<string | null>(null)
   const [page, setPage] = React.useState(1)
-  const [pageSize, setPageSize] = React.useState(VENDOR_PAGE_SIZE)
+  const [pageSize, setPageSize] = React.useState(TEMPLATE_PAGE_SIZE)
 
   /** กรอบตาราง — ใช้เลื่อนหน้าให้เห็นหัวตารางทุกครั้งที่เริ่มโหลดข้อมูลใหม่ */
   const tableRef = React.useRef<HTMLDivElement>(null)
@@ -122,7 +112,6 @@ export function Tables() {
    */
   const load = (
     next: {
-      code: string
       name: string
       status: string | null
       page: number
@@ -138,8 +127,7 @@ export function Tables() {
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
-        const result = await getVendors({
-          code: next.code.trim(),
+        const result = await getVendorExportTemplates({
           name: next.name.trim(),
           status: next.status,
           page: next.page,
@@ -167,18 +155,18 @@ export function Tables() {
    * dev (StrictMode) mount ซ้ำ: cleanup ยกเลิกรอบแรกก่อนยิง จึงยิงจริงครั้งเดียว
    */
   React.useEffect(() => {
-    const start = setTimeout(() => load({ code: codeQuery, name: nameQuery, status, page, pageSize }))
+    const start = setTimeout(() => load({ name: nameQuery, status, page, pageSize }))
     return () => clearTimeout(start)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ตั้งใจดึงแค่ตอนเปิดหน้า ที่เหลือ load ถูกเรียกจากตัวกรอง/แบ่งหน้าเอง
   }, [])
 
   const statusOptions = [
-    { value: VENDOR_ACTIVE, label: tr("active") },
-    { value: VENDOR_INACTIVE, label: tr("inactive") },
+    { value: TEMPLATE_ACTIVE, label: tr("active") },
+    { value: TEMPLATE_INACTIVE, label: tr("inactive") },
   ]
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
-  const visible = list.vendors
+  const visible = list.vendorexporttemplates
 
   /** ลำดับที่โชว์แทนรหัส — นับต่อจากหน้าก่อนหน้า (หน้า 2 แถวแรกได้ 31 เมื่อหน้าละ 30)
    *  ใช้ page/per_page ที่ API ตอบกลับมา ไม่ใช่ state ของตัวกรอง เลขจึงตรงกับแถวที่เห็นจริง */
@@ -195,29 +183,6 @@ export function Tables() {
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
       <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-4">
         <div className="space-y-2">
-          <Label htmlFor="filter-code" className="text-muted-foreground text-xs">
-            {tcol("code")}
-          </Label>
-          <div className="group relative">
-            <Search className="text-muted-foreground group-focus-within:text-primary pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 transition-colors" />
-            <Input
-              id="filter-code"
-              value={codeQuery}
-              onChange={(event) => {
-                const code = event.target.value
-                setCodeQuery(code)
-                setPage(1)
-                load(
-                  { code, name: nameQuery, status, page: 1, pageSize },
-                  SEARCH_DELAY_MS
-                )
-              }}
-              placeholder={t("search")}
-              className="bg-card/80 focus-visible:border-primary/50 pl-8"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
           <Label htmlFor="filter-name" className="text-muted-foreground text-xs">
             {tcol("name")}
           </Label>
@@ -231,7 +196,7 @@ export function Tables() {
                 setNameQuery(name)
                 setPage(1)
                 load(
-                  { code: codeQuery, name, status, page: 1, pageSize },
+                  { name, status, page: 1, pageSize },
                   SEARCH_DELAY_MS
                 )
               }}
@@ -252,7 +217,6 @@ export function Tables() {
               setStatus(next)
               setPage(1)
               load({
-                code: codeQuery,
                 name: nameQuery,
                 status: next,
                 page: 1,
@@ -311,19 +275,17 @@ export function Tables() {
               <TableRow className="hover:bg-transparent">
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
                 <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("code")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
-                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("email")}</TableHead>
-                <TableHead className="text-muted-foreground w-36 text-xs font-semibold tracking-wide uppercase">{tcol("tel")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("senderCode")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("path")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {visible.map((vendor, index) => (
+              {visible.map((template, index) => (
                 <TableRow
-                  key={vendor.id}
+                  key={template.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
                   <TableCell className="pt-1 pb-1 relative pl-6">
@@ -334,39 +296,31 @@ export function Tables() {
                     />
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
-                  <TableCell className="pt-1 pb-1">
-                    <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
-                      {vendor.code}
-                    </span>
-                  </TableCell>
-                  <TableCell className="pt-1 pb-1 font-medium">{vendor.name}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{vendor.email}</TableCell>
-                  <TableCell className="pt-1 pb-1 text-muted-foreground font-mono text-xs">{vendor.tel}</TableCell>
-                  <TableCell className="pt-1 pb-1">
-                    {/* ผู้ขายที่ยังไม่มีรหัสผู้ส่ง ปล่อยช่องว่างไว้ ไม่ต้องมีปุ่มให้กด กดไปก็เจอตารางเปล่า */}
-                    {senderCount(vendor) > 0 ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={tform("viewSenderCode")}
-                        onClick={() => setViewingSender(vendor)}
-                        className="bg-primary/10 text-primary hover:bg-primary/20 h-7 gap-1.5 px-2 text-xs font-medium"
+                  <TableCell className="pt-1 pb-1 font-medium">{template.name}</TableCell>
+                  <TableCell className="pt-1 pb-1 max-w-[260px] truncate">
+                    {/* โชว์แค่ชื่อไฟล์ กดแล้วดาวน์โหลด (/uploads/* rewrite ไป API) · ยังไม่มีไฟล์ = ช่องว่าง */}
+                    {template.path ? (
+                      <a
+                        href={template.path}
+                        download
+                        className="text-primary inline-flex max-w-full items-center gap-1.5 text-xs font-medium hover:underline"
                       >
-                        <Truck className="size-3.5" />
-                        {senderCount(vendor)}
-                      </Button>
+                        <FileSpreadsheet className="size-3.5 shrink-0" />
+                        <span className="truncate">{templateFileName(template.path)}</span>
+                      </a>
                     ) : null}
                   </TableCell>
+                  <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[320px] truncate">{template.detail}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"
                       className={`border-transparent font-medium ${
-                        isVendorActive(vendor)
+                        isTemplateActive(template)
                           ? "bg-success/12 text-success-ink hover:bg-success/12"
                           : "bg-muted text-muted-foreground hover:bg-muted"
                       }`}
                     >
-                      {isVendorActive(vendor) ? tr("active") : tr("inactive")}
+                      {isTemplateActive(template) ? tr("active") : tr("inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 pr-6 text-right">
@@ -375,7 +329,7 @@ export function Tables() {
                         variant="ghost"
                         size="icon"
                         aria-label={t("edit")}
-                        onClick={() => setForm({ mode: "edit", vendor })}
+                        onClick={() => setForm({ mode: "edit", template })}
                         className="bg-warning/18 text-warning-ink hover:bg-orange-50 hover:text-orange-300"
                       >
                         <Pencil />
@@ -384,7 +338,7 @@ export function Tables() {
                         variant="ghost"
                         size="icon"
                         aria-label={tall("delete")}
-                        onClick={() => setRemoving(vendor)}
+                        onClick={() => setRemoving(template)}
                         className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
                       >
                         <Trash2 />
@@ -428,7 +382,6 @@ export function Tables() {
           onPageChange={(next) => {
             setPage(next)
             load({
-              code: codeQuery,
               name: nameQuery,
               status,
               page: next,
@@ -439,7 +392,6 @@ export function Tables() {
             setPageSize(size)
             setPage(1)
             load({
-              code: codeQuery,
               name: nameQuery,
               status,
               page: 1,
@@ -456,20 +408,11 @@ export function Tables() {
           if (!next) setForm(null)
         }}
         mode={form?.mode ?? "add"}
-        vendor={form?.vendor}
+        template={form?.template}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
         onSaved={() =>
-          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
+          load({ name: nameQuery, status, page, pageSize })
         }
-      />
-
-      {/* ดูรหัสผู้ส่งของแถวนั้น — อ่านอย่างเดียว แก้ไขทำที่ฟอร์ม */}
-      <SenderModal
-        open={viewingSender !== null}
-        onOpenChange={(next) => {
-          if (!next) setViewingSender(null)
-        }}
-        vendor={viewingSender ?? undefined}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
@@ -478,9 +421,9 @@ export function Tables() {
         onOpenChange={(next) => {
           if (!next) setRemoving(null)
         }}
-        vendor={removing ?? undefined}
+        template={removing ?? undefined}
         onDeleted={() =>
-          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
+          load({ name: nameQuery, status, page, pageSize })
         }
       />
     </Card>

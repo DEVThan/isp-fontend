@@ -1,20 +1,21 @@
 "use client"
 
 import * as React from "react"
-import { CircleCheck, LoaderCircle, Plus, Trash2, TriangleAlert } from "lucide-react"
+import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { saveVendor } from "@/app/vendor/vendor_export_template/_components/api"
 import {
-  parseSenderCodes,
-  serializeSenderCodes,
-  VENDOR_ACTIVE,
-  VENDOR_INACTIVE,
-  VENDOR_MAX_LEN,
-  type SenderCode,
-  type Vendor,
-  type VendorFormMode,
-  type VendorFormValues,
+  saveVendorExportTemplate,
+  uploadVendorExportTemplateFile,
+} from "@/app/vendor/vendor_export_template/_components/api"
+import { FilePicker } from "@/app/vendor/vendor_export_template/_components/file_picker"
+import {
+  TEMPLATE_ACTIVE,
+  TEMPLATE_INACTIVE,
+  TEMPLATE_NAME_MAX_LEN,
+  type VendorExportTemplate,
+  type VendorExportTemplateFormMode,
+  type VendorExportTemplateFormValues,
 } from "@/app/vendor/vendor_export_template/_components/model"
 import { SelectOption } from "@/app/vendor/vendor_export_template/_components/selectoption"
 import {
@@ -35,50 +36,37 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 
 /**
- * form_modal.tsx — ฟอร์มเพิ่ม/แก้ไขผู้ขายในกล่องซ้อน
+ * form_modal.tsx — ฟอร์มเพิ่ม/แก้ไขเทมเพลตส่งออกผู้ขายในกล่องซ้อน
  *
  * ปุ่มที่เปิดฟอร์มเป็นคนบอกโหมดมาเอง: "add" เปิดฟอร์มเปล่า "edit" เปิดพร้อมค่าของแถวนั้น
- * กดบันทึกแล้วยิง POST /api/web/vendor-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
+ * กดบันทึกแล้วยิง POST /api/web/vendor-export-template-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
+ * ไฟล์ Excel อัปโหลดผ่าน FilePicker — โหมดเพิ่มอัปโหลดหลังบันทึกแถว (ต้องได้ id ก่อนถึงจะตั้งโฟลเดอร์ได้)
  */
 // คลาสขอบแดง — ต้องสลับคลาสเอง ไม่ใช้ variant aria-invalid: เพราะ Tailwind v4 ห่อ variant
 // ด้วย :where() ความจำเพาะจึงเท่ากับ border-input แล้วแพ้ลำดับใน stylesheet
 const INVALID_FIELD =
   "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
 
-const emptyValues: VendorFormValues = {
-  code: "",
+const emptyValues: VendorExportTemplateFormValues = {
   name: "",
-  email: "",
-  tel: "",
-  address: "",
-  remark: "",
-  sender_code: "",
-  active_status: VENDOR_ACTIVE,
+  detail: "",
+  path: "",
+  active_status: TEMPLATE_ACTIVE,
 }
 
-const toValues = (vendor: Vendor | undefined): VendorFormValues =>
-  vendor
+const toValues = (
+  template: VendorExportTemplate | undefined
+): VendorExportTemplateFormValues =>
+  template
     ? {
-        code: vendor.code,
-        name: vendor.name,
+        name: template.name,
         // คอลัมน์พวกนี้ nullable ในฐานข้อมูล แต่ฟอร์มถือเป็นสตริงเสมอ
-        email: vendor.email ?? "",
-        tel: vendor.tel ?? "",
-        address: vendor.address ?? "",
-        remark: vendor.remark ?? "",
-        sender_code: vendor.sender_code ?? "",
-        active_status: vendor.active_status,
+        detail: template.detail ?? "",
+        path: template.path ?? "",
+        active_status: template.active_status,
       }
     : emptyValues
 
@@ -86,37 +74,33 @@ export function FormModal({
   open,
   onOpenChange,
   mode,
-  vendor,
+  template,
   onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** ปุ่มไหนเป็นคนเปิด — "add" หรือ "edit" */
-  mode: VendorFormMode
+  mode: VendorExportTemplateFormMode
   /** แถวที่กำลังแก้ (โหมด edit เท่านั้น) */
-  vendor?: Vendor
+  template?: VendorExportTemplate
   /** บันทึกสำเร็จแล้ว — ตารางเอาไปโหลดข้อมูลใหม่ */
   onSaved?: () => void
 }) {
   const t = useTranslations("common")
-  const tr = useTranslations("vendors")
-  const tform = useTranslations("vendors.form")
-  const tcol = useTranslations("vendors.columns")
+  const tr = useTranslations("vendorexporttemplates")
+  const tform = useTranslations("vendorexporttemplates.form")
+  const tcol = useTranslations("vendorexporttemplates.columns")
 
-  const [values, setValues] = React.useState(() => toValues(vendor))
+  const [values, setValues] = React.useState(() => toValues(template))
   const [saving, setSaving] = React.useState(false)
-  /** รหัสผู้ขายยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
-  const [codeError, setCodeError] = React.useState(false)
-  /** ชื่อผู้ขายยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
+  /** ชื่อเทมเพลตยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
   const [nameError, setNameError] = React.useState(false)
-  /**
-   * แถวรหัสผู้ส่งที่กำลังแก้อยู่ — ถือเป็นความจริงของ UI ส่วน values.sender_code เป็นเงาไว้ส่ง API
-   * แยกกันเพราะ serializeSenderCodes() ตัดแถวที่ยังว่างทิ้ง ถ้า UI อ่านจากสตริงนั้นตรง ๆ
-   * แถวที่เพิ่งกดเพิ่มจะหายไปทันทีก่อนได้พิมพ์
-   */
-  const [senderRows, setSenderRows] = React.useState<SenderCode[]>(() =>
-    parseSenderCodes(vendor?.sender_code)
-  )
+  /** ยังไม่มีไฟล์เทมเพลตตอนกดบันทึก — โหมดเพิ่มดูไฟล์ที่เลือกค้างไว้ โหมดแก้ไขดู path ของแถว */
+  const [fileError, setFileError] = React.useState(false)
+  /** ไฟล์ที่เลือกในโหมดเพิ่ม — ยังไม่มี id ให้ตั้งโฟลเดอร์ จึงอัปโหลดหลังบันทึกแถวแล้ว */
+  const [pendingFile, setPendingFile] = React.useState<File | null>(null)
+  /** โหมดแก้ไขกำลังอัปโหลดไฟล์อยู่ — ปิดปุ่มบันทึกไว้ ไม่งั้นบันทึก path เก่าทับ */
+  const [uploadingFile, setUploadingFile] = React.useState(false)
   /** ผลของการกดบันทึกครั้งล่าสุด — null คือยังไม่ได้กด */
   const [result, setResult] = React.useState<{
     ok: boolean
@@ -128,32 +112,27 @@ export function FormModal({
    * ปรับ state ระหว่าง render ตามแบบที่ React แนะนำ ไม่ใช้ useEffect ไป setState
    * (กฎ react-hooks/set-state-in-effect ของ eslint-config-next 16 ห้ามไว้)
    */
-  const formKey = `${mode}-${vendor?.id ?? "new"}-${String(open)}`
+  const formKey = `${mode}-${template?.id ?? "new"}-${String(open)}`
   const [lastKey, setLastKey] = React.useState(formKey)
   if (formKey !== lastKey) {
     setLastKey(formKey)
-    setValues(toValues(vendor))
+    setValues(toValues(template))
     setResult(null)
     setSaving(false)
-    setCodeError(false)
     setNameError(false)
-    setSenderRows(parseSenderCodes(vendor?.sender_code))
+    setFileError(false)
+    setPendingFile(null)
+    setUploadingFile(false)
   }
 
-  const set = <K extends keyof VendorFormValues>(
+  const set = <K extends keyof VendorExportTemplateFormValues>(
     key: K,
-    value: VendorFormValues[K]
+    value: VendorExportTemplateFormValues[K]
   ) => setValues((current) => ({ ...current, [key]: value }))
 
-  /** แก้แถวรหัสผู้ส่งทีเดียวทั้งสองที่ — ตาราง (ที่ผู้ใช้เห็น) กับค่าที่จะส่งไปบันทึก */
-  const setSenders = (next: SenderCode[]) => {
-    setSenderRows(next)
-    set("sender_code", serializeSenderCodes(next))
-  }
-
   const statusOptions = [
-    { value: VENDOR_ACTIVE, label: tr("active") },
-    { value: VENDOR_INACTIVE, label: tr("inactive") },
+    { value: TEMPLATE_ACTIVE, label: tr("active") },
+    { value: TEMPLATE_INACTIVE, label: tr("inactive") },
   ]
 
   return (
@@ -176,16 +155,37 @@ export function FormModal({
             event.preventDefault()
             if (saving) return
             // เช็คทั้งสองช่องที่บังคับก่อน ให้ขึ้นกรอบแดงพร้อมกัน ไม่ใช่ทีละช่อง
-            const missingCode = !values.code.trim()
+            // ไฟล์บังคับแค่ฝั่งหน้าเว็บ — API ต้องรับ path ว่างตอน add (ยังไม่มี id ให้ตั้งโฟลเดอร์ อัปโหลดหลังบันทึก)
             const missingName = !values.name.trim()
-            setCodeError(missingCode)
+            const missingFile = !(pendingFile || values.path)
             setNameError(missingName)
-            if (missingCode || missingName) return
+            setFileError(missingFile)
+            if (missingName || missingFile || uploadingFile) return
             setSaving(true)
             setResult(null)
             try {
               // โหมดของฟอร์มคือ action ที่ API ใช้ตัดสินใจ ("add" / "edit")
-              await saveVendor(mode, values, vendor?.id)
+              // add ส่ง path ว่างไปก่อน (API รับได้) — ยังไม่มี id ให้ตั้งโฟลเดอร์ไฟล์
+              const saved = await saveVendorExportTemplate(mode, values, template?.id)
+              // add: เลือกไฟล์ไว้ก็อัปโหลดตอนนี้ที่ได้ id แล้ว — API เขียน path ลงคอลัมน์ให้เอง ไม่ต้องยิง edit ซ้ำ
+              if (mode === "add" && pendingFile) {
+                try {
+                  await uploadVendorExportTemplateFile(pendingFile, saved.id)
+                } catch (fileError) {
+                  // แถวบันทึกไปแล้ว — กดบันทึกซ้ำจะโดน 400 ชื่อซ้ำ จึงปิดกล่องแล้วบอกให้ไปใส่ไฟล์ในโหมดแก้ไข
+                  const detail =
+                    fileError instanceof Error && fileError.message
+                      ? ` (${fileError.message})`
+                      : ""
+                  setResult({
+                    ok: false,
+                    message: `${tform("fileSaveFailed")}${detail}`,
+                  })
+                  onSaved?.()
+                  setTimeout(() => onOpenChange(false), 3500)
+                  return
+                }
+              }
               setResult({ ok: true })
               onSaved?.()
               // ให้เห็นข้อความว่าสำเร็จสักครู่ก่อนปิด ไม่งั้นกล่องหายไปเลยเหมือนไม่มีอะไรเกิดขึ้น
@@ -202,207 +202,55 @@ export function FormModal({
           }}
           className="grid gap-4"
         >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field
-              id="vendor-code"
-              label={tcol("code")}
-              required
-              error={codeError ? t("required") : undefined}
-            >
-              <Input
-                id="vendor-code"
-                value={values.code}
-                maxLength={VENDOR_MAX_LEN}
-                onChange={(event) => {
-                  set("code", event.target.value)
-                  if (event.target.value.trim()) setCodeError(false)
-                }}
-                placeholder="V001"
-                aria-required
-                aria-invalid={codeError || undefined}
-                className={codeError ? INVALID_FIELD : undefined}
-              />
-            </Field>
-            {/* ชื่อผู้ขายยาวกว่ารหัสมาก กินสองช่องที่เหลือของแถว */}
-            <div className="sm:col-span-2">
-              <Field
-                id="vendor-name"
-                label={tcol("name")}
-                required
-                error={nameError ? t("required") : undefined}
-              >
-                <Input
-                  id="vendor-name"
-                  value={values.name}
-                  maxLength={VENDOR_MAX_LEN}
-                  onChange={(event) => {
-                    set("name", event.target.value)
-                    if (event.target.value.trim()) setNameError(false)
-                  }}
-                  placeholder="..."
-                  aria-required
-                  aria-invalid={nameError || undefined}
-                  className={nameError ? INVALID_FIELD : undefined}
-                />
-              </Field>
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field id="vendor-email" label={tcol("email")}>
-              <Input
-                id="vendor-email"
-                // ไม่ใช้ type="email" — ช่องนี้ไม่บังคับ และ API ไม่ได้ตรวจรูปแบบ
-                // ปล่อยให้เบราว์เซอร์ block การ submit จะกลายเป็นกฎที่หลังบ้านไม่มี
-                value={values.email}
-                maxLength={VENDOR_MAX_LEN}
-                placeholder="..."
-                onChange={(event) => set("email", event.target.value)}
-              />
-            </Field>
-            <Field id="vendor-tel" label={tcol("tel")}>
-              <Input
-                id="vendor-tel"
-                value={values.tel}
-                maxLength={VENDOR_MAX_LEN}
-                placeholder="..."
-                onChange={(event) => set("tel", event.target.value)}
-              />
-            </Field>
-          </div>
-
-          <Field id="vendor-address" label={tcol("address")}>
-            <Textarea
-              id="vendor-address"
-              rows={2}
-              value={values.address}
+          <Field
+            id="template-name"
+            label={tcol("name")}
+            required
+            error={nameError ? t("required") : undefined}
+          >
+            <Input
+              id="template-name"
+              value={values.name}
+              maxLength={TEMPLATE_NAME_MAX_LEN}
+              onChange={(event) => {
+                set("name", event.target.value)
+                if (event.target.value.trim()) setNameError(false)
+              }}
               placeholder="..."
-              onChange={(event) => set("address", event.target.value)}
+              aria-required
+              aria-invalid={nameError || undefined}
+              className={nameError ? INVALID_FIELD : undefined}
             />
           </Field>
 
-          {/* รหัสผู้ส่ง — ผู้ขายหนึ่งรายมีได้หลายขนส่ง เก็บรวมเป็น JSON string ในคอลัมน์เดียว */}
-          <div className="space-y-2">
-            <Label className="text-muted-foreground text-xs">
-              {tcol("senderCode")}
-            </Label>
-            <div className="border-border/60 overflow-hidden rounded-lg border">
-              <Table>
-                <TableHeader className="bg-muted/60">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-muted-foreground pl-3 text-xs font-semibold tracking-wide uppercase">
-                      {tcol("shipping")}
-                    </TableHead>
-                    <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                      {tcol("senderCode")}
-                    </TableHead>
-                    <TableHead className="w-12 pr-3">
-                      <span className="sr-only">{t("delete")}</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {senderRows.map((row, index) => (
-                    // แถวไม่มี id ของตัวเอง คีย์จึงต้องเป็นตำแหน่ง — ลบแถวกลางแล้ว React
-                    // จะ reuse ช่องกรอกของแถวถัดไป ซึ่งถูกต้องอยู่แล้วเพราะค่ามาจาก state ทั้งหมด
-                    <TableRow
-                      key={index}
-                      className="border-border/50 hover:bg-transparent"
-                    >
-                      <TableCell className="py-1 pl-3">
-                        <Input
-                          value={row.shipping}
-                          placeholder="..."
-                          aria-label={`${tcol("shipping")} ${index + 1}`}
-                          onChange={(event) =>
-                            setSenders(
-                              senderRows.map((current, i) =>
-                                i === index
-                                  ? { ...current, shipping: event.target.value }
-                                  : current
-                              )
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <Input
-                          value={row.sendercode}
-                          placeholder="..."
-                          aria-label={`${tcol("senderCode")} ${index + 1}`}
-                          onChange={(event) =>
-                            setSenders(
-                              senderRows.map((current, i) =>
-                                i === index
-                                  ? {
-                                      ...current,
-                                      sendercode: event.target.value,
-                                    }
-                                  : current
-                              )
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="py-1 pr-3 text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t("delete")}
-                          onClick={() =>
-                            setSenders(
-                              senderRows.filter((_, i) => i !== index)
-                            )
-                          }
-                          className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
-                        >
-                          <Trash2 />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-
-                  {senderRows.length === 0 ? (
-                    <TableRow className="hover:bg-transparent">
-                      <TableCell
-                        colSpan={3}
-                        className="text-muted-foreground py-4 text-center text-xs"
-                      >
-                        {tform("noSenderCode")}
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </TableBody>
-              </Table>
-
-              <div className="border-border/50 border-t p-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setSenders([
-                      ...senderRows,
-                      { shipping: "", sendercode: "" },
-                    ])
-                  }
-                >
-                  <Plus /> {tform("addSenderCode")}
-                </Button>
-              </div>
-            </div>
-          </div>
+          <FilePicker
+            id="template-path"
+            label={tcol("path")}
+            required
+            error={fileError ? t("required") : undefined}
+            value={values.path}
+            templateId={mode === "edit" ? template?.id : undefined}
+            pendingFile={pendingFile}
+            onChange={(path) => {
+              set("path", path)
+              setFileError(false)
+            }}
+            onPendingFileChange={(file) => {
+              setPendingFile(file)
+              if (file) setFileError(false)
+            }}
+            onUploadingChange={setUploadingFile}
+          />
 
           {/* สถานะอยู่แถวของตัวเอง — กินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field id="vendor-status" label={tcol("status")}>
+            <Field id="template-status" label={tcol("status")}>
               <SelectOption
-                id="vendor-status"
+                id="template-status"
                 options={statusOptions}
                 value={values.active_status}
                 onValueChange={(next) =>
-                  set("active_status", next ?? VENDOR_ACTIVE)
+                  set("active_status", next ?? TEMPLATE_ACTIVE)
                 }
                 placeholder={tr("active")}
                 label={tcol("status")}
@@ -410,13 +258,13 @@ export function FormModal({
             </Field>
           </div>
 
-          <Field id="vendor-remark" label={tcol("remark")}>
+          <Field id="template-detail" label={tcol("detail")}>
             <Textarea
-              id="vendor-remark"
-              rows={2}
-              value={values.remark}
+              id="template-detail"
+              rows={3}
+              value={values.detail}
               placeholder="..."
-              onChange={(event) => set("remark", event.target.value)}
+              onChange={(event) => set("detail", event.target.value)}
             />
           </Field>
 
@@ -445,7 +293,7 @@ export function FormModal({
             </DialogClose>
             <Button
               type="submit"
-              disabled={saving}
+              disabled={saving || uploadingFile}
               className="from-chart-1 to-chart-5 bg-gradient-to-r text-white transition-transform hover:-translate-y-0.5 hover:opacity-95"
             >
               {saving ? <LoaderCircle className="animate-spin" /> : null}
