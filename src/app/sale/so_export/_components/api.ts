@@ -163,6 +163,59 @@ export async function deleteSoExport(id: number): Promise<SoDeleted> {
   return (await post<SoDeleted>("so_export-get-delet", { id })) as SoDeleted
 }
 
+/** ไฟล์ที่ได้จากการส่งออกตามเทมเพลตผู้ขาย — group คือชื่อกลุ่มที่ถูกเขียนลง so.export_group_name แล้ว */
+export type SoVendorExport = {
+  blob: Blob
+  fileName: string
+  group: string
+}
+
+/**
+ * POST /api/web/so_export-vendor — ส่งออกรายการที่เลือกตามเทมเพลตของผู้ขาย
+ *
+ * API หาเทมเพลตจาก vendor.export_template แล้วเติมข้อมูลลงแถว {token} ในไฟล์
+ * สร้างไฟล์สำเร็จแล้วตั้ง export_group_name = "{รหัสผู้ขาย}-yymmdd-hhmmss" ให้ทุกแถวที่ส่งไป
+ * สำเร็จตอบเป็นไฟล์ (ชื่อกลุ่มอยู่ใน header X-Export-Group) · ผิดพลาดตอบ JSON envelope ปกติ
+ * จึงแยกด้วย Content-Type ไม่ใช้ post() ข้างบนที่อ่านเป็น JSON อย่างเดียว
+ */
+export async function exportSoByVendor(
+  vendorId: number,
+  ids: number[]
+): Promise<SoVendorExport> {
+  const url = `${API_BASE_URL}/so_export-vendor`
+  let res: Response
+
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vendor_id: vendorId, ids }),
+    })
+  } catch (cause) {
+    throw new ApiError(
+      API_NETWORK_ERROR,
+      `เรียก API ไม่สำเร็จ: ${url} (${String(cause)})`
+    )
+  }
+
+  if (!res.ok || (res.headers.get("Content-Type") ?? "").includes("json")) {
+    const envelope = (await res.json().catch(() => null)) as ApiEnvelope<unknown> | null
+    throw new ApiError(
+      envelope?.resultcode ?? res.status,
+      envelope?.message ?? (res.statusText || "Invalid response")
+    )
+  }
+
+  const group = res.headers.get("X-Export-Group") ?? ""
+  // ชื่อไฟล์จริงอยู่ใน Content-Disposition (นามสกุลตามเทมเพลต .xlsx / .xlsm) — อ่านไม่ได้ใช้ชื่อกลุ่ม
+  const disposition = res.headers.get("Content-Disposition") ?? ""
+  const fileName =
+    /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)?.[1] ??
+    `${group || "so_export"}.xlsx`
+  return { blob: await res.blob(), fileName: decodeURIComponent(fileName), group }
+}
+
 /** ยิงเส้น -get-option หนึ่งเส้น — พังก็คืน [] ช่องนั้นแค่ไม่มีตัวเลือก ไม่ลากช่องอื่นพังไปด้วย */
 async function options<T>(path: string): Promise<T[]> {
   try {

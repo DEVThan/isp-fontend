@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import {
+  CircleCheck,
   // Eye, — ปุ่มดูข้อมูลซ่อนไว้
+  FileDown,
   LoaderCircle,
   // Pencil, — ปุ่มแก้ไขซ่อนไว้
   // Plus, — ปุ่มเพิ่มปิดไว้ก่อน
@@ -14,6 +16,7 @@ import {
 import { useTranslations } from "next-intl"
 
 import {
+  exportSoByVendor,
   getSoExportList,
   getSoOptions,
   SO_PAGE_SIZE,
@@ -280,6 +283,12 @@ export function Tables() {
     label: `${option.code} — ${option.name}`,
   }))
 
+  /** ผู้ขายสำหรับส่งออก — ค่าคือ id (API ใช้หา vendor.export_template) ป้ายเหมือนตัวกรองผู้ขาย */
+  const exportVendorOptions: SelectOptionItem[] = options.vendors.map((option) => ({
+    value: String(option.id),
+    label: `${option.code} — ${option.name}`,
+  }))
+
   /** ประเภทการจัดส่ง — ทะเบียน shiptment_type · ค่าคือชื่อ (ตรงกับ so.shipment_type) */
   const shipmentTypeOptions: SelectOptionItem[] = options.shipmentTypes.map((option) => ({
     value: option.name,
@@ -329,6 +338,52 @@ export function Tables() {
       else next.delete(id)
       return next
     })
+
+  /** ผู้ขายที่จะส่งออกให้ (id เป็นข้อความตาม SelectOption) — แยกจากตัวกรองผู้ขายด้านบน ไม่กรองตาราง */
+  const [exportVendor, setExportVendor] = React.useState<string | null>(null)
+  const [exporting, setExporting] = React.useState(false)
+  /** ผลของการกดส่งออกครั้งล่าสุด — null คือยังไม่ได้กด / ถูกล้างเมื่อเปลี่ยนผู้ขาย */
+  const [exportResult, setExportResult] = React.useState<{
+    ok: boolean
+    message: string
+  } | null>(null)
+
+  /** ส่งออกได้เมื่อเลือกผู้ขายแล้ว และติ๊กอย่างน้อยหนึ่งรายการ (ข้ามหน้าได้) */
+  const canExport = exportVendor !== null && selected.size > 0 && !exporting
+
+  /**
+   * ส่งออกตามเทมเพลตของผู้ขาย — API หาเทมเพลตเอง (ไม่มีเทมเพลต = ตอบ 400 พร้อมเหตุผล)
+   * สำเร็จ: ดาวน์โหลดไฟล์ ล้างรายการที่ติ๊ก แล้วโหลดหน้านี้ใหม่ (export_group_name ของแถวเหล่านั้นเปลี่ยนแล้ว)
+   */
+  const runExport = async () => {
+    if (!canExport) return
+    setExporting(true)
+    setExportResult(null)
+    try {
+      const file = await exportSoByVendor(Number(exportVendor), [...selected])
+      const href = URL.createObjectURL(file.blob)
+      const link = document.createElement("a")
+      link.href = href
+      link.download = file.fileName
+      link.click()
+      // ให้ browser เริ่มดาวน์โหลดก่อนค่อยคืน URL
+      setTimeout(() => URL.revokeObjectURL(href), 1000)
+      setExportResult({ ok: true, message: tr("exportDone", { group: file.group }) })
+      setSelected(new Set())
+      load(filters)
+    } catch (error) {
+      // ข้อความจาก API บอกสาเหตุตรง ๆ (ไม่มีเทมเพลต / token ผิด) — ห้าม console.error ใน dev จะขึ้นเต็มจอ
+      setExportResult({
+        ok: false,
+        message:
+          error instanceof Error && error.message
+            ? `${tr("exportError")}: ${error.message}`
+            : tr("exportError"),
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const togglePage = (checked: boolean) =>
     setSelected((prev) => {
@@ -486,10 +541,39 @@ export function Tables() {
       </CardContent>
 
       <CardContent className="px-4 py-0">
-        <div className="flex flex-wrap items-end justify-end gap-0 p-0 md:p-0">
+        <div className="flex flex-wrap items-center justify-end gap-2 p-0 pt-3 md:p-0 md:pt-3">
+          {/* ส่งออกตามเทมเพลตผู้ขาย — ฝั่งซ้ายเหนือตาราง: เลือกผู้ขาย แล้วกดส่งออกรายการที่ติ๊กไว้ */}
+          <div className="w-full sm:w-72">
+            <SelectOption
+              id="export-vendor"
+              options={exportVendorOptions}
+              value={exportVendor}
+              onValueChange={(next) => {
+                setExportVendor(next)
+                setExportResult(null)
+              }}
+              placeholder={tr("exportVendor")}
+              label={tr("exportVendor")}
+            />
+          </div>
+          <Button
+            onClick={() => void runExport()}
+            disabled={!canExport}
+            title={
+              exportVendor === null
+                ? tr("exportNeedVendor")
+                : selected.size === 0
+                  ? tr("exportNeedRows")
+                  : undefined
+            }
+            className="from-chart-1 to-chart-5 bg-gradient-to-r text-white transition-transform hover:-translate-y-0.5 hover:opacity-95"
+          >
+            {exporting ? <LoaderCircle className="animate-spin" /> : <FileDown />}
+            {exporting ? tr("exporting") : tr("export")}
+          </Button>
           {/* จำนวนแถวที่ติ๊กไว้ (รวมทุกหน้า) + ปุ่มล้าง — ขึ้นเฉพาะตอนเลือกอย่างน้อยหนึ่งแถว */}
           {selected.size > 0 ? (
-            <div className="bg-primary/10 text-primary mt-3 mr-auto flex items-center gap-2 rounded-lg py-1 pr-1 pl-3 text-sm font-medium">
+            <div className="bg-primary/10 text-primary mr-auto flex items-center gap-2 rounded-lg py-1 pr-1 pl-3 text-sm font-medium">
               {tr("selected", { count: selected.size.toLocaleString("en-US") })}
               <Button
                 variant="ghost"
@@ -500,7 +584,10 @@ export function Tables() {
                 {t("clear")}
               </Button>
             </div>
-          ) : null}
+          ) : (
+            // ดันกลุ่มส่งออกไปชิดซ้ายเสมอ ถึงจะยังไม่ได้ติ๊กอะไร
+            <div className="mr-auto" />
+          )}
           {/* ปิดปุ่มเพิ่มไว้ก่อน — เปิดกลับให้เอา Plus ใน import ออกจาก comment ด้วย
               (FormModal ด้านล่างยังอยู่ ตอนนี้เข้าถึงได้แต่โหมดแก้ไขจากปุ่มดินสอในแถว
                ทั้งตารางนี้จึงกลายเป็นอ่าน+แก้ไข ไม่มีทางเพิ่มหรือลบแถวจากหน้าเว็บ
@@ -513,6 +600,24 @@ export function Tables() {
             <Plus /> {t("add")}
           </Button> */}
         </div>
+
+        {/* ผลการส่งออกล่าสุด — สำเร็จบอกชื่อกลุ่ม · ไม่สำเร็จบอกเหตุผลจาก API */}
+        {exportResult ? (
+          <p
+            role="status"
+            className={cn(
+              "mt-2 flex items-center gap-1.5 text-sm",
+              exportResult.ok ? "text-success-ink" : "text-destructive"
+            )}
+          >
+            {exportResult.ok ? (
+              <CircleCheck className="size-4 shrink-0" />
+            ) : (
+              <TriangleAlert className="size-4 shrink-0" />
+            )}
+            {exportResult.message}
+          </p>
+        ) : null}
 
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ
             ไม่งั้นตัวหมุนจะจางตามไปด้วย — ใช้พื้นโปร่งของตัวคลุมแทน)

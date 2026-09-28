@@ -964,6 +964,13 @@
     "selectAll": "Select all rows on this page",
     "selectRow": "Select {code}",
     "selected": "{count} selected",
+    "exportVendor": "Vendor to export for",
+    "export": "Export",
+    "exporting": "Exporting…",
+    "exportDone": "Exported — group {group}",
+    "exportError": "Could not export",
+    "exportNeedVendor": "Choose a vendor first",
+    "exportNeedRows": "Select at least one sales order",
     "columns": {
       "no": "No.",
       "so_code": "SO number",

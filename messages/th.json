@@ -964,6 +964,13 @@
     "selectAll": "เลือกทุกแถวในหน้านี้",
     "selectRow": "เลือก {code}",
     "selected": "เลือกแล้ว {count} รายการ",
+    "exportVendor": "ผู้ขายที่จะส่งออก",
+    "export": "ส่งออก",
+    "exporting": "กำลังส่งออก…",
+    "exportDone": "ส่งออกแล้ว — กลุ่ม {group}",
+    "exportError": "ส่งออกไม่สำเร็จ",
+    "exportNeedVendor": "เลือกผู้ขายก่อน",
+    "exportNeedRows": "เลือกใบสั่งขายอย่างน้อย 1 รายการ",
     "columns": {
       "no": "ลำดับ",
       "so_code": "เลขที่ใบสั่งขาย",

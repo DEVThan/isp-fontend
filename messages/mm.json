@@ -964,6 +964,13 @@
     "selectAll": "ဤစာမျက်နှာရှိ အားလုံးကို ရွေးရန်",
     "selectRow": "{code} ကို ရွေးရန်",
     "selected": "{count} ခု ရွေးထားသည်",
+    "exportVendor": "ထုတ်ယူမည့် ရောင်းချသူ",
+    "export": "ထုတ်ယူရန်",
+    "exporting": "ထုတ်ယူနေသည်…",
+    "exportDone": "ထုတ်ယူပြီးပါပြီ — အုပ်စု {group}",
+    "exportError": "ထုတ်ယူ၍ မရပါ",
+    "exportNeedVendor": "ရောင်းချသူကို အရင်ရွေးပါ",
+    "exportNeedRows": "အရောင်း အော်ဒါ အနည်းဆုံး 1 ခု ရွေးပါ",
     "columns": {
       "no": "စဉ်",
       "so_code": "အော်ဒါ နံပါတ်",
