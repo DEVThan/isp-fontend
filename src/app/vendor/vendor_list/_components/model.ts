@@ -31,6 +31,8 @@ export type Vendor = {
   /** รหัสผู้ส่งของฝั่งขนส่ง (คนละตัวกับ code ที่เป็นรหัสผู้ขาย)
    *  เก็บหลายขนส่งในคอลัมน์เดียวเป็น JSON string — อ่านด้วย parseSenderCodes() */
   sender_code: string | null
+  /** เทมเพลตส่งออกของผู้ขายรายนี้ — id ของ vendor_export_template เก็บเป็นข้อความ ("" / null = ยังไม่เลือก) */
+  export_template: string | null
   active_status: string
 }
 
@@ -74,6 +76,7 @@ export type VendorFormValues = {
   address: string
   remark: string
   sender_code: string
+  export_template: string
   active_status: string
 }
 

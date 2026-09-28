@@ -755,6 +755,7 @@
       "remark": "Remark",
       "shipping": "Shipping",
       "senderCode": "Sender code",
+      "exportTemplate": "Export template",
       "status": "Status"
     },
     "form": {

@@ -755,6 +755,7 @@
       "remark": "หมายเหตุ",
       "shipping": "ขนส่ง",
       "senderCode": "รหัสผู้ส่ง",
+      "exportTemplate": "เทมเพลตส่งออก",
       "status": "สถานะ"
     },
     "form": {

@@ -17,6 +17,8 @@ import {
   type VendorFormValues,
 } from "@/app/vendor/vendor_list/_components/model"
 import { SelectOption } from "@/app/vendor/vendor_list/_components/selectoption"
+import { getVendorExportTemplateOptions } from "@/app/vendor/vendor_export_template/_components/api"
+import type { VendorExportTemplateOption } from "@/app/vendor/vendor_export_template/_components/model"
 import {
   Alert,
   AlertContent,
@@ -64,6 +66,7 @@ const emptyValues: VendorFormValues = {
   address: "",
   remark: "",
   sender_code: "",
+  export_template: "",
   active_status: VENDOR_ACTIVE,
 }
 
@@ -78,6 +81,7 @@ const toValues = (vendor: Vendor | undefined): VendorFormValues =>
         address: vendor.address ?? "",
         remark: vendor.remark ?? "",
         sender_code: vendor.sender_code ?? "",
+        export_template: vendor.export_template ?? "",
         active_status: vendor.active_status,
       }
     : emptyValues
@@ -150,6 +154,37 @@ export function FormModal({
     setSenderRows(next)
     set("sender_code", serializeSenderCodes(next))
   }
+
+  /** เทมเพลตส่งออกที่ active — ดึงใหม่ทุกครั้งที่เปิดฟอร์ม ทะเบียนอาจเพิ่ง/ปิดตัวเลือกไป */
+  const [templates, setTemplates] = React.useState<VendorExportTemplateOption[]>([])
+  React.useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    getVendorExportTemplateOptions()
+      .then((next) => {
+        if (!cancelled) setTemplates(next)
+      })
+      // ดึงไม่ได้ก็แค่ไม่มีตัวเลือก ฟอร์มยังบันทึกได้ — ห้าม console.error ใน dev จะขึ้นเต็มจอ
+      .catch(() => {
+        if (!cancelled) setTemplates([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open])
+
+  /** ค่าคือ id เป็นข้อความ (ตรงกับ vendor.export_template)
+   *  เทมเพลตที่แถวเลือกไว้แต่ถูกปิดไปแล้ว (ไม่อยู่ใน get-option) เติมเข้าไปให้เห็น ไม่งั้นช่องดูว่างทั้งที่มีค่า */
+  const templateOptions = [
+    ...templates.map((option) => ({
+      value: String(option.id),
+      label: option.name,
+    })),
+    ...(values.export_template &&
+    !templates.some((option) => String(option.id) === values.export_template)
+      ? [{ value: values.export_template, label: `#${values.export_template}` }]
+      : []),
+  ]
 
   const statusOptions = [
     { value: VENDOR_ACTIVE, label: tr("active") },
@@ -394,8 +429,20 @@ export function FormModal({
             </div>
           </div>
 
-          {/* สถานะอยู่แถวของตัวเอง — กินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง */}
+          {/* สถานะกินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง · เทมเพลตส่งออกกินสองช่องที่เหลือ */}
           <div className="grid gap-4 sm:grid-cols-3">
+            <div className="sm:col-span-2">
+              <Field id="vendor-export-template" label={tcol("exportTemplate")}>
+                <SelectOption
+                  id="vendor-export-template"
+                  options={templateOptions}
+                  value={values.export_template || null}
+                  onValueChange={(next) => set("export_template", next ?? "")}
+                  placeholder="..."
+                  label={tcol("exportTemplate")}
+                />
+              </Field>
+            </div>
             <Field id="vendor-status" label={tcol("status")}>
               <SelectOption
                 id="vendor-status"
