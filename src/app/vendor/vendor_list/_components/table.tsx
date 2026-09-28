@@ -16,9 +16,9 @@ import { useTranslations } from "next-intl"
 import {
   getVendors,
   VENDOR_PAGE_SIZE,
-} from "@/app/vendor/_components/api"
-import { DeleteModal } from "@/app/vendor/_components/delete_modal"
-import { FormModal } from "@/app/vendor/_components/form_modal"
+} from "@/app/vendor/vendor_list/_components/api"
+import { DeleteModal } from "@/app/vendor/vendor_list/_components/delete_modal"
+import { FormModal } from "@/app/vendor/vendor_list/_components/form_modal"
 import {
   isVendorActive,
   parseSenderCodes,
@@ -27,10 +27,10 @@ import {
   type Vendor,
   type VendorFormMode,
   type VendorList,
-} from "@/app/vendor/_components/model"
-import { TablePagination } from "@/app/vendor/_components/pagination"
-import { SelectOption } from "@/app/vendor/_components/selectoption"
-import { SenderModal } from "@/app/vendor/_components/sender_modal"
+} from "@/app/vendor/vendor_list/_components/model"
+import { TablePagination } from "@/app/vendor/vendor_list/_components/pagination"
+import { SelectOption } from "@/app/vendor/vendor_list/_components/selectoption"
+import { SenderModal } from "@/app/vendor/vendor_list/_components/sender_modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"

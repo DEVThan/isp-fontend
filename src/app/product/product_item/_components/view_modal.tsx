@@ -25,7 +25,7 @@ import {
   type ProductItemRow,
 } from "@/app/product/product_item/_components/model"
 import { ProductImage } from "@/app/product/product_item/_components/product_image"
-import { parseSenderCodes } from "@/app/vendor/_components/model"
+import { parseSenderCodes } from "@/app/vendor/vendor_list/_components/model"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {

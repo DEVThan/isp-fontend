@@ -4,7 +4,7 @@ import * as React from "react"
 import { CircleCheck, LoaderCircle, Plus, Trash2, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { saveVendor } from "@/app/vendor/_components/api"
+import { saveVendor } from "@/app/vendor/vendor_list/_components/api"
 import {
   parseSenderCodes,
   serializeSenderCodes,
@@ -15,8 +15,8 @@ import {
   type Vendor,
   type VendorFormMode,
   type VendorFormValues,
-} from "@/app/vendor/_components/model"
-import { SelectOption } from "@/app/vendor/_components/selectoption"
+} from "@/app/vendor/vendor_list/_components/model"
+import { SelectOption } from "@/app/vendor/vendor_list/_components/selectoption"
 import {
   Alert,
   AlertContent,

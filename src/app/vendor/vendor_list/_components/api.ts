@@ -10,7 +10,7 @@ import type {
   VendorFormValues,
   VendorList,
   VendorOption,
-} from "@/app/vendor/_components/model"
+} from "@/app/vendor/vendor_list/_components/model"
 
 /**
  * api.ts — เส้น API ของหน้าจัดการผู้ขาย (ตาราง vendor)

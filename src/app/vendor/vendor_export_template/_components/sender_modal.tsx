@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl"
 import {
   parseSenderCodes,
   type Vendor,
-} from "@/app/vendor/_components/model"
+} from "@/app/vendor/vendor_export_template/_components/model"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

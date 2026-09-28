@@ -9,12 +9,13 @@ import type {
   NamedOption,
   So,
   SoDeleted,
+  SoExportOption,
   SoFormMode,
   SoFormValues,
   SoList,
   SoOptions,
   VendorOption,
-} from "@/app/sale/so/_components/model"
+} from "@/app/sale/so_export/_components/model"
 
 /**
  * api.ts — เส้น API ของหน้าใบสั่งขาย (ตาราง so)
@@ -22,9 +23,10 @@ import type {
  * ฝั่ง browser ยิง "/api/web" แล้วให้ rewrite ใน next.config.ts ส่งต่อไป Flask (เลี่ยง CORS)
  * ฝั่ง server ไม่มี origin ให้อ้าง path สัมพัทธ์จึงใช้ไม่ได้ ต้องใช้ URL เต็มจาก API_BASE_URL
  *
- * ตารางนี้มี 3 เส้นเท่านั้น (routes/web.py): so-get-list / so-action / so-delete
- * **ไม่มี so-get-option** — ฝั่ง API ตั้งใจไม่ทำ (43,000+ แถว ใหญ่เกินกว่าจะเป็น dropdown)
- * ตัวเลือกของช่อง select จึงมาจากเส้น -get-option ของทะเบียนอื่น ดู getSoOptions ท้ายไฟล์
+ * หน้าส่งออกใบสั่งขาย (so_export) — ข้อมูลเป็นคอลัมน์ชุดเดียวกับตาราง so (ดู model.ts) แต่ยิงเส้นของตัวเอง 4 เส้น:
+ *   so_export-get-list / so_export-get-action / so_export-get-delet / so_export-get-option
+ * (ชื่อเส้นตามที่สั่งมา 28/09/2026 — ตอนนั้นใน routes/web.py ยังไม่มีทั้ง 4 เส้น มีแค่ /so-export ที่คืนไฟล์ .xlsx)
+ * ตัวเลือกของช่อง select ในฟอร์มยังมาจากเส้น -get-option ของทะเบียนอื่น ดู getSoOptions ท้ายไฟล์
  */
 const API_BASE_URL =
   typeof window === "undefined"
@@ -68,7 +70,7 @@ async function post<T>(path: string, body: unknown): Promise<T | undefined> {
   return envelope.result
 }
 
-/** เงื่อนไขที่ so-get-list รับ — ทุกตัวไม่บังคับ ไม่ส่ง = ไม่กรองตัวนั้น */
+/** เงื่อนไขที่ so_export-get-list รับ (ชุดเดียวกับ so-get-list) — ทุกตัวไม่บังคับ ไม่ส่ง = ไม่กรองตัวนั้น */
 export type SoQuery = {
   /** ค้นจาก so.so_code ฝั่งเซิร์ฟเวอร์ (ilike "มีคำนี้อยู่") */
   soCode?: string
@@ -96,14 +98,14 @@ const dateParam = (value: string | undefined) =>
   value && /^\d{4}-\d{2}-\d{2}$/.test(value.trim()) ? value.trim() : ""
 
 /**
- * POST /api/web/so-get-list — ใบสั่งขายทั้งหมด ออเดอร์ใหม่ขึ้นก่อน แล้ว po_date ใหม่สุดก่อน
+ * POST /api/web/so_export-get-list — ใบสั่งขายทั้งหมด ออเดอร์ใหม่ขึ้นก่อน แล้ว po_date ใหม่สุดก่อน
  *
  * ค้นหา/กรองช่วงวันที่/แบ่งหน้า ทำที่ฝั่งเซิร์ฟเวอร์ทั้งหมด ตารางแค่ส่งเงื่อนไขไปแล้วแสดงผลที่ได้
  * ไม่เจอเลย API ตอบ 200 พร้อม so = [] — ไม่ใช่ error
  * (เรียงด้วย po_date ไม่ใช่ updated_at เพราะงาน sync เขียน updated_at เท่ากันทั้งรอบ)
  */
-export async function getSoList(query: SoQuery = {}): Promise<SoList> {
-  const result = await post<SoList>("so-get-list", {
+export async function getSoExportList(query: SoQuery = {}): Promise<SoList> {
+  const result = await post<SoList & { so_export?: So[] }>("so_export-get-list", {
     so_code: query.soCode ?? "",
     name: query.name ?? "",
     tel: query.tel ?? "",
@@ -120,8 +122,8 @@ export async function getSoList(query: SoQuery = {}): Promise<SoList> {
     per_page: query.perPage ?? SO_PAGE_SIZE,
   })
   return {
-    // คีย์เป็นชื่อตาราง ไม่ใช่ชื่อเส้น — API ตอบ "so"
-    so: result?.so ?? [],
+    // เส้นนี้ยังไม่มีตอนเขียน ไม่รู้ว่าจะตอบคีย์ "so_export" หรือ "so" (แบบ so-get-list) — รับได้ทั้งคู่
+    so: result?.so_export ?? result?.so ?? [],
     total: result?.total ?? 0,
     page: result?.page ?? 1,
     per_page: result?.per_page ?? 0,
@@ -130,7 +132,7 @@ export async function getSoList(query: SoQuery = {}): Promise<SoList> {
 }
 
 /**
- * POST /api/web/so-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
+ * POST /api/web/so_export-get-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
  *
  * "add" ส่ง id เป็น 0 (ฐานข้อมูลออกเลขให้จาก sequence) · "edit" ต้องส่ง id ของแถวที่แก้
  * ทั้งสองแบบส่งไปทุกฟิลด์ ไม่ใช่เฉพาะที่แก้ และคืนแถวหลังบันทึกกลับมา (รวมคอลัมน์ของงาน sync)
@@ -138,12 +140,12 @@ export async function getSoList(query: SoQuery = {}): Promise<SoList> {
  * "so_code with this product already exists" · customer_id / shipment_type_id ที่ไม่มีจริงตอบ 400
  * ข้อความจาก API ถูกโชว์ในฟอร์มตรง ๆ ไม่ได้แปลใหม่
  */
-export async function saveSo(
+export async function saveSoExport(
   action: SoFormMode,
   values: SoFormValues,
   soId?: number
 ): Promise<So> {
-  return (await post<So>("so-action", {
+  return (await post<So>("so_export-get-action", {
     action,
     id: soId ?? 0,
     ...values,
@@ -151,13 +153,14 @@ export async function saveSo(
 }
 
 /**
- * POST /api/web/so-delete — ลบรายการตาม id (ส่งไปแค่ id เท่านั้น)
+ * POST /api/web/so_export-get-delet — ลบรายการตาม id (ส่งไปแค่ id เท่านั้น)
  *
  * ลบทีละแถว ไม่ใช่ทั้งใบ · ลบออกจากตารางจริง กู้คืนไม่ได้
  * แถวที่มาจากไฟล์ sync งาน sync รอบถัดไปจะเติมกลับมาใหม่
  */
-export async function deleteSo(id: number): Promise<SoDeleted> {
-  return (await post<SoDeleted>("so-delete", { id })) as SoDeleted
+export async function deleteSoExport(id: number): Promise<SoDeleted> {
+  // ชื่อเส้นสะกด "delet" ตามที่สั่งมา — ถ้าฝั่ง API ตั้งเป็น "-delete" ต้องแก้ตรงนี้ให้ตรงกัน
+  return (await post<SoDeleted>("so_export-get-delet", { id })) as SoDeleted
 }
 
 /** ยิงเส้น -get-option หนึ่งเส้น — พังก็คืน [] ช่องนั้นแค่ไม่มีตัวเลือก ไม่ลากช่องอื่นพังไปด้วย */
@@ -173,7 +176,7 @@ async function options<T>(path: string): Promise<T[]> {
 /**
  * ตัวเลือกของช่อง select ทั้งหมดในหน้านี้ — 7 เส้นยิงพร้อมกัน ไม่รับพารามิเตอร์ ได้เฉพาะตัวที่ active
  *
- * ไม่มี so-get-option ให้ยิง (ดูหัวไฟล์) จึงดึงจากทะเบียนที่แต่ละคอลัมน์อ้างถึง:
+ * ช่องในฟอร์มอ้างถึงทะเบียนอื่น จึงดึงจากทะเบียนที่แต่ละคอลัมน์อ้างถึง (ไม่ใช่ so_export-get-option):
  *   status -> status_po · pay_by -> payment_type · is_payment -> status_payment
  *   shipment_type -> shiptment_type (ตัวเดียวที่ผูกด้วย id: so.shipment_type_id)
  *   channel / channel_name -> broadcast · product_type_name -> product_type · vendor_name -> vendor
@@ -206,6 +209,16 @@ export async function getSoOptions(): Promise<SoOptions> {
     productTypes,
     vendors,
   }
+}
+
+/**
+ * POST /api/web/so_export-get-option — ตัวเลือกของหน้านี้เอง (ไม่รับพารามิเตอร์)
+ *
+ * รูปแบบแถวยังไม่รู้แน่ (เส้นยังไม่มีตอนเขียน) — เดาไว้ว่า id + so_code แบบเส้น -get-option อื่น ดู SoExportOption
+ * ยังไม่ได้ผูกกับช่องไหนในหน้า · พังก็คืน [] เหมือนเส้นตัวเลือกอื่น
+ */
+export async function getSoExportOptions(): Promise<SoExportOption[]> {
+  return options<SoExportOption>("so_export-get-option")
 }
 
 /**

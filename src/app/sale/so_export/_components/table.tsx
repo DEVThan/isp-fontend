@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import {
-  Eye,
+  // Eye, — ปุ่มดูข้อมูลซ่อนไว้
   LoaderCircle,
-  Pencil,
+  // Pencil, — ปุ่มแก้ไขซ่อนไว้
   // Plus, — ปุ่มเพิ่มปิดไว้ก่อน
   Search,
   SearchX,
@@ -14,34 +14,36 @@ import {
 import { useTranslations } from "next-intl"
 
 import {
-  getSoList,
+  getSoExportList,
   getSoOptions,
   SO_PAGE_SIZE,
-} from "@/app/sale/so/_components/api"
-import { DateRangeFilter } from "@/app/sale/so/_components/daterange"
-import { DeleteModal } from "@/app/sale/so/_components/delete_modal"
-import { FormModal } from "@/app/sale/so/_components/form_modal"
-// import { BroadcastLogo } from "@/app/sale/so/_components/logo" — ใช้แค่ในคอลัมน์ช่องทางที่ซ่อนอยู่
+} from "@/app/sale/so_export/_components/api"
+import { DateRangeFilter } from "@/app/sale/so_export/_components/daterange"
+import { DeleteModal } from "@/app/sale/so_export/_components/delete_modal"
+import { FormModal } from "@/app/sale/so_export/_components/form_modal"
+// import { BroadcastLogo } from "@/app/sale/so_export/_components/logo" — ใช้แค่ในคอลัมน์ช่องทางที่ซ่อนอยู่
 import {
   NO_SO_OPTIONS,
   type So,
   type SoFormMode,
   type SoList,
-} from "@/app/sale/so/_components/model"
-import { TablePagination } from "@/app/sale/so/_components/pagination"
+} from "@/app/sale/so_export/_components/model"
+import { TablePagination } from "@/app/sale/so_export/_components/pagination"
 import {
   NEUTRAL_STYLE,
   PAYMENT_STYLE,
   STATUS_STYLE,
-} from "@/app/sale/so/_components/status_style"
-import { ViewModal } from "@/app/sale/so/_components/view_modal"
+} from "@/app/sale/so_export/_components/status_style"
+import { ViewModal } from "@/app/sale/so_export/_components/view_modal"
 import {
   SelectOption,
   type SelectOptionItem,
-} from "@/app/sale/so/_components/selectoption"
+} from "@/app/sale/so_export/_components/selectoption"
 import { Badge } from "@/components/ui/badge"
+// Button ใช้แค่ปุ่มล้างรายการที่เลือก — ปุ่มในแถว (ดู / แก้ไข / ลบ) และปุ่มเพิ่มซ่อนอยู่
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -55,7 +57,7 @@ import {
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
 
-/** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
+/** คอลัมน์ checkbox + คอลัมน์ข้อมูลที่เปิดใช้อยู่ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง (ช่องปุ่มดู/แก้ไขซ่อนไว้ จึงไม่นับ)
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
 const COLUMN_COUNT = 11
 
@@ -64,7 +66,7 @@ const SEARCH_DELAY_MS = 350
 
 // สีป้ายสถานะ (STATUS_STYLE / PAYMENT_STYLE) ย้ายไป status_style.ts — กล่องดูข้อมูลใช้ร่วมกัน
 
-/** เงื่อนไขทั้งหมดที่ส่งไปให้ API ตัดหน้ามาให้ — ชื่อตรงกับพารามิเตอร์ของ so-get-list */
+/** เงื่อนไขทั้งหมดที่ส่งไปให้ API ตัดหน้ามาให้ — ชื่อตรงกับพารามิเตอร์ของ so_export-get-list */
 type Filters = {
   soCode: string
   name: string
@@ -119,8 +121,8 @@ const EMPTY_LIST: SoList = {
 export function Tables() {
   const t = useTranslations("common.table")
   const tall = useTranslations("common")
-  const tr = useTranslations("so")
-  const tcol = useTranslations("so.columns")
+  const tr = useTranslations("so_export")
+  const tcol = useTranslations("so_export.columns")
 
   const [list, setList] = React.useState<SoList>(EMPTY_LIST)
   const [failed, setFailed] = React.useState(false)
@@ -213,7 +215,7 @@ export function Tables() {
     const id = ++latest.current
     timer.current = setTimeout(async () => {
       try {
-        const result = await getSoList({
+        const result = await getSoExportList({
           soCode: next.soCode.trim(),
           name: next.name.trim(),
           tel: next.tel.trim(),
@@ -309,6 +311,34 @@ export function Tables() {
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
   const visible = list.so
+
+  /**
+   * แถวที่ติ๊กไว้ — เก็บเป็น id จึงจำข้ามหน้าได้ (ไปหน้า 2 แล้วกลับมา ติ๊กเดิมยังอยู่)
+   * เปลี่ยนตัวกรองก็ไม่ล้าง · ล้างได้ด้วยปุ่ม "ล้าง" ในแถบจำนวนที่เลือกเหนือตาราง
+   */
+  const [selected, setSelected] = React.useState<ReadonlySet<number>>(() => new Set())
+  /** ช่องบนหัวตาราง = เลือก/ไม่เลือก "ทั้งหน้าที่เห็นอยู่" ไม่ใช่ทุกแถวที่ตรงเงื่อนไข (API ส่งมาทีละหน้า) */
+  const pageSelected = visible.filter((row) => selected.has(row.id)).length
+  const allOnPage = visible.length > 0 && pageSelected === visible.length
+  const someOnPage = pageSelected > 0 && !allOnPage
+
+  const toggleRow = (id: number, checked: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+
+  const togglePage = (checked: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      for (const row of visible) {
+        if (checked) next.add(row.id)
+        else next.delete(row.id)
+      }
+      return next
+    })
 
   /** ลำดับที่โชว์แทนรหัส — นับต่อจากหน้าก่อนหน้า (หน้า 2 แถวแรกได้ 31 เมื่อหน้าละ 30)
    *  ใช้ page/per_page ที่ API ตอบกลับมา ไม่ใช่ state ของตัวกรอง เลขจึงตรงกับแถวที่เห็นจริง */
@@ -457,6 +487,20 @@ export function Tables() {
 
       <CardContent className="px-4 py-0">
         <div className="flex flex-wrap items-end justify-end gap-0 p-0 md:p-0">
+          {/* จำนวนแถวที่ติ๊กไว้ (รวมทุกหน้า) + ปุ่มล้าง — ขึ้นเฉพาะตอนเลือกอย่างน้อยหนึ่งแถว */}
+          {selected.size > 0 ? (
+            <div className="bg-primary/10 text-primary mt-3 mr-auto flex items-center gap-2 rounded-lg py-1 pr-1 pl-3 text-sm font-medium">
+              {tr("selected", { count: selected.size.toLocaleString("en-US") })}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelected(new Set())}
+                className="text-primary hover:bg-primary/15 h-7"
+              >
+                {t("clear")}
+              </Button>
+            </div>
+          ) : null}
           {/* ปิดปุ่มเพิ่มไว้ก่อน — เปิดกลับให้เอา Plus ใน import ออกจาก comment ด้วย
               (FormModal ด้านล่างยังอยู่ ตอนนี้เข้าถึงได้แต่โหมดแก้ไขจากปุ่มดินสอในแถว
                ทั้งตารางนี้จึงกลายเป็นอ่าน+แก้ไข ไม่มีทางเพิ่มหรือลบแถวจากหน้าเว็บ
@@ -510,8 +554,19 @@ export function Tables() {
           <Table>
             <TableHeader className="bg-muted/60">
               <TableRow className="hover:bg-transparent">
+                {/* เลือกทั้งหน้า — ติ๊กครบทุกแถวในหน้า = ถูก · ติ๊กบางแถว = ขีด (indeterminate) */}
+                <TableHead className="w-10 pl-6">
+                  <Checkbox
+                    checked={allOnPage}
+                    indeterminate={someOnPage}
+                    disabled={visible.length === 0}
+                    onCheckedChange={(checked) => togglePage(checked)}
+                    aria-label={tr("selectAll")}
+                    className="bg-card"
+                  />
+                </TableHead>
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
-                <TableHead className="text-muted-foreground w-14 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                <TableHead className="text-muted-foreground w-14 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
                 <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("so_code")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("product_name")}</TableHead>
@@ -524,9 +579,11 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-16 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-right text-xs font-semibold tracking-wide uppercase">{tcol("amount")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
-                {/* สองปุ่ม (ดู + แก้ไข) — w-24 · 32px ที่เพิ่มขึ้นเอามาจากคอลัมน์ชื่อสินค้า */}
-                <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
+                {/* คอลัมน์สุดท้ายแล้ว (ช่องปุ่มซ่อนอยู่) — pr-6 ให้ขอบขวาเว้นเท่าขอบซ้ายของคอลัมน์ลำดับ */}
+                <TableHead className="text-muted-foreground w-32 pr-6 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
+                {/* ช่องปุ่ม (ดู + แก้ไข) — ซ่อนไว้ทั้งคอลัมน์ (เปิดกลับ: เอา comment ออกทั้งหัวคอลัมน์และเซลล์
+                    + Eye / Pencil / Button ใน import + COLUMN_COUNT กลับเป็น 11 + เอา pr-6 ออกจากคอลัมน์ชำระเงิน) */}
+                {/* <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -536,14 +593,23 @@ export function Tables() {
                 return (
                 <TableRow
                   key={row.id}
-                  className="group/row border-border/50 hover:bg-accent/40 transition-colors"
+                  data-state={selected.has(row.id) ? "selected" : undefined}
+                  className="group/row border-border/50 hover:bg-accent/40 data-[state=selected]:bg-primary/5 transition-colors"
                 >
                   <TableCell className="pt-1 pb-1 relative pl-6">
-                    {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ */}
+                    {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ — แถวที่ติ๊กไว้ขึ้นค้าง */}
                     <span
                       aria-hidden
-                      className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
+                      className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100 group-data-[state=selected]/row:opacity-100"
                     />
+                    <Checkbox
+                      checked={selected.has(row.id)}
+                      onCheckedChange={(checked) => toggleRow(row.id, checked)}
+                      aria-label={tr("selectRow", { code: row.so_code })}
+                      className="bg-card"
+                    />
+                  </TableCell>
+                  <TableCell className="pt-1 pb-1">
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
                   {/* เลขที่ใบ + วันที่สั่งซื้อ (po_date) — API เรียงตาม po_date วันที่จึงอยู่คู่กับเลขที่ใบ (เดิมโชว์ create_date) */}
@@ -621,7 +687,7 @@ export function Tables() {
                     ) : null}
                   </TableCell>
                   {/* สถานะชำระเงิน + วิธีชำระตัวจางบรรทัดล่าง */}
-                  <TableCell className="pt-1 pb-1">
+                  <TableCell className="pt-1 pb-1 pr-6">
                     {row.is_payment ? (
                       <Badge
                         variant="secondary"
@@ -636,9 +702,11 @@ export function Tables() {
                     ) : null}
                     <div className="text-muted-foreground mt-0.5 text-xs">{row.pay_by}</div>
                   </TableCell>
-                  <TableCell className="pt-1 pb-1 pr-6 text-right">
+                  {/* ปุ่มดูข้อมูล + แก้ไข — ซ่อนไว้ทั้งเซลล์ (ดูหมายเหตุที่หัวคอลัมน์)
+                      ViewModal / FormModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด */}
+                  {/* <TableCell className="pt-1 pb-1 pr-6 text-right">
                     <div className="flex justify-end gap-0.5">
-                      {/* ดูข้อมูลทั้งหมดแบบอ่านอย่างเดียว — สี info แยกจากส้ม (แก้ไข) เหมือนหน้าสินค้า */}
+                      {/* ดูข้อมูลทั้งหมดแบบอ่านอย่างเดียว — สี info แยกจากส้ม (แก้ไข) เหมือนหน้าสินค้า *\/}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -658,7 +726,7 @@ export function Tables() {
                         <Pencil />
                       </Button>
                       {/* ปิดปุ่มลบไว้ก่อน — เปิดกลับให้เอา Trash2 ใน import ออกจาก comment ด้วย
-                          (DeleteModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด) */}
+                          (DeleteModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด) *\/}
                       {/* <Button
                         variant="ghost"
                         size="icon"
@@ -667,9 +735,9 @@ export function Tables() {
                         className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
                       >
                         <Trash2 />
-                      </Button> */}
+                      </Button> *\/}
                     </div>
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
                 )
               })}

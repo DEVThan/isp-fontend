@@ -4,8 +4,8 @@ import * as React from "react"
 import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { deleteVendor } from "@/app/vendor/_components/api"
-import type { Vendor } from "@/app/vendor/_components/model"
+import { deleteSoExport } from "@/app/sale/so_export/_components/api"
+import type { So } from "@/app/sale/so_export/_components/model"
 import {
   Alert,
   AlertContent,
@@ -24,26 +24,29 @@ import {
 } from "@/components/ui/dialog"
 
 /**
- * delete_modal.tsx — ถามยืนยันก่อนลบผู้ขายแล้วค่อยยิง POST /api/web/vendor-delete
+ * delete_modal.tsx — ถามยืนยันก่อนลบรายการแล้วค่อยยิง POST /api/web/so_export-get-delet
  *
  * ลบสำเร็จเท่านั้นถึงจะเรียก onDeleted ให้ตารางโหลดใหม่ · ลบไม่สำเร็จกล่องยังเปิดค้าง
  * พร้อมข้อความจาก API และตารางไม่ถูกแตะต้อง
+ *
+ * **ลบทีละแถว ไม่ใช่ทั้งใบ** — so_code เดียวมีได้หลายแถว (หนึ่งแถวคือหนึ่งรายการสินค้า)
+ * และแถวที่มาจากไฟล์ sync งาน sync รอบถัดไปจะเติมกลับมาใหม่ เตือนไว้ก่อนกดทั้งสองข้อ
  */
 export function DeleteModal({
   open,
   onOpenChange,
-  vendor,
+  so,
   onDeleted,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** แถวที่กำลังจะลบ */
-  vendor?: Vendor
+  so?: So
   /** ลบสำเร็จแล้ว — ตารางเอาไปโหลดข้อมูลใหม่ */
   onDeleted?: () => void
 }) {
   const t = useTranslations("common")
-  const tform = useTranslations("vendors.form")
+  const tform = useTranslations("so_export.form")
 
   const [deleting, setDeleting] = React.useState(false)
   /** ผลของการกดลบครั้งล่าสุด — null คือยังไม่ได้กด */
@@ -53,7 +56,7 @@ export function DeleteModal({
   } | null>(null)
 
   // เปิดใหม่หรือสลับแถวเมื่อไหร่ ให้ล้างผลของรอบก่อนทิ้ง (ปรับ state ระหว่าง render)
-  const key = `${vendor?.id ?? "none"}-${String(open)}`
+  const key = `${so?.id ?? "none"}-${String(open)}`
   const [lastKey, setLastKey] = React.useState(key)
   if (key !== lastKey) {
     setLastKey(key)
@@ -70,8 +73,14 @@ export function DeleteModal({
         </DialogHeader>
 
         <DialogDescription>
-          {tform("deleteDescription", { name: vendor?.name ?? "" })}
+          {/* บอกทั้งเลขที่ใบและชื่อสินค้า — ใบเดียวมีหลายแถว บอกแค่เลขที่ใบจะไม่รู้ว่าลบบรรทัดไหน */}
+          {tform("deleteDescription", {
+            code: so?.so_code ?? "",
+            product: so?.product_name ?? "",
+          })}
         </DialogDescription>
+
+        <p className="text-muted-foreground text-xs">{tform("deleteWarning")}</p>
 
         {result ? (
           <Alert variant={result.ok ? "success" : "destructive"}>
@@ -98,15 +107,14 @@ export function DeleteModal({
           </DialogClose>
           <Button
             variant="destructive"
-            disabled={deleting || !vendor}
+            disabled={deleting || !so}
             onClick={async () => {
-              if (!vendor || deleting) return
+              if (!so || deleting) return
               setDeleting(true)
               setResult(null)
               try {
                 // ส่งไปแค่ id ตามที่เส้นนี้ต้องการ
-                // ตารางนี้ไม่มีใครอ้างชื่อจากมัน เส้นลบจึงคืนมาแค่แถวที่หายไป ไม่มีอะไรต้องเตือนต่อ
-                await deleteVendor(vendor.id)
+                await deleteSoExport(so.id)
                 setResult({ ok: true })
                 onDeleted?.()
                 setTimeout(() => onOpenChange(false), 1400)

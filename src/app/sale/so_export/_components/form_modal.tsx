@@ -14,10 +14,10 @@ import {
 import { useTranslations } from "next-intl"
 
 // type Accent ใช้แค่ใน SyncInfo ที่ซ่อนอยู่ — เปิด SyncInfo กลับให้ใส่ ", type Accent" คืนด้วย
-import { ACCENTS } from "@/app/sale/so/_components/accents"
-import { getSoOptions, saveSo } from "@/app/sale/so/_components/api"
-import { CustomerSelect } from "@/app/sale/so/_components/customerselect"
-import { BroadcastLogo } from "@/app/sale/so/_components/logo"
+import { ACCENTS } from "@/app/sale/so_export/_components/accents"
+import { getSoOptions, saveSoExport } from "@/app/sale/so_export/_components/api"
+import { CustomerSelect } from "@/app/sale/so_export/_components/customerselect"
+import { BroadcastLogo } from "@/app/sale/so_export/_components/logo"
 import {
   NO_SO_OPTIONS,
   SO_FIELDS,
@@ -28,11 +28,11 @@ import {
   type So,
   type SoFormMode,
   type SoFormValues,
-} from "@/app/sale/so/_components/model"
+} from "@/app/sale/so_export/_components/model"
 import {
   SelectOption,
   type SelectOptionItem,
-} from "@/app/sale/so/_components/selectoption"
+} from "@/app/sale/so_export/_components/selectoption"
 import {
   Alert,
   AlertContent,
@@ -59,7 +59,7 @@ import { cn } from "@/lib/utils"
  * form_modal.tsx — ฟอร์มเพิ่ม/แก้ไขรายการในใบสั่งขาย
  *
  * ปุ่มที่เปิดฟอร์มเป็นคนบอกโหมดมาเอง: "add" เปิดฟอร์มเปล่า "edit" เปิดพร้อมค่าของแถวนั้น
- * กดบันทึกแล้วยิง POST /api/web/so-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
+ * กดบันทึกแล้วยิง POST /api/web/so_export-get-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
  *
  * **ฟอร์มนี้ถือค่าครบทุกคอลัมน์ที่เขียนได้เสมอ** (SO_FIELDS) เพราะเส้น -action เขียนทับทั้งแถว
  * ไม่ได้แก้เฉพาะที่ส่งไป — ตกไปตัวเดียวของเดิมกลายเป็น NULL ทันที
@@ -82,7 +82,7 @@ import { cn } from "@/lib/utils"
  * ระวัง: แถวที่เพิ่มจากหน้านี้จะไม่มีวันที่ทั้งสองตัว และเส้น -get-list เรียง create_date desc
  * nulls last แถวใหม่จึงไปโผล่หน้าสุดท้าย ไม่ใช่หน้าแรก
  *
- * **ช่อง select** ไม่มีเส้น so-get-option (ดูหัว api.ts) ตัวเลือกจึงมาจากทะเบียนที่คอลัมน์นั้นอ้างถึง
+ * **ช่อง select** ไม่ใช้ so_export-get-option (ดูหัว api.ts) ตัวเลือกจึงมาจากทะเบียนที่คอลัมน์นั้นอ้างถึง
  * ดึงใหม่ทุกครั้งที่เปิดฟอร์ม · ทุกช่องเก็บ "ชื่อ" ลงคอลัมน์ข้อความ ยกเว้นประเภทการจัดส่งที่เก็บ
  * shipment_type_id ให้ด้วย (คอลัมน์นั้นเป็น foreign key ตัวจริง) และช่องทางที่เขียนลงสองคอลัมน์พร้อมกัน
  * ค่าเดิมของแถวที่ไม่มีในตัวเลือกถูกเติมเข้าไปให้เห็น (withCurrent) ไม่งั้นช่องจะดูว่างทั้งที่มีค่า
@@ -243,8 +243,8 @@ export function FormModal({
   onSaved?: () => void
 }) {
   const t = useTranslations("common")
-  const tform = useTranslations("so.form")
-  const tcol = useTranslations("so.columns")
+  const tform = useTranslations("so_export.form")
+  const tcol = useTranslations("so_export.columns")
 
   const [values, setValues] = React.useState(() => toValues(so))
   const [saving, setSaving] = React.useState(false)
@@ -525,7 +525,7 @@ export function FormModal({
             try {
               // โหมดของฟอร์มคือ action ที่ API ใช้ตัดสินใจ ("add" / "edit")
               // ส่งไปครบทุกคอลัมน์ ไม่งั้นของเดิมโดนเขียนทับเป็นค่าว่าง
-              await saveSo(mode, values, so?.id)
+              await saveSoExport(mode, values, so?.id)
               setResult({ ok: true })
               onSaved?.()
               // ให้เห็นข้อความว่าสำเร็จสักครู่ก่อนปิด ไม่งั้นกล่องหายไปเลยเหมือนไม่มีอะไรเกิดขึ้น
@@ -909,7 +909,7 @@ export function FormModal({
  *  แถวที่เพิ่มจากหน้านี้ไม่มี source_file (โชว์ขีดจาง ๆ ให้รู้ว่าไม่ได้มาจากไฟล์) */
 // ซ่อนไว้ก่อน (ตามที่สั่ง) — เปิดกลับ: เอา comment ของฟังก์ชันนี้ + formatStamp + จุดที่เรียกในฟอร์มออก
 // function SyncInfo({ so }: { so: So }) {
-//   const tcol = useTranslations("so.columns")
+//   const tcol = useTranslations("so_export.columns")
 //
 //   const info: {
 //     key: "source_file" | "synced_at" | "updated_at"
