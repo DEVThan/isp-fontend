@@ -774,7 +774,9 @@
       "addSenderCode": "เพิ่มรหัสผู้ส่ง",
       "noSenderCode": "ยังไม่มีรหัสผู้ส่ง",
       "viewSenderCode": "ดูรหัสผู้ส่ง",
-      "senderDescription": "รหัสผู้ส่งทั้งหมดของ “{name}”"
+      "senderDescription": "รหัสผู้ส่งทั้งหมดของ “{name}”",
+      "senderCodeLimit": "เลือกขนส่งครบทุกเจ้าแล้ว ({count} เจ้า)",
+      "noShipping": "ยังไม่มีบริษัทขนส่งให้เลือก — เพิ่มได้ที่หน้าบริษัทขนส่ง"
     },
     "active": "เปิดใช้งาน",
     "inactive": "ปิดใช้งาน",

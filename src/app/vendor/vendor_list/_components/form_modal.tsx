@@ -21,6 +21,8 @@ import {
   type VendorFormValues,
 } from "@/app/vendor/vendor_list/_components/model"
 import { SelectOption } from "@/app/vendor/vendor_list/_components/selectoption"
+import { getShippingOptions } from "@/app/shipping/_components/api"
+import type { ShippingOption } from "@/app/shipping/_components/model"
 // เทมเพลตส่งออก — ช่องซ่อนไว้ (ดูที่ช่องในฟอร์ม) เปิดกลับให้เอา comment สองบรรทัดนี้ออกด้วย
 // import { getVendorExportTemplateOptions } from "@/app/vendor/vendor_export_template/_components/api"
 // import type { VendorExportTemplateOption } from "@/app/vendor/vendor_export_template/_components/model"
@@ -179,6 +181,51 @@ export function FormModal({
       cancelled = true
     }
   }, [open])
+
+  /**
+   * บริษัทขนส่งที่ active (/shipping-get-option) — ตัวเลือกของคอลัมน์ "ขนส่ง" ในตารางรหัสผู้ส่ง
+   * ดึงใหม่ทุกครั้งที่เปิดฟอร์ม · เก็บ "ชื่อ" ลง shipping ของแต่ละแถว (หน้าใบสั่งขายเอาไปเป็นตัวเลือก "ขนส่งโดย")
+   */
+  const [shippings, setShippings] = React.useState<ShippingOption[]>([])
+  React.useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    getShippingOptions()
+      .then((next) => {
+        if (!cancelled) setShippings(next)
+      })
+      .catch(() => {
+        if (!cancelled) setShippings([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open])
+
+  /**
+   * ตัวเลือกขนส่งของแถวที่ index — ตัดขนส่งที่แถวอื่นเลือกไปแล้ว (เลือกซ้ำไม่ได้)
+   * ค่าเดิมของแถวที่ไม่อยู่ในทะเบียน (ข้อมูลเก่าที่พิมพ์เอง หรือขนส่งที่ถูกปิดไป) เติมเข้าไปให้เห็น ไม่หายเงียบ ๆ
+   */
+  const shippingOptionsFor = (index: number) => {
+    const taken = new Set(
+      senderRows
+        .filter((_, i) => i !== index)
+        .map((row) => row.shipping.trim())
+        .filter(Boolean)
+    )
+    const own = senderRows[index]?.shipping.trim() ?? ""
+    return [
+      ...shippings
+        .filter((option) => !taken.has(option.name))
+        .map((option) => ({ value: option.name, label: option.name })),
+      ...(own && !shippings.some((option) => option.name === own)
+        ? [{ value: own, label: own }]
+        : []),
+    ]
+  }
+
+  /** เพิ่มแถวได้ไม่เกินจำนวนขนส่งในทะเบียน (แต่ละเจ้าใช้ได้แถวเดียว) */
+  const senderLimitReached = senderRows.length >= shippings.length
 
   /** ค่าคือชื่อ (ตรงกับ vendor.shipment_type)
    *  ชื่อที่แถวเลือกไว้แต่ถูกปิดไปแล้ว (ไม่อยู่ใน get-option) เติมเข้าไปให้เห็น ไม่งั้นช่องดูว่างทั้งที่มีค่า */
@@ -374,20 +421,23 @@ export function FormModal({
                       key={index}
                       className="border-border/50 hover:bg-transparent"
                     >
+                      {/* ขนส่ง — เลือกจากทะเบียนบริษัทขนส่ง (เดิมพิมพ์เอง) ตัวที่แถวอื่นเลือกแล้วไม่อยู่ในรายการ */}
                       <TableCell className="py-1 pl-3">
-                        <Input
-                          value={row.shipping}
-                          placeholder="..."
-                          aria-label={`${tcol("shipping")} ${index + 1}`}
-                          onChange={(event) =>
+                        <SelectOption
+                          id={`vendor-shipping-${index}`}
+                          options={shippingOptionsFor(index)}
+                          value={row.shipping.trim() || null}
+                          onValueChange={(next) =>
                             setSenders(
                               senderRows.map((current, i) =>
                                 i === index
-                                  ? { ...current, shipping: event.target.value }
+                                  ? { ...current, shipping: next ?? "" }
                                   : current
                               )
                             )
                           }
+                          placeholder="..."
+                          label={`${tcol("shipping")} ${index + 1}`}
                         />
                       </TableCell>
                       <TableCell className="py-1">
@@ -441,11 +491,13 @@ export function FormModal({
                 </TableBody>
               </Table>
 
-              <div className="border-border/50 border-t p-2">
+              <div className="border-border/50 flex flex-wrap items-center gap-2 border-t p-2">
+                {/* เพิ่มแถวได้ไม่เกินจำนวนขนส่งในทะเบียน — ครบแล้วปุ่มกดไม่ได้ พร้อมบอกเหตุผล */}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={senderLimitReached}
                   onClick={() =>
                     setSenders([
                       ...senderRows,
@@ -455,6 +507,13 @@ export function FormModal({
                 >
                   <Plus /> {tform("addSenderCode")}
                 </Button>
+                {senderLimitReached ? (
+                  <span className="text-muted-foreground text-xs">
+                    {shippings.length === 0
+                      ? tform("noShipping")
+                      : tform("senderCodeLimit", { count: shippings.length })}
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>

@@ -774,7 +774,9 @@
       "addSenderCode": "ပေးပို့သူ ကုဒ် ထည့်ရန်",
       "noSenderCode": "ပေးပို့သူ ကုဒ် မရှိသေးပါ",
       "viewSenderCode": "ပေးပို့သူ ကုဒ်များ ကြည့်ရန်",
-      "senderDescription": "“{name}” ၏ ပေးပို့သူ ကုဒ် အားလုံး"
+      "senderDescription": "“{name}” ၏ ပေးပို့သူ ကုဒ် အားလုံး",
+      "senderCodeLimit": "ပို့ဆောင်သူ အားလုံး ရွေးပြီးပါပြီ ({count})",
+      "noShipping": "ရွေးရန် ပို့ဆောင်ရေး ကုမ္ပဏီ မရှိသေးပါ"
     },
     "active": "ဖွင့်ထား",
     "inactive": "ပိတ်ထား",
