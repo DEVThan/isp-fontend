@@ -14,6 +14,7 @@ import type {
   SoList,
   SoOptions,
   VendorOption,
+  ShippingRegistryOption,
 } from "@/app/sale/so/_components/model"
 
 /**
@@ -188,6 +189,7 @@ export async function getSoOptions(): Promise<SoOptions> {
     broadcasts,
     productTypes,
     vendors,
+    shippings,
   ] = await Promise.all([
     options<NamedOption>("status-po-get-option"),
     options<NamedOption>("payment-type-get-option"),
@@ -196,6 +198,7 @@ export async function getSoOptions(): Promise<SoOptions> {
     options<BroadcastOption>("broadcast-get-option"),
     options<NamedOption>("product-type-get-option"),
     options<VendorOption>("vendor-get-option"),
+    options<ShippingRegistryOption>("shipping-get-option"),
   ])
   return {
     statuses,
@@ -205,6 +208,7 @@ export async function getSoOptions(): Promise<SoOptions> {
     broadcasts,
     productTypes,
     vendors,
+    shippings,
   }
 }
 

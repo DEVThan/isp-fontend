@@ -127,6 +127,11 @@ export type So = {
   /** timestamp จริง (ไม่ใช่ text เหมือนวันที่ตัวอื่น) — Flask ส่งมาเป็น "Thu, 24 Sep 2026 04:00:43 GMT" */
   synced_at: string | null
   updated_at: string | null
+  /** ผู้ขายจาก join so.item_code -> products.item_code -> products.vendo_code -> vendor.code (so-get-list เท่านั้น
+   *  2026-09-29) — หาไม่เจอ = null · แถวที่ได้จาก -action ไม่มีสองฟิลด์นี้ */
+  vendor_code?: string | null
+  /** vendor.shipment_type ของผู้ขายข้างบน — ตารางและฟอร์มใช้เป็นประเภทการจัดส่งก่อน so.shipment_type */
+  vendor_shipment_type?: string | null
 }
 
 /**
@@ -177,6 +182,9 @@ export type VendorOption = NamedOption & {
   sender_code?: string | null
 }
 
+/** บริษัทขนส่งจาก /shipping-get-option — จับคู่กับ vendor.sender_code ด้วยชื่อ (หน้าผู้ขายเก็บชื่อ) หรือรหัส */
+export type ShippingRegistryOption = NamedOption & { code: string | null }
+
 /** ช่องทางการออกอากาศ — มีโลโก้มาด้วย (หน้านี้ไม่ได้ใช้) */
 export type BroadcastOption = NamedOption & { logo: string }
 
@@ -194,6 +202,8 @@ export type SoOptions = {
   broadcasts: BroadcastOption[]
   /** ทะเบียน product_type */
   productTypes: NamedOption[]
+  /** ทะเบียน shipping (บริษัทขนส่ง) — ตัวเลือก "ขนส่งโดย" กรองด้วยขนส่งใน vendor.sender_code ของผู้ขาย */
+  shippings: ShippingRegistryOption[]
   vendors: VendorOption[]
 }
 
@@ -205,5 +215,6 @@ export const NO_SO_OPTIONS: SoOptions = {
   shipmentTypes: [],
   broadcasts: [],
   productTypes: [],
+  shippings: [],
   vendors: [],
 }
