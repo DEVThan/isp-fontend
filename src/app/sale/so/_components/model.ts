@@ -168,8 +168,14 @@ export type NamedOption = { id: number; name: string }
 /** ลูกค้าจาก /customer-get-option — ค้นฝั่งเซิร์ฟเวอร์ ได้ไม่เกิน 20 คนต่อครั้ง (ดู getCustomerOptions) */
 export type CustomerOption = { id: number; name: string | null; tel: string }
 
-/** ผู้ขาย — ชื่อซ้ำกันได้ จึงมี code มาด้วย */
-export type VendorOption = NamedOption & { code: string }
+/** ผู้ขาย — ชื่อซ้ำกันได้ จึงมี code มาด้วย
+ *  shipment_type / sender_code (2026-09-29) — ฟอร์มเลือกผู้ขายแล้วเติมประเภทการจัดส่ง และทำตัวเลือก "ขนส่งโดย"
+ *  sender_code เป็น JSON string ของ [{shipping, sendercode}] อ่านด้วย parseSenderCodes ของหน้า vendor */
+export type VendorOption = NamedOption & {
+  code: string
+  shipment_type?: string | null
+  sender_code?: string | null
+}
 
 /** ช่องทางการออกอากาศ — มีโลโก้มาด้วย (หน้านี้ไม่ได้ใช้) */
 export type BroadcastOption = NamedOption & { logo: string }

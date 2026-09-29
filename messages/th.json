@@ -976,7 +976,10 @@
       "syncReadonlyHint": "ค่านี้มาจากงาน sync รายวัน แก้จากหน้านี้ไม่ได้",
       "customerIdHint": "รหัสลูกค้าในทะเบียนลูกค้า · เว้นว่าง = ไม่เชื่อมโยง",
       "customerSearch": "ค้นหาด้วยชื่อหรือเบอร์โทร",
-      "customerSearchError": "ค้นหาลูกค้าไม่สำเร็จ"
+      "customerSearchError": "ค้นหาลูกค้าไม่สำเร็จ",
+      "shipmentTypeHint": "มาจากประเภทการจัดส่งของผู้ขาย",
+      "shippingByEmpty": "ผู้ขายนี้ยังไม่มีรายการขนส่ง — พิมพ์เองได้",
+      "shippingByToggle": "เปิดรายการขนส่งของผู้ขาย"
     }
   },
   "so_export": {
