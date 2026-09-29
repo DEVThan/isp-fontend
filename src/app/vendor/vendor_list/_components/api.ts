@@ -10,6 +10,7 @@ import type {
   VendorFormValues,
   VendorList,
   VendorOption,
+  ShipmentTypeOption,
 } from "@/app/vendor/vendor_list/_components/model"
 
 /**
@@ -65,6 +66,8 @@ export type VendorQuery = {
   code?: string
   /** ค้นจาก vendor.name ฝั่งเซิร์ฟเวอร์ (ilike) — ไม่ส่ง = ไม่กรอง */
   name?: string
+  /** vendor.shipment_type เทียบตรงตัว (ชื่อจาก dropdown) — ไม่ส่ง = ไม่กรอง */
+  shipmentType?: string | null
   /** "active" / "inactive" — null หรือไม่ส่ง = ไม่กรองสถานะ */
   status?: string | null
   page?: number
@@ -83,6 +86,7 @@ export async function getVendors(
   const result = await post<VendorList>("vendor-get-list", {
     code: query.code ?? "",
     name: query.name ?? "",
+    shipment_type: query.shipmentType ?? "",
     // ไม่ส่ง active_status เลยเมื่อไม่ได้กรอง — ส่งสตริงว่างไปก็ได้ แต่ไม่ส่งอ่านง่ายกว่าตอน debug
     ...(query.status ? { active_status: query.status } : {}),
     page: query.page ?? 1,
@@ -104,6 +108,17 @@ export async function getVendors(
 export async function getVendorOptions(): Promise<VendorOption[]> {
   return (
     (await post<VendorOption[]>("vendor-get-option", {})) ??
+    []
+  )
+}
+
+/**
+ * POST /api/web/status-shiptmenttype-get-option — ประเภทการจัดส่งที่ active (id + name)
+ * ใช้ทั้งตัวกรองในตารางและช่องในฟอร์ม · ค่าที่เก็บลง vendor.shipment_type คือ name
+ */
+export async function getShipmentTypeOptions(): Promise<ShipmentTypeOption[]> {
+  return (
+    (await post<ShipmentTypeOption[]>("status-shiptmenttype-get-option", {})) ??
     []
   )
 }

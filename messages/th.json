@@ -756,6 +756,7 @@
       "shipping": "ขนส่ง",
       "senderCode": "รหัสผู้ส่ง",
       "exportTemplate": "เทมเพลตส่งออก",
+      "shipmentType": "ประเภทการจัดส่ง",
       "status": "สถานะ"
     },
     "form": {

@@ -33,6 +33,8 @@ export type Vendor = {
   sender_code: string | null
   /** เทมเพลตส่งออกของผู้ขายรายนี้ — id ของ vendor_export_template เก็บเป็นข้อความ ("" / null = ยังไม่เลือก) */
   export_template: string | null
+  /** ประเภทการจัดส่ง — เก็บ "ชื่อ" จากทะเบียน shiptment_type (เหมือน so.shipment_type) · "" / null = ยังไม่เลือก */
+  shipment_type: string | null
   active_status: string
 }
 
@@ -77,7 +79,14 @@ export type VendorFormValues = {
   remark: string
   sender_code: string
   export_template: string
+  shipment_type: string
   active_status: string
+}
+
+/** ตัวเลือกประเภทการจัดส่งจาก POST /api/web/status-shiptmenttype-get-option — เฉพาะที่ active */
+export type ShipmentTypeOption = {
+  id: number
+  name: string
 }
 
 /** ความยาวสูงสุดของ code / name / email / tel — ตรงกับ _MAX_LEN ฝั่ง API (varchar(100))

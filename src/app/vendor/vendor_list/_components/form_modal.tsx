@@ -4,7 +4,10 @@ import * as React from "react"
 import { CircleCheck, LoaderCircle, Plus, Trash2, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl"
 
-import { saveVendor } from "@/app/vendor/vendor_list/_components/api"
+import {
+  getShipmentTypeOptions,
+  saveVendor,
+} from "@/app/vendor/vendor_list/_components/api"
 import {
   parseSenderCodes,
   serializeSenderCodes,
@@ -12,13 +15,15 @@ import {
   VENDOR_INACTIVE,
   VENDOR_MAX_LEN,
   type SenderCode,
+  type ShipmentTypeOption,
   type Vendor,
   type VendorFormMode,
   type VendorFormValues,
 } from "@/app/vendor/vendor_list/_components/model"
 import { SelectOption } from "@/app/vendor/vendor_list/_components/selectoption"
-import { getVendorExportTemplateOptions } from "@/app/vendor/vendor_export_template/_components/api"
-import type { VendorExportTemplateOption } from "@/app/vendor/vendor_export_template/_components/model"
+// เทมเพลตส่งออก — ช่องซ่อนไว้ (ดูที่ช่องในฟอร์ม) เปิดกลับให้เอา comment สองบรรทัดนี้ออกด้วย
+// import { getVendorExportTemplateOptions } from "@/app/vendor/vendor_export_template/_components/api"
+// import type { VendorExportTemplateOption } from "@/app/vendor/vendor_export_template/_components/model"
 import {
   Alert,
   AlertContent,
@@ -67,6 +72,7 @@ const emptyValues: VendorFormValues = {
   remark: "",
   sender_code: "",
   export_template: "",
+  shipment_type: "",
   active_status: VENDOR_ACTIVE,
 }
 
@@ -82,6 +88,7 @@ const toValues = (vendor: Vendor | undefined): VendorFormValues =>
         remark: vendor.remark ?? "",
         sender_code: vendor.sender_code ?? "",
         export_template: vendor.export_template ?? "",
+        shipment_type: vendor.shipment_type ?? "",
         active_status: vendor.active_status,
       }
     : emptyValues
@@ -155,36 +162,59 @@ export function FormModal({
     set("sender_code", serializeSenderCodes(next))
   }
 
-  /** เทมเพลตส่งออกที่ active — ดึงใหม่ทุกครั้งที่เปิดฟอร์ม ทะเบียนอาจเพิ่ง/ปิดตัวเลือกไป */
-  const [templates, setTemplates] = React.useState<VendorExportTemplateOption[]>([])
+  /** ประเภทการจัดส่งที่ active — ดึงใหม่ทุกครั้งที่เปิดฟอร์ม ทะเบียนอาจเพิ่ง/ปิดตัวเลือกไป */
+  const [shipmentTypes, setShipmentTypes] = React.useState<ShipmentTypeOption[]>([])
   React.useEffect(() => {
     if (!open) return
     let cancelled = false
-    getVendorExportTemplateOptions()
+    getShipmentTypeOptions()
       .then((next) => {
-        if (!cancelled) setTemplates(next)
+        if (!cancelled) setShipmentTypes(next)
       })
       // ดึงไม่ได้ก็แค่ไม่มีตัวเลือก ฟอร์มยังบันทึกได้ — ห้าม console.error ใน dev จะขึ้นเต็มจอ
       .catch(() => {
-        if (!cancelled) setTemplates([])
+        if (!cancelled) setShipmentTypes([])
       })
     return () => {
       cancelled = true
     }
   }, [open])
 
-  /** ค่าคือ id เป็นข้อความ (ตรงกับ vendor.export_template)
-   *  เทมเพลตที่แถวเลือกไว้แต่ถูกปิดไปแล้ว (ไม่อยู่ใน get-option) เติมเข้าไปให้เห็น ไม่งั้นช่องดูว่างทั้งที่มีค่า */
-  const templateOptions = [
-    ...templates.map((option) => ({
-      value: String(option.id),
-      label: option.name,
-    })),
-    ...(values.export_template &&
-    !templates.some((option) => String(option.id) === values.export_template)
-      ? [{ value: values.export_template, label: `#${values.export_template}` }]
+  /** ค่าคือชื่อ (ตรงกับ vendor.shipment_type)
+   *  ชื่อที่แถวเลือกไว้แต่ถูกปิดไปแล้ว (ไม่อยู่ใน get-option) เติมเข้าไปให้เห็น ไม่งั้นช่องดูว่างทั้งที่มีค่า */
+  const shipmentTypeOptions = [
+    ...shipmentTypes.map((option) => ({ value: option.name, label: option.name })),
+    ...(values.shipment_type &&
+    !shipmentTypes.some((option) => option.name === values.shipment_type)
+      ? [{ value: values.shipment_type, label: values.shipment_type }]
       : []),
   ]
+
+  // เทมเพลตส่งออก — ซ่อนไว้ (ผู้ใช้ขอ 29/09/2026 ให้ประเภทการจัดส่งมาแทนที่)
+  // ค่า export_template เดิมของแถวยังอยู่ใน values และถูกส่งไปกับ -action ทุกครั้ง ไม่ถูกล้าง
+  // เปิดกลับ: เอา comment ออกทั้งก้อนนี้ + import สองบรรทัดด้านบน + ช่องในฟอร์ม
+  // const [templates, setTemplates] = React.useState<VendorExportTemplateOption[]>([])
+  // React.useEffect(() => {
+  //   if (!open) return
+  //   let cancelled = false
+  //   getVendorExportTemplateOptions()
+  //     .then((next) => {
+  //       if (!cancelled) setTemplates(next)
+  //     })
+  //     .catch(() => {
+  //       if (!cancelled) setTemplates([])
+  //     })
+  //   return () => {
+  //     cancelled = true
+  //   }
+  // }, [open])
+  // const templateOptions = [
+  //   ...templates.map((option) => ({ value: String(option.id), label: option.name })),
+  //   ...(values.export_template &&
+  //   !templates.some((option) => String(option.id) === values.export_template)
+  //     ? [{ value: values.export_template, label: `#${values.export_template}` }]
+  //     : []),
+  // ]
 
   const statusOptions = [
     { value: VENDOR_ACTIVE, label: tr("active") },
@@ -429,9 +459,10 @@ export function FormModal({
             </div>
           </div>
 
-          {/* สถานะกินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง · เทมเพลตส่งออกกินสองช่องที่เหลือ */}
+          {/* สถานะกินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง · ประเภทการจัดส่งกินสองช่องที่เหลือ */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="sm:col-span-2">
+            {/* เทมเพลตส่งออก — ซ่อนไว้ ประเภทการจัดส่งมาแทนที่ (ดูหมายเหตุที่ templateOptions ด้านบน) */}
+            {/* <div className="sm:col-span-2">
               <Field id="vendor-export-template" label={tcol("exportTemplate")}>
                 <SelectOption
                   id="vendor-export-template"
@@ -440,6 +471,18 @@ export function FormModal({
                   onValueChange={(next) => set("export_template", next ?? "")}
                   placeholder="..."
                   label={tcol("exportTemplate")}
+                />
+              </Field>
+            </div> */}
+            <div className="sm:col-span-2">
+              <Field id="vendor-shipment-type" label={tcol("shipmentType")}>
+                <SelectOption
+                  id="vendor-shipment-type"
+                  options={shipmentTypeOptions}
+                  value={values.shipment_type || null}
+                  onValueChange={(next) => set("shipment_type", next ?? "")}
+                  placeholder="..."
+                  label={tcol("shipmentType")}
                 />
               </Field>
             </div>

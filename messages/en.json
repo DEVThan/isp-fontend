@@ -756,6 +756,7 @@
       "shipping": "Shipping",
       "senderCode": "Sender code",
       "exportTemplate": "Export template",
+      "shipmentType": "Shipment type",
       "status": "Status"
     },
     "form": {
