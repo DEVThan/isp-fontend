@@ -127,6 +127,11 @@ export type So = {
   /** timestamp จริง (ไม่ใช่ text เหมือนวันที่ตัวอื่น) — Flask ส่งมาเป็น "Thu, 24 Sep 2026 04:00:43 GMT" */
   synced_at: string | null
   updated_at: string | null
+  /** ผู้ขายจาก join so.item_code -> products.item_code -> products.vendo_code -> vendor.code (so_export-get-list
+   *  เหมือน so-get-list 2026-09-29) — หาไม่เจอ = null · แถวที่ได้จาก -action ไม่มีสองฟิลด์นี้ */
+  vendor_code?: string | null
+  /** vendor.shipment_type ของผู้ขายข้างบน — ตารางและฟอร์มใช้เป็นประเภทการจัดส่งก่อน so.shipment_type */
+  vendor_shipment_type?: string | null
 }
 
 /**
@@ -141,7 +146,7 @@ export type SoList = {
   total_pages: number
 }
 
-/** ปุ่มไหนเป็นคนเปิดฟอร์ม — ค่าเดียวกับ action ที่ POST /api/web/so_export-get-action รับ */
+/** ปุ่มไหนเป็นคนเปิดฟอร์ม — ค่าเดียวกับ action ที่ POST /api/web/so_export-action รับ */
 export type SoFormMode = "add" | "edit"
 
 /**
@@ -168,8 +173,17 @@ export type NamedOption = { id: number; name: string }
 /** ลูกค้าจาก /customer-get-option — ค้นฝั่งเซิร์ฟเวอร์ ได้ไม่เกิน 20 คนต่อครั้ง (ดู getCustomerOptions) */
 export type CustomerOption = { id: number; name: string | null; tel: string }
 
-/** ผู้ขาย — ชื่อซ้ำกันได้ จึงมี code มาด้วย */
-export type VendorOption = NamedOption & { code: string }
+/** ผู้ขาย — ชื่อซ้ำกันได้ จึงมี code มาด้วย
+ *  shipment_type / sender_code (2026-09-29) — ฟอร์มเลือกผู้ขายแล้วเติมประเภทการจัดส่ง และทำตัวเลือก "ขนส่งโดย"
+ *  sender_code เป็น JSON string ของ [{shipping, sendercode}] อ่านด้วย parseSenderCodes ของหน้า vendor */
+export type VendorOption = NamedOption & {
+  code: string
+  shipment_type?: string | null
+  sender_code?: string | null
+}
+
+/** บริษัทขนส่งจาก /shipping-get-option — จับคู่กับ vendor.sender_code ด้วยชื่อ (หน้าผู้ขายเก็บชื่อ) หรือรหัส */
+export type ShippingRegistryOption = NamedOption & { code: string | null }
 
 /** ช่องทางการออกอากาศ — มีโลโก้มาด้วย (หน้านี้ไม่ได้ใช้) */
 export type BroadcastOption = NamedOption & { logo: string }
@@ -188,6 +202,8 @@ export type SoOptions = {
   broadcasts: BroadcastOption[]
   /** ทะเบียน product_type */
   productTypes: NamedOption[]
+  /** ทะเบียน shipping (บริษัทขนส่ง) — ตัวเลือก "ขนส่งโดย" กรองด้วยขนส่งใน vendor.sender_code ของผู้ขาย */
+  shippings: ShippingRegistryOption[]
   vendors: VendorOption[]
 }
 
@@ -199,6 +215,7 @@ export const NO_SO_OPTIONS: SoOptions = {
   shipmentTypes: [],
   broadcasts: [],
   productTypes: [],
+  shippings: [],
   vendors: [],
 }
 

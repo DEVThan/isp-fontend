@@ -1083,7 +1083,10 @@
       "syncReadonlyHint": "This value comes from the daily sync and cannot be changed here",
       "customerIdHint": "Customer ID from the customer registry · leave blank for no link",
       "customerSearch": "Search by name or phone",
-      "customerSearchError": "Could not search customers"
+      "customerSearchError": "Could not search customers",
+      "shipmentTypeHint": "Comes from the vendor's shipment type",
+      "shippingByEmpty": "This vendor has no carriers yet — type one",
+      "shippingByToggle": "Show the vendor's carriers"
     }
   },
   "broadcasts": {

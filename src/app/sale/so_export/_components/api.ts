@@ -15,6 +15,7 @@ import type {
   SoList,
   SoOptions,
   VendorOption,
+  ShippingRegistryOption,
 } from "@/app/sale/so_export/_components/model"
 
 /**
@@ -24,7 +25,8 @@ import type {
  * ฝั่ง server ไม่มี origin ให้อ้าง path สัมพัทธ์จึงใช้ไม่ได้ ต้องใช้ URL เต็มจาก API_BASE_URL
  *
  * หน้าส่งออกใบสั่งขาย (so_export) — ข้อมูลเป็นคอลัมน์ชุดเดียวกับตาราง so (ดู model.ts) แต่ยิงเส้นของตัวเอง 4 เส้น:
- *   so_export-get-list / so_export-get-action / so_export-get-delet / so_export-get-option
+ *   so_export-get-list / so_export-action / so_export-get-delet / so_export-get-option
+ * (แก้ 29/09/2026: ฝั่ง API จริงชื่อ so_export-action ไม่ใช่ -get-action · -get-delet / -get-option ยังไม่มีใน API)
  * (ชื่อเส้นตามที่สั่งมา 28/09/2026 — ตอนนั้นใน routes/web.py ยังไม่มีทั้ง 4 เส้น มีแค่ /so-export ที่คืนไฟล์ .xlsx)
  * ตัวเลือกของช่อง select ในฟอร์มยังมาจากเส้น -get-option ของทะเบียนอื่น ดู getSoOptions ท้ายไฟล์
  */
@@ -132,7 +134,7 @@ export async function getSoExportList(query: SoQuery = {}): Promise<SoList> {
 }
 
 /**
- * POST /api/web/so_export-get-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
+ * POST /api/web/so_export-action — เพิ่ม/แก้ไข เส้นเดียวจบ แยกด้วย action ใน body
  *
  * "add" ส่ง id เป็น 0 (ฐานข้อมูลออกเลขให้จาก sequence) · "edit" ต้องส่ง id ของแถวที่แก้
  * ทั้งสองแบบส่งไปทุกฟิลด์ ไม่ใช่เฉพาะที่แก้ และคืนแถวหลังบันทึกกลับมา (รวมคอลัมน์ของงาน sync)
@@ -145,7 +147,7 @@ export async function saveSoExport(
   values: SoFormValues,
   soId?: number
 ): Promise<So> {
-  return (await post<So>("so_export-get-action", {
+  return (await post<So>("so_export-action", {
     action,
     id: soId ?? 0,
     ...values,
@@ -244,6 +246,7 @@ export async function getSoOptions(): Promise<SoOptions> {
     broadcasts,
     productTypes,
     vendors,
+    shippings,
   ] = await Promise.all([
     options<NamedOption>("status-po-get-option"),
     options<NamedOption>("payment-type-get-option"),
@@ -252,6 +255,7 @@ export async function getSoOptions(): Promise<SoOptions> {
     options<BroadcastOption>("broadcast-get-option"),
     options<NamedOption>("product-type-get-option"),
     options<VendorOption>("vendor-get-option"),
+    options<ShippingRegistryOption>("shipping-get-option"),
   ])
   return {
     statuses,
@@ -261,6 +265,7 @@ export async function getSoOptions(): Promise<SoOptions> {
     broadcasts,
     productTypes,
     vendors,
+    shippings,
   }
 }
 
