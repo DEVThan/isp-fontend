@@ -4,6 +4,7 @@ import {
   type ApiEnvelope,
 } from "@/app/login/components/api"
 import type {
+  TemplateMapping,
   VendorExportTemplate,
   VendorExportTemplateDeleted,
   VendorExportTemplateFormMode,
@@ -169,6 +170,44 @@ export async function uploadVendorExportTemplateFile(
     throw new ApiError(envelope.resultcode ?? res.status, envelope.message)
   }
   return envelope.result.path
+}
+
+/**
+ * POST /api/web/vendor-export-template-mapping-get — หัวคอลัมน์ในไฟล์ + การจับคู่ที่บันทึกไว้ (หรือที่ระบบเดาให้)
+ *
+ * ส่ง sheet / headerRow เมื่อผู้ใช้เปลี่ยนชีตหรือแถวหัวตาราง — API อ่านหัวคอลัมน์ของแถวนั้นแล้วเดาใหม่
+ * ไม่ส่ง = ใช้ที่บันทึกไว้ หรือให้ API หาแถวหัวตารางเอง
+ */
+export async function getTemplateMapping(
+  id: number,
+  sheet?: string,
+  headerRow?: number
+): Promise<TemplateMapping> {
+  return (await post<TemplateMapping>("vendor-export-template-mapping-get", {
+    id,
+    ...(sheet ? { sheet } : {}),
+    ...(headerRow ? { header_row: headerRow } : {}),
+  })) as TemplateMapping
+}
+
+/**
+ * POST /api/web/vendor-export-template-mapping-save — บันทึกการจับคู่ (ตัวอักษรคอลัมน์ -> นิพจน์)
+ *
+ * API จำหัวคอลัมน์ -> นิพจน์ ทุกคู่ไว้ เทมเพลตถัดไปที่มีหัวเดียวกันจึงจับคู่ได้เอง
+ * ชื่อใน {…} ที่ไม่รู้จัก / ไม่มีคอลัมน์ไหนถูกจับคู่ API ตอบ 400
+ */
+export async function saveTemplateMapping(
+  id: number,
+  sheet: string,
+  headerRow: number,
+  mapping: Record<string, string>
+): Promise<VendorExportTemplate> {
+  return (await post<VendorExportTemplate>("vendor-export-template-mapping-save", {
+    id,
+    sheet,
+    header_row: headerRow,
+    mapping,
+  })) as VendorExportTemplate
 }
 
 /**

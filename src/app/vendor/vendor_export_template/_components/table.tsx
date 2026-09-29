@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   FileSpreadsheet,
+  Columns3,
   LoaderCircle,
   Pencil,
   Plus,
@@ -19,6 +20,7 @@ import {
 } from "@/app/vendor/vendor_export_template/_components/api"
 import { DeleteModal } from "@/app/vendor/vendor_export_template/_components/delete_modal"
 import { FormModal } from "@/app/vendor/vendor_export_template/_components/form_modal"
+import { MappingModal } from "@/app/vendor/vendor_export_template/_components/mapping_modal"
 import {
   isTemplateActive,
   templateFileName,
@@ -47,7 +49,7 @@ import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 6
+const COLUMN_COUNT = 7
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -87,6 +89,8 @@ export function Tables() {
   } | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
   const [removing, setRemoving] = React.useState<VendorExportTemplate | null>(null)
+  /** เทมเพลตที่กำลังจับคู่คอลัมน์ — null คือปิดกล่อง */
+  const [mapping, setMapping] = React.useState<number | null>(null)
 
   const [nameQuery, setNameQuery] = React.useState("")
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
@@ -277,9 +281,10 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("path")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("mapping")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
-                <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
+                <TableHead className="w-32 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -310,6 +315,23 @@ export function Tables() {
                       </a>
                     ) : null}
                   </TableCell>
+                  {/* การจับคู่คอลัมน์ — ส่งออกได้เมื่อจับคู่แล้ว · ยังไม่มีไฟล์ = ช่องว่าง (ไม่มีอะไรให้จับคู่)
+                      ป้ายเหลืองกดได้ เปิดหน้าจับคู่เลย */}
+                  <TableCell className="pt-1 pb-1">
+                    {template.path ? (
+                      template.mapped ? (
+                        <Badge variant="secondary" className="bg-success/12 text-success-ink hover:bg-success/12 border-transparent font-medium">
+                          {tcol("mapped")}
+                        </Badge>
+                      ) : (
+                        <button type="button" onClick={() => setMapping(template.id)}>
+                          <Badge variant="secondary" className="bg-warning/18 text-warning-ink hover:bg-warning/25 cursor-pointer border-transparent font-medium">
+                            {tcol("notMapped")}
+                          </Badge>
+                        </button>
+                      )
+                    ) : null}
+                  </TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[320px] truncate">{template.detail}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
@@ -325,6 +347,19 @@ export function Tables() {
                   </TableCell>
                   <TableCell className="pt-1 pb-1 pr-6 text-right">
                     <div className="flex justify-end gap-0.5">
+                      {/* จับคู่คอลัมน์ — มีเฉพาะแถวที่มีไฟล์แล้ว */}
+                      {template.path ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={tcol("openMapping")}
+                          title={tcol("openMapping")}
+                          onClick={() => setMapping(template.id)}
+                          className="bg-info/12 text-info-ink hover:bg-info/20"
+                        >
+                          <Columns3 />
+                        </Button>
+                      ) : null}
                       <Button
                         variant="ghost"
                         size="icon"
@@ -410,9 +445,21 @@ export function Tables() {
         mode={form?.mode ?? "add"}
         template={form?.template}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
-        onSaved={() =>
+        // มีไฟล์ใหม่ = การจับคู่ถูกล้าง เปิดหน้าจับคู่ต่อให้เลย (หลังฟอร์มปิด ~1.4 วิ)
+        onSaved={(saved, fileChanged) => {
           load({ name: nameQuery, status, page, pageSize })
-        }
+          if (saved && fileChanged) setTimeout(() => setMapping(saved.id), 1500)
+        }}
+      />
+
+      {/* จับคู่คอลัมน์ของไฟล์กับข้อมูลใบสั่งขาย — บันทึกแล้วโหลดใหม่ ป้ายจะเปลี่ยนเป็น "จับคู่แล้ว" */}
+      <MappingModal
+        open={mapping !== null}
+        onOpenChange={(next) => {
+          if (!next) setMapping(null)
+        }}
+        templateId={mapping ?? undefined}
+        onSaved={() => load({ name: nameQuery, status, page, pageSize })}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}

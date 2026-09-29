@@ -83,8 +83,10 @@ export function FormModal({
   mode: VendorExportTemplateFormMode
   /** แถวที่กำลังแก้ (โหมด edit เท่านั้น) */
   template?: VendorExportTemplate
-  /** บันทึกสำเร็จแล้ว — ตารางเอาไปโหลดข้อมูลใหม่ */
-  onSaved?: () => void
+  /** บันทึกสำเร็จแล้ว — ตารางเอาไปโหลดข้อมูลใหม่
+   *  saved = แถวหลังบันทึก · fileChanged = อัปโหลดไฟล์ใหม่ในรอบนี้ (การจับคู่ถูกล้าง ตารางเปิดหน้าจับคู่ต่อให้)
+   *  ไม่ส่ง saved = แค่ให้โหลดใหม่ (อัปโหลดไฟล์ในโหมดแก้ไขแล้ว แต่ยังไม่ได้กดบันทึก) */
+  onSaved?: (saved?: VendorExportTemplate, fileChanged?: boolean) => void
 }) {
   const t = useTranslations("common")
   const tr = useTranslations("vendorexporttemplates")
@@ -101,6 +103,8 @@ export function FormModal({
   const [pendingFile, setPendingFile] = React.useState<File | null>(null)
   /** โหมดแก้ไขกำลังอัปโหลดไฟล์อยู่ — ปิดปุ่มบันทึกไว้ ไม่งั้นบันทึก path เก่าทับ */
   const [uploadingFile, setUploadingFile] = React.useState(false)
+  /** โหมดแก้ไขอัปโหลดไฟล์ใหม่ไปแล้วในรอบนี้ — API ล้างการจับคู่ทิ้ง ต้องจับคู่ใหม่หลังบันทึก */
+  const [fileUploaded, setFileUploaded] = React.useState(false)
   /** ผลของการกดบันทึกครั้งล่าสุด — null คือยังไม่ได้กด */
   const [result, setResult] = React.useState<{
     ok: boolean
@@ -123,6 +127,7 @@ export function FormModal({
     setFileError(false)
     setPendingFile(null)
     setUploadingFile(false)
+    setFileUploaded(false)
   }
 
   const set = <K extends keyof VendorExportTemplateFormValues>(
@@ -181,13 +186,13 @@ export function FormModal({
                     ok: false,
                     message: `${tform("fileSaveFailed")}${detail}`,
                   })
-                  onSaved?.()
+                  onSaved?.(saved, false)
                   setTimeout(() => onOpenChange(false), 3500)
                   return
                 }
               }
               setResult({ ok: true })
-              onSaved?.()
+              onSaved?.(saved, (mode === "add" && pendingFile !== null) || fileUploaded)
               // ให้เห็นข้อความว่าสำเร็จสักครู่ก่อนปิด ไม่งั้นกล่องหายไปเลยเหมือนไม่มีอะไรเกิดขึ้น
               setTimeout(() => onOpenChange(false), 1400)
             } catch (error) {
@@ -234,6 +239,9 @@ export function FormModal({
             onChange={(path) => {
               set("path", path)
               setFileError(false)
+              // ไฟล์ใหม่อยู่ในแถวแล้วและการจับคู่ถูกล้าง — ให้ตารางโหลดใหม่ทันที เผื่อผู้ใช้กดยกเลิกฟอร์ม
+              setFileUploaded(true)
+              onSaved?.()
             }}
             onPendingFileChange={(file) => {
               setPendingFile(file)

@@ -25,6 +25,11 @@ export type VendorExportTemplate = {
   /** ไฟล์ Excel ที่อัปโหลดไว้ — /uploads/vendor_export_template/{id}/template/{ชื่อไฟล์} · "" คือยังไม่มีไฟล์ */
   path: string | null
   active_status: string
+  /** ชีต / แถวหัวตาราง ที่จับคู่คอลัมน์ไว้ — null = ยังไม่ได้จับคู่ (อัปโหลดไฟล์ใหม่ล้างทิ้ง) */
+  sheet: string | null
+  header_row: number | null
+  /** บันทึกการจับคู่คอลัมน์ไว้แล้ว — ส่งออกได้ */
+  mapped: boolean
 }
 
 /** เทมเพลตนี้เปิดใช้งานอยู่ไหม */
@@ -80,4 +85,50 @@ export function templateFileName(path: string | null | undefined) {
 export type VendorExportTemplateDeleted = {
   id: number
   name: string
+}
+
+/** หนึ่งคอลัมน์ในแถวหัวตารางของไฟล์ — expr คือค่าที่จะเติม ("{name}", "{pay_by} {amount}", "Y", "" = ปล่อยว่าง) */
+export type MappingColumn = {
+  /** ตัวอักษรคอลัมน์ของ Excel (A, B, …) */
+  column: string
+  header: string
+  expr: string
+  /** ระบบเดาให้ (ยังไม่เคยบันทึก) — หน้าเว็บติดป้าย "ระบบเดา" ให้ผู้ใช้ตรวจ */
+  guessed: boolean
+}
+
+/** ผลของ POST /api/web/vendor-export-template-mapping-get */
+export type TemplateMapping = {
+  id: number
+  name: string
+  sheets: string[]
+  sheet: string
+  header_row: number
+  /** ตัวเลือกแถวหัวตาราง — เลขแถว + ข้อความ 4 ช่องแรก */
+  rows: { row: number; text: string }[]
+  columns: MappingColumn[]
+  /** columns[].expr มาจากที่บันทึกไว้ (ไม่ใช่เดาใหม่) */
+  saved: boolean
+  /** ชื่อช่องทั้งหมดที่ใส่ใน {…} ได้ — ช่องคำนวณก่อน แล้วตามด้วยคอลัมน์ของ so */
+  fields: string[]
+  /** ค่าตัวอย่างจากใบสั่งขายล่าสุด ไว้โชว์ว่าแต่ละคอลัมน์จะได้อะไร */
+  sample: Record<string, string | null>
+}
+
+/** ช่องที่คำนวณตอนส่งออก (ไม่ได้อยู่ในตาราง so) — ตรงกับ VIRTUAL_FIELDS ใน export_mapping.py */
+export const VIRTUAL_FIELDS = [
+  "no",
+  "export_group_name",
+  "export_date",
+  "vendor_code",
+  "full_address",
+  "cod_amount",
+] as const
+
+/** {ชื่อช่อง} ในนิพจน์ — ชุดเดียวกับ TOKEN ฝั่ง API */
+export const TOKEN = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g
+
+/** นิพจน์ + ค่าตัวอย่าง -> ข้อความที่จะได้ (โชว์ในหน้าจับคู่เท่านั้น ของจริงคำนวณฝั่ง API) */
+export function previewExpr(expr: string, sample: Record<string, string | null>) {
+  return expr.replace(TOKEN, (_, name: string) => sample[name] ?? "")
 }

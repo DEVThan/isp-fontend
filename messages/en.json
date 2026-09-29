@@ -786,7 +786,11 @@
       "name": "Template name",
       "path": "Template file",
       "detail": "Detail",
-      "status": "Status"
+      "status": "Status",
+      "mapping": "Column mapping",
+      "mapped": "Mapped",
+      "notMapped": "Not mapped",
+      "openMapping": "Map columns"
     },
     "form": {
       "addTitle": "Add export template",
@@ -809,6 +813,35 @@
       "fileHint": "Excel .xlsx, .xlsm or .xls, up to 10 MB",
       "filePendingHint": "The file will be uploaded after the template is saved",
       "fileSaveFailed": "Template saved, but the file could not be uploaded — open Edit to add the file again"
+    },
+    "mapping": {
+      "title": "Map columns",
+      "description": "Match each column in the template file to sales-order data. The system guessed from headers it has seen before — check them and save.",
+      "sheet": "Sheet",
+      "headerRow": "Header row",
+      "rowOption": "Row {row} — {text}",
+      "column": "Col",
+      "header": "Header in file",
+      "field": "Data to fill",
+      "preview": "Example",
+      "custom": "Custom…",
+      "customPlaceholder": "e.g. '{pay_by} {amount}' or a fixed value",
+      "none": "Leave empty",
+      "guessed": "Guessed",
+      "noHeaders": "This row has no headers — pick another header row",
+      "hint": "Old data below the header row is cleared on export. Custom values can combine fields in '{braces}' or be fixed text. Examples use the latest sales order.",
+      "loadError": "Could not read the template file",
+      "saved": "Mapping saved",
+      "saveError": "Could not save",
+      "mappedCount": "{count} of {total} columns mapped",
+      "fields": {
+        "no": "Running number (1, 2, 3…)",
+        "export_group_name": "Export group name",
+        "export_date": "Export date",
+        "vendor_code": "Vendor code",
+        "full_address": "Full address (address, subdistrict, district, province, postcode)",
+        "cod_amount": "COD amount (COD orders only)"
+      }
     },
     "active": "Active",
     "inactive": "Inactive",
