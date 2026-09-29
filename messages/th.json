@@ -659,7 +659,7 @@
       "productTypeName": "ประเภทสินค้า",
       "supplierName": "ผู้ขาย",
       "senderCode": "รหัสผู้ส่ง",
-      "shipmentType": "การจัดส่ง",
+      "shipmentType": "ประเภทการจัดส่ง",
       "status": "สถานะ",
       "remark": "หมายเหตุ",
       "detial": "รายละเอียด",

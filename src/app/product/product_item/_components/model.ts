@@ -118,6 +118,8 @@ export type ProductItemRow = ProductItem & {
   vendor_name: string | null
   /** vendor.sender_code ดิบ ๆ — JSON string ของ [{shipping, sendercode}] อ่านด้วย parseSenderCodes ของหน้า vendor */
   vendor_sender_code: string | null
+  /** vendor.shipment_type — ประเภทการจัดส่งของผู้ขาย ตารางโชว์ตัวนี้แทน shipment_type ของสินค้า (2026-09-29) */
+  vendor_shipment_type: string | null
 }
 
 /** ความยาวสูงสุดของคอลัมน์ varchar — ตรงกับ _VARCHAR ฝั่ง API เกินแล้วตอบ 400 */

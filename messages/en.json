@@ -659,7 +659,7 @@
       "productTypeName": "Product type",
       "supplierName": "Supplier",
       "senderCode": "Sender code",
-      "shipmentType": "Shipment",
+      "shipmentType": "Shipment type",
       "status": "Status",
       "remark": "Remark",
       "detial": "Detail",
