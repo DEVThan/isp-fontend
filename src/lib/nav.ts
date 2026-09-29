@@ -140,6 +140,9 @@ export const iconByName: Record<string, LucideIcon> = {
   dollar: DollarSign,
   sale: DollarSign,
   so: DollarSign,
+  // หน้าบริษัทขนส่ง (/shipping) — รับทั้งตัวพิมพ์เล็ก (truck) และโค้ดเมนู (shipping) เผื่อฐานข้อมูลเขียนแบบนั้น
+  truck: Truck,
+  shipping: Truck,
 }
 
 /** ชื่อไอคอนที่ไม่มีในตาราง (หรือเมนูที่ไม่ได้ตั้งไอคอน) ใช้ตัวนี้แทน */
