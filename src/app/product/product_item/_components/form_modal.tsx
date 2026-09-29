@@ -720,7 +720,9 @@ export function FormModal({
                       />
                     </Field>
                   </div>
-                  {select("shipment_type", byName(options.shipmentTypes))}
+                  {/* การจัดส่ง — ซ่อนไว้ (ผู้ใช้ขอ 29/09/2026 · เปิดกลับ: เอา comment ออก)
+                      ค่าเดิมของแถวยังอยู่ใน values และถูกส่งไปกับ -action ทุกครั้ง ไม่ถูกล้าง */}
+                  {/* {select("shipment_type", byName(options.shipmentTypes))} */}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {/* supplier_name พิมพ์เอง — ข้อมูลเดิมเป็นข้อความอิสระ (เช่น "iShopping") ไม่ได้ผูกกับทะเบียนผู้ขาย */}
