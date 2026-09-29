@@ -7,7 +7,7 @@ import {
   Plus,
   Search,
   SearchX,
-  Trash2,
+  // Trash2, — ปุ่มลบซ่อนไว้ก่อน
   TriangleAlert,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
@@ -348,7 +348,9 @@ export function Tables() {
                       >
                         <Pencil />
                       </Button>
-                      <Button
+                      {/* ปุ่มลบ — ซ่อนไว้ก่อน (ผู้ใช้สั่ง 29/09/2026 · เปิดกลับ: เอา comment ออก + Trash2 ใน import)
+                          DeleteModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด */}
+                      {/* <Button
                         variant="ghost"
                         size="icon"
                         aria-label={tall("delete")}
@@ -356,7 +358,7 @@ export function Tables() {
                         className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
                       >
                         <Trash2 />
-                      </Button>
+                      </Button> */}
                     </div>
                   </TableCell>
                 </TableRow>
