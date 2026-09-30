@@ -24,7 +24,8 @@ import {
 import { DateRangeFilter } from "@/app/sale/so_export/_components/daterange"
 import { DeleteModal } from "@/app/sale/so_export/_components/delete_modal"
 import { FormModal } from "@/app/sale/so_export/_components/form_modal"
-// import { BroadcastLogo } from "@/app/sale/so_export/_components/logo" — ใช้แค่ในคอลัมน์ช่องทางที่ซ่อนอยู่
+// ใช้กับโลโก้ในตัวกรองขนส่ง (และคอลัมน์ช่องทางที่ซ่อนอยู่)
+import { BroadcastLogo } from "@/app/sale/so_export/_components/logo"
 import {
   NO_SO_OPTIONS,
   type So,
@@ -96,6 +97,8 @@ type Filters = {
   vendor: string | null
   /** null = ไม่กรองประเภทการจัดส่ง · ค่าคือชื่อ (so.shipment_type) */
   shipmentType: string | null
+  /** null = ไม่กรองขนส่ง · ค่าคือชื่อบริษัทขนส่ง (so.shipping_by) */
+  shippingBy: string | null
   /** YYYY-MM-DD จากช่อง type="date" — ว่าง = ไม่กรอง */
   dateFrom: string
   dateTo: string
@@ -168,6 +171,7 @@ export function Tables() {
   const [channel /* , setChannel */] = React.useState<string | null>(null)
   const [vendor, setVendor] = React.useState<string | null>(null)
   const [shipmentType, setShipmentType] = React.useState<string | null>(null)
+  const [shippingBy, setShippingBy] = React.useState<string | null>(null)
   const [dateFrom, setDateFrom] = React.useState("")
   const [dateTo, setDateTo] = React.useState("")
   const [page, setPage] = React.useState(1)
@@ -213,6 +217,7 @@ export function Tables() {
     channel,
     vendor,
     shipmentType,
+    shippingBy,
     dateFrom,
     dateTo,
     page,
@@ -241,6 +246,7 @@ export function Tables() {
           channel: next.channel ?? "",
           vendorName: next.vendor ?? "",
           shipmentType: next.shipmentType ?? "",
+          shippingBy: next.shippingBy ?? "",
           dateFrom: next.dateFrom,
           dateTo: next.dateTo,
           page: next.page,
@@ -302,6 +308,14 @@ export function Tables() {
   const shipmentTypeOptions: SelectOptionItem[] = options.shipmentTypes.map((option) => ({
     value: option.name,
     label: option.name,
+  }))
+
+  /** ขนส่ง — ทะเบียนบริษัทขนส่ง (/shipping-get-option) · ค่าคือชื่อ (ตรงกับ so.shipping_by) · โลโก้หน้าชื่อ
+   *  (เหมือนหน้า so 30/09/2026) BroadcastLogo ไม่มีรูป/เปิดไม่ขึ้นก็ซ่อนตัวเอง */
+  const shippingOptions: SelectOptionItem[] = options.shippings.map((option) => ({
+    value: option.name,
+    label: option.name,
+    icon: <BroadcastLogo src={option.logo} alt={option.name} className="size-5" />,
   }))
 
   /**
@@ -382,6 +396,7 @@ export function Tables() {
         channel: filters.channel ?? "",
         vendorName: filters.vendor ?? "",
         shipmentType: filters.shipmentType ?? "",
+        shippingBy: filters.shippingBy ?? "",
         dateFrom: filters.dateFrom,
         dateTo: filters.dateTo,
       })
@@ -546,6 +561,11 @@ export function Tables() {
         {selectFilter("filter-shipmentType", tcol("shipment_type"), shipmentTypeOptions, shipmentType, (next) => {
           setShipmentType(next)
           return { ...filters, shipmentType: next, page: 1 }
+        })}
+        {/* ขนส่ง (so.shipping_by) — ตัวเลือกจากทะเบียนบริษัทขนส่ง พร้อมโลโก้ (เหมือนหน้า so) · ปุ่มส่งออกใช้ตัวกรองนี้ด้วย */}
+        {selectFilter("filter-shippingBy", tcol("shipping_by"), shippingOptions, shippingBy, (next) => {
+          setShippingBy(next)
+          return { ...filters, shippingBy: next, page: 1 }
         })}
         {/* วันที่สั่งซื้อ (po_date) — เดิมกรองวันที่สร้าง · ช่วงวันที่ช่องเดียว (ปฏิทินในป๊อปอัป) แทนสองช่อง ตั้งแต่/ถึง แบบเดิม
             ค่าที่ส่ง API ยังเป็น date_from / date_to (YYYY-MM-DD) — ฝั่ง API เทียบกับ po_date แล้ว (so.py) · กว้างคอลัมน์เดียวเท่าช่องอื่น (ข้อความช่วงวันที่ยังพอดี) */}

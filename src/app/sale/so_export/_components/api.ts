@@ -88,6 +88,8 @@ export type SoQuery = {
   vendorName?: string
   /** ค้นจาก so.shipment_type — ตัวกรองประเภทการจัดส่งส่งชื่อจาก /status-shiptmenttype-get-option */
   shipmentType?: string
+  /** ค้นจาก so.shipping_by — ตัวกรองขนส่งส่งชื่อจาก /shipping-get-option (API ค้นแบบมีคำนี้อยู่) */
+  shippingBy?: string
   /** po_date (วันที่สั่งซื้อ) ตั้งแต่วันนี้ — รูปแบบ YYYY-MM-DD เท่านั้น ผิดรูป API ตอบ 400 */
   dateFrom?: string
   dateTo?: string
@@ -118,6 +120,7 @@ export async function getSoExportList(query: SoQuery = {}): Promise<SoList> {
     sell_by: query.sellBy ?? "",
     vendor_name: query.vendorName ?? "",
     shipment_type: query.shipmentType ?? "",
+    shipping_by: query.shippingBy ?? "",
     date_from: dateParam(query.dateFrom),
     date_to: dateParam(query.dateTo),
     page: query.page ?? 1,
@@ -264,6 +267,7 @@ export async function exportSoByTemplate(
     sell_by: query.sellBy ?? "",
     vendor_name: query.vendorName ?? "",
     shipment_type: query.shipmentType ?? "",
+    shipping_by: query.shippingBy ?? "",
     date_from: dateParam(query.dateFrom),
     date_to: dateParam(query.dateTo),
   })

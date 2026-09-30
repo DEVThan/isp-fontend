@@ -183,7 +183,11 @@ export type VendorOption = NamedOption & {
 }
 
 /** บริษัทขนส่งจาก /shipping-get-option — จับคู่กับ vendor.sender_code ด้วยชื่อ (หน้าผู้ขายเก็บชื่อ) หรือรหัส */
-export type ShippingRegistryOption = NamedOption & { code: string | null }
+export type ShippingRegistryOption = NamedOption & {
+  code: string | null
+  /** path โลโก้ /uploads/shipping/{id}/logo/… — ""/null = ไม่มีรูป (ตัวกรองในตารางโชว์คู่ชื่อ) */
+  logo?: string | null
+}
 
 /** ช่องทางการออกอากาศ — มีโลโก้มาด้วย (หน้านี้ไม่ได้ใช้) */
 export type BroadcastOption = NamedOption & { logo: string }
