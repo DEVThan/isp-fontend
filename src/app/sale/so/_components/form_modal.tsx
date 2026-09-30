@@ -571,10 +571,12 @@ export function FormModal({
   }))
 
   /**
-   * รหัสผู้ส่ง (แสดงอย่างเดียว — ตาราง so ไม่มีคอลัมน์เก็บ) — จาก vendor.sender_code ของผู้ขาย
+   * รหัสผู้ส่ง (อ่านอย่างเดียว เก็บลง so.sender_code ตอนบันทึก) — จาก vendor.sender_code ของผู้ขาย
    * แถวที่ shipping ตรงกับ "ขนส่งโดย" (เทียบกับชื่อหรือรหัสของบริษัทขนส่งนั้น ไม่สนตัวพิมพ์) · ไม่เจอ = ว่าง
+   * ยังหาผู้ขายไม่เจอ (ข้อมูล sync ที่ชื่อผู้ขายไม่อยู่ในทะเบียน) = คงค่าที่เก็บไว้เดิม ไม่ล้างทิ้ง
    */
   const senderCode = (() => {
+    if (!vendor) return values.sender_code
     const by = values.shipping_by.trim().toLowerCase()
     if (!by) return ""
     const registry = options.shippings.find((option) => option.name.toLowerCase() === by)
@@ -635,7 +637,8 @@ export function FormModal({
               // ส่งไปครบทุกคอลัมน์ ไม่งั้นของเดิมโดนเขียนทับเป็นค่าว่าง
               // ประเภทการจัดส่งตามผู้ขายเสมอ (ช่องอ่านอย่างเดียว) — แถวที่ผู้ขายเพิ่งตั้งประเภทได้ค่าใหม่ตอนบันทึก
               // ขนส่งโดย: แถวที่ยังว่างส่งขนส่งเจ้าแรกของผู้ขายไป (ตรงกับที่ช่องโชว์เป็นค่าที่เลือกไว้)
-              await saveSo(mode, shipmentFromVendor(values, shipmentSource), so?.id)
+              // รหัสผู้ส่ง: ค่าที่ช่องโชว์ (ดู senderCode) ถูกเขียนลง so.sender_code
+              await saveSo(mode, { ...shipmentFromVendor(values, shipmentSource), sender_code: senderCode }, so?.id)
               setResult({ ok: true })
               onSaved?.()
               // ให้เห็นข้อความว่าสำเร็จสักครู่ก่อนปิด ไม่งั้นกล่องหายไปเลยเหมือนไม่มีอะไรเกิดขึ้น
@@ -967,7 +970,7 @@ export function FormModal({
                       className={READONLY}
                     />
                   </Field>
-                  {/* รหัสผู้ส่ง — อ่านอย่างเดียว จาก vendor.sender_code ตามขนส่งที่เลือก (ดู senderCode) ไม่ถูกบันทึก */}
+                  {/* รหัสผู้ส่ง — อ่านอย่างเดียว จาก vendor.sender_code ตามขนส่งที่เลือก (ดู senderCode) บันทึกลง so.sender_code */}
                   <Field id="so-sender_code" label={tform("senderCode")} hint={tform("senderCodeHint")}>
                     <Input
                       id="so-sender_code"

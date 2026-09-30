@@ -105,6 +105,7 @@ export function MappingModal({
   const tcustomer = useTranslations("customer.columns")
   const tproduct = useTranslations("productitems.columns")
   const tvendor = useTranslations("vendors.columns")
+  const tpayment = useTranslations("paymenttypes.columns")
 
   const [data, setData] = React.useState<TemplateMapping | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -172,6 +173,8 @@ export function MappingModal({
     if (table === "customer") return tcustomer.has(key) ? tcustomer(key) : column
     if (table === "products") return tproduct.has(key) ? tproduct(key) : column
     if (table === "vendor") return tvendor.has(key) ? tvendor(key) : column
+    // payment_type (so.pay_by -> payment_type.name) — คำแปลของหน้าประเภทการชำระเงิน
+    if (table === "payment_type") return tpayment.has(key) ? tpayment(key) : column
     return column
   }
   const fieldLabel = (field: string) => {

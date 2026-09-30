@@ -851,7 +851,8 @@
         "so": "Sales order",
         "customer": "Customer",
         "products": "Product",
-        "vendor": "Vendor"
+        "vendor": "Vendor",
+        "payment_type": "Payment type"
       },
       "addField": "+ Add data…",
       "removeField": "Remove {field}",
@@ -952,6 +953,7 @@
       "receive_date": "Received date",
       "appointment_date": "Appointment date",
       "cash_in": "Cash in",
+      "sender_code": "Sender code",
       "barcode": "Barcode",
       "qty": "Qty",
       "price_per_unit": "Unit price",
@@ -1058,6 +1060,7 @@
       "receive_date": "Received date",
       "appointment_date": "Appointment date",
       "cash_in": "Cash in",
+      "sender_code": "Sender code",
       "barcode": "Barcode",
       "qty": "Qty",
       "price_per_unit": "Unit price",

@@ -132,7 +132,7 @@ export const TOKEN = /\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\}/
 export const TOKENS_ONLY = /^\{[^{}]+\}(?:\s+\{[^{}]+\})*$/
 
 /** ตารางที่เลือกคอลัมน์มาใส่ได้ — ตรงกับ SOURCES ฝั่ง API (token เป็น "ตาราง.คอลัมน์") */
-export const SOURCES = ["so", "customer", "products", "vendor"] as const
+export const SOURCES = ["so", "customer", "products", "vendor", "payment_type"] as const
 
 /**
  * นิพจน์ + ค่าตัวอย่าง -> ข้อความที่จะได้ (โชว์ในหน้าจับคู่เท่านั้น ของจริงคำนวณฝั่ง API)

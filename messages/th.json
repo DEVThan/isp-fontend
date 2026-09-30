@@ -851,7 +851,8 @@
         "so": "ใบสั่งขาย",
         "customer": "ลูกค้า",
         "products": "สินค้า",
-        "vendor": "ผู้ขาย"
+        "vendor": "ผู้ขาย",
+        "payment_type": "ประเภทการชำระเงิน"
       },
       "addField": "+ เพิ่มข้อมูล…",
       "removeField": "เอา {field} ออก",
@@ -952,6 +953,7 @@
       "receive_date": "วันที่รับสินค้า",
       "appointment_date": "วันที่นัดหมาย",
       "cash_in": "รับเงินเข้า",
+      "sender_code": "รหัสผู้ส่ง",
       "barcode": "บาร์โค้ด",
       "qty": "จำนวน",
       "price_per_unit": "ราคาต่อหน่วย",
@@ -1058,6 +1060,7 @@
       "receive_date": "วันที่รับสินค้า",
       "appointment_date": "วันที่นัดหมาย",
       "cash_in": "รับเงินเข้า",
+      "sender_code": "รหัสผู้ส่ง",
       "barcode": "บาร์โค้ด",
       "qty": "จำนวน",
       "price_per_unit": "ราคาต่อหน่วย",

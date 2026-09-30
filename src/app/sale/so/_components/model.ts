@@ -49,6 +49,8 @@ export const SO_TEXT = [
   "receive_date",
   "appointment_date",
   "cash_in",
+  /** รหัสผู้ส่ง (varchar 10, 2026-09-30) — ฟอร์มคำนวณจาก vendor.sender_code ตามขนส่งแล้วเขียนลงมา */
+  "sender_code",
 ] as const
 
 /** ตัวเลข — numeric ในฐานข้อมูล API คืนมาเป็นข้อความ ("999.0") · ค่าว่าง = NULL */
