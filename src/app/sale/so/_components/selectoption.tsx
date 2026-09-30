@@ -68,15 +68,18 @@ export function SelectOption({
           aria-invalid={invalid || undefined}
           // cn (tailwind-merge) ให้ border-destructive ทับ border-input จริง — ต่อสตริงเฉย ๆ ตัวไหนชนะขึ้นกับลำดับใน stylesheet
           className={cn(
-            "border-input bg-card data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-between gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30",
+            "border-input bg-card data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-start gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30",
             invalid &&
               "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
           )}
         >
+          {/* justify-start (ไม่ใช่ between): ตัวเลือกที่ส่ง icon มาแต่รูปไม่มี/เปิดไม่ขึ้น span ว่างจะดันชื่อไปชิดขวา
+              ปุ่มล้าง/ลูกศรวางแบบ absolute อยู่แล้ว ไม่ต้องพึ่ง between */}
           {/* รูปของตัวเลือกที่เลือกอยู่ — วางเองนอก Combobox.Value เพราะ Value รับได้แต่ข้อความ
               (selected คำนวณไว้ข้างบนแล้ว ไม่ต้องพึ่ง render prop ของ Base UI) */}
           {selected?.icon ? (
-            <span className="flex shrink-0 items-center">{selected.icon}</span>
+            // empty:hidden — icon ที่ render เป็น null (โลโก้ไม่มี/เปิดไม่ขึ้น) ไม่เหลือช่องว่าง gap ค้าง
+            <span className="flex shrink-0 items-center empty:hidden">{selected.icon}</span>
           ) : null}
           {/* Value ไม่ได้ render element ของตัวเอง (ไม่มี className) จึงต้องมี span ครอบ */}
           <span className="truncate">
