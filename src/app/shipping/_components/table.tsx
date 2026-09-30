@@ -13,7 +13,9 @@ import {
 import { useTranslations } from "next-intl"
 
 import {
+  getShippingOptions,
   getShippings,
+  setShippingDefault,
   SHIPPING_PAGE_SIZE,
 } from "@/app/shipping/_components/api"
 import { DeleteModal } from "@/app/shipping/_components/delete_modal"
@@ -26,6 +28,7 @@ import {
   type Shipping,
   type ShippingFormMode,
   type ShippingList,
+  type ShippingOption,
 } from "@/app/shipping/_components/model"
 import { TablePagination } from "@/app/shipping/_components/pagination"
 import { SelectOption } from "@/app/shipping/_components/selectoption"
@@ -158,6 +161,54 @@ export function Tables() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ตั้งใจดึงแค่ตอนเปิดหน้า ที่เหลือ load ถูกเรียกจากตัวกรอง/แบ่งหน้าเอง
   }, [])
 
+  /**
+   * ขนส่งเริ่มต้น (2026-09-30 — เก็บไว้ก่อน ยังไม่มีที่ไหนใช้)
+   * ตัวเลือก = ขนส่งที่ active จาก /shipping-get-option (มี is_default บอกเจ้าปัจจุบัน) · เลือกแล้วบันทึกทันที
+   */
+  const [defaultOptionsRaw, setDefaultOptionsRaw] = React.useState<ShippingOption[]>([])
+  const [savingDefault, setSavingDefault] = React.useState(false)
+  const [defaultMessage, setDefaultMessage] = React.useState<{ ok: boolean; text: string } | null>(null)
+  const reloadDefaults = () =>
+    getShippingOptions()
+      .then(setDefaultOptionsRaw)
+      // ห้าม console.error — ใน dev overlay จะขึ้นเต็มจอ
+      .catch(() => {})
+  React.useEffect(() => {
+    let cancelled = false
+    getShippingOptions()
+      .then((next) => {
+        if (!cancelled) setDefaultOptionsRaw(next)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  const defaultOptions = defaultOptionsRaw.map((option) => ({ value: String(option.id), label: option.name }))
+  const currentDefault = defaultOptionsRaw.find((option) => option.is_default)
+
+  const changeDefault = async (next: string | null) => {
+    setSavingDefault(true)
+    setDefaultMessage(null)
+    try {
+      const saved = await setShippingDefault(next ? Number(next) : 0)
+      setDefaultMessage({
+        ok: true,
+        text: saved ? tr("defaultSaved", { name: saved.name }) : tr("defaultCleared"),
+      })
+      await reloadDefaults()
+      // ป้าย "ค่าเริ่มต้น" ในตารางเปลี่ยนแถว — โหลดหน้าปัจจุบันใหม่
+      load({ ...filters, page, pageSize })
+    } catch (error) {
+      setDefaultMessage({
+        ok: false,
+        text: error instanceof Error && error.message ? `${tr("defaultError")}: ${error.message}` : tr("defaultError"),
+      })
+    } finally {
+      setSavingDefault(false)
+    }
+  }
+
   /** เปลี่ยนตัวกรองตัวไหนก็ตาม — กลับไปหน้า 1 แล้วยิงใหม่ (ช่องพิมพ์หน่วงก่อน ตัวเลือกยิงเลย) */
   const filter = (next: Filters, delay = 0) => {
     setFilters(next)
@@ -241,7 +292,28 @@ export function Tables() {
       </CardContent>
 
       <CardContent className="px-4 py-0">
-        <div className="flex flex-wrap items-end justify-end gap-0 p-0 md:p-0">
+        <div className="flex flex-wrap items-end justify-end gap-2 p-0 pt-3 md:p-0 md:pt-3">
+          {/* ขนส่งเริ่มต้น — ฝั่งซ้ายเหนือตาราง ป้ายอยู่บนช่อง (แบบเดียวกับแถบตัวกรอง) เลือกแล้วบันทึกทันที (ล้าง × = ไม่มีค่าเริ่มต้น)
+              ป้ายไม่ผูก htmlFor — ตัวเปิดของ SelectOption เป็น <button> คลิกที่ว่างข้างป้ายจะเปิดกล่องเลือกเอง */}
+          <div className="w-full space-y-2 sm:w-64">
+            <Label className="text-muted-foreground w-fit text-xs">{tr("defaultShipping")}</Label>
+            <SelectOption
+              id="default-shipping"
+              options={defaultOptions}
+              value={currentDefault ? String(currentDefault.id) : null}
+              onValueChange={(next) => void changeDefault(next)}
+              placeholder={tr("defaultNone")}
+              label={tr("defaultShipping")}
+            />
+          </div>
+          {/* สถานะการบันทึก — ชิดล่างให้อยู่แนวเดียวกับช่องเลือก */}
+          {savingDefault ? <LoaderCircle className="text-primary mb-2 size-4 animate-spin" /> : null}
+          {defaultMessage ? (
+            <span className={defaultMessage.ok ? "text-success-ink mb-2 text-xs" : "text-destructive mb-2 text-xs"}>
+              {defaultMessage.text}
+            </span>
+          ) : null}
+          <div className="mr-auto" />
           {/* ไล่เฉดเดียวกับโลโก้ในเมนูข้าง ให้ปุ่มหลักของหน้าเป็นจุดสีที่สะดุดตาที่สุด */}
           <Button
             onClick={() => setForm({ mode: "add" })}
@@ -320,6 +392,12 @@ export function Tables() {
                     <div className="flex items-center gap-2">
                       <ShippingLogo src={shipping.logo} alt={shipping.name} version={logoVersion} className="size-7" />
                       <span className="font-medium">{shipping.name}</span>
+                      {/* ขนส่งเริ่มต้น — ป้ายสีเดียวกับปุ่มหลัก (ไม่ใช้สีสถานะ) */}
+                      {shipping.is_default ? (
+                        <Badge variant="secondary" className="bg-primary/10 text-primary border-transparent font-medium">
+                          {tr("defaultBadge")}
+                        </Badge>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground font-mono text-xs">{shipping.prefix}</TableCell>
@@ -419,6 +497,8 @@ export function Tables() {
         onSaved={() => {
           setLogoVersion(Date.now())
           load({ ...filters, page, pageSize })
+          // ชื่อ/สถานะอาจเปลี่ยน — ตัวเลือกขนส่งเริ่มต้นต้องตามด้วย
+          void reloadDefaults()
         }}
       />
 

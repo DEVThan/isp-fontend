@@ -1185,7 +1185,13 @@
     },
     "active": "Active",
     "inactive": "Inactive",
-    "loadError": "Could not load shipping companies"
+    "loadError": "Could not load shipping companies",
+    "defaultShipping": "Default carrier",
+    "defaultBadge": "Default",
+    "defaultNone": "Not set",
+    "defaultSaved": "{name} is now the default carrier",
+    "defaultCleared": "Default carrier cleared",
+    "defaultError": "Could not set the default carrier"
   },
   "status": {
     "active": "Active",

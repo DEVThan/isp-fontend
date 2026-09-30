@@ -163,6 +163,19 @@ export async function uploadShippingLogo(
 }
 
 /**
+ * POST /api/web/shipping-set-default — ตั้งขนส่งเริ่มต้น (มีได้เจ้าเดียว เจ้าเดิมถูกปลดให้เอง)
+ * id 0 = ล้าง ไม่มีเจ้าไหนเป็นค่าเริ่มต้น · ขนส่งที่ปิดใช้งาน API ตอบ 400 · คืนเจ้าที่เป็นค่าเริ่มต้นตอนนี้ (null = ไม่มี)
+ */
+export async function setShippingDefault(
+  id: number
+): Promise<{ id: number; code: string | null; name: string } | null> {
+  return (await post<{ id: number; code: string | null; name: string } | null>(
+    "shipping-set-default",
+    { id }
+  )) ?? null
+}
+
+/**
  * POST /api/web/shipping-delete — ลบขนส่งตาม id (ส่งไปแค่ id เท่านั้น)
  *
  * ลบออกจากตารางจริง กู้คืนไม่ได้ · ผลลัพธ์คือแถวที่หายไป (ไม่มีตารางไหนอ้างแถวจากที่นี่)

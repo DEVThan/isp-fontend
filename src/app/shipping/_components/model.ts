@@ -32,6 +32,8 @@ export type Shipping = {
   address: string | null
   remark: string | null
   active_status: string
+  /** ขนส่งเริ่มต้น — มีได้เจ้าเดียว ตั้งผ่าน /shipping-set-default (2026-09-30 เก็บไว้ก่อน ยังไม่มีที่ไหนใช้) */
+  is_default?: boolean
 }
 
 /** ขนส่งเจ้านี้เปิดใช้งานอยู่ไหม */
@@ -58,6 +60,7 @@ export type ShippingOption = {
   name: string
   prefix: string | null
   logo: string | null
+  is_default?: boolean
 }
 
 /** ปุ่มไหนเป็นคนเปิดฟอร์ม — ค่าเดียวกับ action ที่ POST /api/web/shipping-action รับ */
