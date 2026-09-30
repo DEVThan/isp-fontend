@@ -7,6 +7,7 @@ import {
   LoaderCircle,
   Sparkles,
   TriangleAlert,
+  X,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -16,6 +17,7 @@ import {
 } from "@/app/vendor/vendor_export_template/_components/api"
 import {
   previewExpr,
+  TOKENS_ONLY,
   VIRTUAL_FIELDS,
   type TemplateMapping,
 } from "@/app/vendor/vendor_export_template/_components/model"
@@ -60,22 +62,28 @@ import {
  * · ปล่อยว่าง (ล้างตัวเลือก)
  */
 
-/** ค่าในช่องเลือกที่หมายถึง "กำหนดเอง" — ไม่ชนกับชื่อช่องจริง (ชื่อช่องไม่มีขีดสองตัว) */
-const CUSTOM = "__custom__"
-
-/** นิพจน์ที่เป็นช่องข้อมูลช่องเดียวล้วน ๆ -> ชื่อช่อง · นอกนั้น null */
-const singleField = (expr: string, fields: string[]) => {
-  const match = /^\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(expr.trim())
-  return match && fields.includes(match[1]) ? match[1] : null
+/**
+ * นิพจน์ -> รายการช่องที่เลือก (2026-09-30: หนึ่งคอลัมน์ของไฟล์เลือกได้หลายช่อง ต่อกันด้วยช่องว่าง)
+ * ได้ก็ต่อเมื่อเป็น token ล้วนคั่นด้วยช่องว่าง และทุกตัวอยู่ในรายการช่อง · ว่าง = [] · นอกนั้น null = โหมดพิมพ์เอง
+ */
+const tokensOf = (expr: string, fields: string[]): string[] | null => {
+  const text = expr.trim()
+  if (!text) return []
+  if (!TOKENS_ONLY.test(text)) return null
+  const names = [...text.matchAll(/\{([^{}]+)\}/g)].map((match) => match[1])
+  return names.every((name) => fields.includes(name)) ? names : null
 }
 
-/** คอลัมน์ที่ต้องเปิดช่องพิมพ์นิพจน์ตั้งแต่แรก — มีค่าแต่ไม่ใช่ช่องเดียวล้วน ๆ */
+/** คอลัมน์ที่ต้องเปิดโหมดพิมพ์เองตั้งแต่แรก — มีค่าคงที่/ตัวคั่นอื่น ที่แปลงเป็นรายการช่องไม่ได้ */
 const customColumns = (data: TemplateMapping) =>
   new Set(
     data.columns
-      .filter((col) => col.expr && !singleField(col.expr, data.fields))
+      .filter((col) => tokensOf(col.expr, data.fields) === null)
       .map((col) => col.column)
   )
+
+/** รายการช่อง -> นิพจน์ที่ส่งไปบันทึก */
+const toExpr = (fields: string[]) => fields.map((field) => `{${field}}`).join(" ")
 
 export function MappingModal({
   open,
@@ -94,6 +102,9 @@ export function MappingModal({
   const tmap = useTranslations("vendorexporttemplates.mapping")
   const tfield = useTranslations("vendorexporttemplates.mapping.fields")
   const tso = useTranslations("so_export.columns")
+  const tcustomer = useTranslations("customer.columns")
+  const tproduct = useTranslations("productitems.columns")
+  const tvendor = useTranslations("vendors.columns")
 
   const [data, setData] = React.useState<TemplateMapping | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -150,23 +161,33 @@ export function MappingModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ดึงใหม่เฉพาะตอนเปิด/สลับเทมเพลต ที่เหลือเรียกจากตัวเลือกชีต/แถว
   }, [open, templateId])
 
-  /** ป้ายของช่องข้อมูล — ช่องคำนวณมีคำแปลของตัวเอง ช่องของ so ใช้ชื่อคอลัมน์ชุดเดียวกับหน้าส่งออก */
+  /**
+   * ป้ายของช่องข้อมูล "ตาราง · คอลัมน์" — ช่องคำนวณมีคำแปลของตัวเอง
+   * ชื่อคอลัมน์ใช้คำแปลของหน้านั้น ๆ (so_export / customer / productitems / vendors) ไม่มีคำแปลใช้ชื่อคอลัมน์ตรง ๆ
+   */
+  const columnLabel = (table: string, column: string) => {
+    // แยกทีละตาราง — Translator แต่ละ namespace เป็นคนละชนิด รวมเป็น union แล้วเรียกไม่ได้
+    const key = column as never
+    if (table === "so") return tso.has(key) ? tso(key) : column
+    if (table === "customer") return tcustomer.has(key) ? tcustomer(key) : column
+    if (table === "products") return tproduct.has(key) ? tproduct(key) : column
+    if (table === "vendor") return tvendor.has(key) ? tvendor(key) : column
+    return column
+  }
   const fieldLabel = (field: string) => {
     if ((VIRTUAL_FIELDS as readonly string[]).includes(field)) {
-      return tfield(field as (typeof VIRTUAL_FIELDS)[number])
+      return `${tmap("tables.calc")} · ${tfield(field as (typeof VIRTUAL_FIELDS)[number])}`
     }
-    return tso.has(field as Parameters<typeof tso>[0])
-      ? tso(field as Parameters<typeof tso>[0])
-      : field
+    const [table, column] = field.split(".")
+    const tableLabel = tmap.has(`tables.${table}` as never) ? tmap(`tables.${table}` as never) : table
+    return `${tableLabel} · ${columnLabel(table, column ?? "")}`
   }
 
-  const fieldOptions: SelectOptionItem[] = [
-    ...(data?.fields ?? []).map((field) => ({
-      value: field,
-      label: `${fieldLabel(field)} · ${field}`,
-    })),
-    { value: CUSTOM, label: tmap("custom") },
-  ]
+  /** ตัวเลือก "เพิ่มข้อมูล" ของคอลัมน์หนึ่ง — ตัดช่องที่คอลัมน์นี้เลือกไปแล้ว · ป้ายมีชื่อจริงต่อท้ายไว้ค้นหา */
+  const fieldOptions = (chosen: string[]): SelectOptionItem[] =>
+    (data?.fields ?? [])
+      .filter((field) => !chosen.includes(field))
+      .map((field) => ({ value: field, label: `${fieldLabel(field)} (${field})` }))
 
   const mappedCount = Object.values(exprs).filter((expr) => expr.trim()).length
 
@@ -261,7 +282,7 @@ export function MappingModal({
                   {data.columns.map((col) => {
                     const expr = exprs[col.column] ?? ""
                     const isCustom = custom.has(col.column)
-                    const selected = isCustom ? CUSTOM : singleField(expr, data.fields)
+                    const chosen = isCustom ? [] : (tokensOf(expr, data.fields) ?? [])
                     const preview = expr ? previewExpr(expr, data.sample) : ""
                     return (
                       <TableRow key={col.column} className="border-border/50 align-top hover:bg-transparent">
@@ -281,22 +302,8 @@ export function MappingModal({
                           ) : null}
                         </TableCell>
                         <TableCell className="space-y-2 py-2">
-                          <SelectOption
-                            id={`mapping-${col.column}`}
-                            options={fieldOptions}
-                            value={selected}
-                            onValueChange={(next) => {
-                              if (next === CUSTOM) {
-                                toggleCustom(col.column, true)
-                                return
-                              }
-                              toggleCustom(col.column, false)
-                              setExpr(col.column, next ? `{${next}}` : "")
-                            }}
-                            placeholder={tmap("none")}
-                            label={col.header}
-                          />
                           {isCustom ? (
+                            // พิมพ์เอง — ค่าคงที่ หรือหลายช่องที่คั่นด้วยอย่างอื่นนอกจากช่องว่าง
                             <Input
                               value={expr}
                               onChange={(event) => setExpr(col.column, event.target.value)}
@@ -304,7 +311,60 @@ export function MappingModal({
                               aria-label={`${col.header} — ${tmap("custom")}`}
                               className="font-mono text-sm"
                             />
-                          ) : null}
+                          ) : (
+                            <>
+                              {/* ช่องที่เลือกไว้ — เรียงตามลำดับที่เลือก ตอนส่งออกต่อกันด้วยช่องว่าง (ช่องที่ว่างถูกข้าม) */}
+                              {chosen.length ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {chosen.map((field, index) => (
+                                    <Badge
+                                      key={field}
+                                      variant="secondary"
+                                      className="bg-primary/10 text-primary gap-1 border-transparent py-0.5 pr-0.5 font-medium"
+                                    >
+                                      {fieldLabel(field)}
+                                      <button
+                                        type="button"
+                                        aria-label={tmap("removeField", { field: fieldLabel(field) })}
+                                        onClick={() =>
+                                          setExpr(col.column, toExpr(chosen.filter((_, i) => i !== index)))
+                                        }
+                                        className="hover:bg-primary/20 rounded-sm p-0.5"
+                                      >
+                                        <X className="size-3" />
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              ) : null}
+                              {/* เพิ่มทีละช่อง — ค่าของช่องเลือกเป็น null เสมอ เลือกแล้วต่อท้ายรายการ แล้วกลับเป็นป้าย "เพิ่มข้อมูล" */}
+                              <SelectOption
+                                id={`mapping-${col.column}`}
+                                options={fieldOptions(chosen)}
+                                value={null}
+                                onValueChange={(next) => {
+                                  if (next) setExpr(col.column, toExpr([...chosen, next]))
+                                }}
+                                placeholder={chosen.length ? tmap("addField") : tmap("none")}
+                                label={col.header}
+                              />
+                            </>
+                          )}
+                          {/* สลับโหมด — พิมพ์เอง <-> เลือกจากตาราง (กลับมาเลือกได้เฉพาะนิพจน์ที่แปลงเป็นรายการช่องได้ ไม่งั้นล้าง) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isCustom) {
+                                if (tokensOf(expr, data.fields) === null) setExpr(col.column, "")
+                                toggleCustom(col.column, false)
+                              } else {
+                                toggleCustom(col.column, true)
+                              }
+                            }}
+                            className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline"
+                          >
+                            {isCustom ? tmap("useFields") : tmap("useCustom")}
+                          </button>
                         </TableCell>
                         <TableCell className="text-muted-foreground max-w-[220px] py-2 pr-4 text-sm break-words whitespace-normal">
                           {preview}

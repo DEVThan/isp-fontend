@@ -125,10 +125,25 @@ export const VIRTUAL_FIELDS = [
   "cod_amount",
 ] as const
 
-/** {ชื่อช่อง} ในนิพจน์ — ชุดเดียวกับ TOKEN ฝั่ง API */
-export const TOKEN = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g
+/** {ช่อง} หรือ {ตาราง.ช่อง} ในนิพจน์ — ชุดเดียวกับ TOKEN ฝั่ง API (export_mapping.py) */
+export const TOKEN = /\{([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\}/g
 
-/** นิพจน์ + ค่าตัวอย่าง -> ข้อความที่จะได้ (โชว์ในหน้าจับคู่เท่านั้น ของจริงคำนวณฝั่ง API) */
+/** นิพจน์ที่เป็น token ล้วนคั่นด้วยช่องว่าง — แบบที่หน้าจับคู่สร้างจากการเลือกหลายช่อง */
+export const TOKENS_ONLY = /^\{[^{}]+\}(?:\s+\{[^{}]+\})*$/
+
+/** ตารางที่เลือกคอลัมน์มาใส่ได้ — ตรงกับ SOURCES ฝั่ง API (token เป็น "ตาราง.คอลัมน์") */
+export const SOURCES = ["so", "customer", "products", "vendor"] as const
+
+/**
+ * นิพจน์ + ค่าตัวอย่าง -> ข้อความที่จะได้ (โชว์ในหน้าจับคู่เท่านั้น ของจริงคำนวณฝั่ง API)
+ * token ล้วนหลายตัว ข้ามตัวที่ว่างแบบเดียวกับ fill() ฝั่ง API จะได้ไม่มีช่องว่างห้อย
+ */
 export function previewExpr(expr: string, sample: Record<string, string | null>) {
+  if (TOKENS_ONLY.test(expr.trim())) {
+    return [...expr.matchAll(TOKEN)]
+      .map((match) => sample[match[1]] ?? "")
+      .filter((value) => value.trim() !== "")
+      .join(" ")
+  }
   return expr.replace(TOKEN, (_, name: string) => sample[name] ?? "")
 }
