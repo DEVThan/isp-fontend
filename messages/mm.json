@@ -1113,7 +1113,8 @@
     "exportConfirmDescription": "လက်ရှိ စစ်ထုတ်ချက်နှင့် ကိုက်ညီသော အော်ဒါ အားလုံး ({count}) ကို ထုတ်ယူမည် — ဖိုင် ကြီးနိုင်သည်",
     "exportDoneFile": "အော်ဒါ {count} ခု ထုတ်ယူပြီး — {file}",
     "exportCodes": " · dropship ပို့ဆောင်မှု နံပါတ် {count} ခု ထုတ်ပြီး",
-    "exportCodesSkipped": " ({count} ခု ကျော်ခဲ့သည် — prefix မရှိ)"
+    "exportCodesSkipped": " ({count} ခု ကျော်ခဲ့သည် — prefix မရှိ)",
+    "exportGroupName": " · အုပ်စု {name} · အခြေအနေကို \"กำลังจัดส่ง\" သို့ ပြောင်းပြီး"
   },
   "broadcasts": {
     "title": "Broadcast ချန်နယ်များ",

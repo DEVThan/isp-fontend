@@ -412,10 +412,12 @@ export function Tables() {
         message:
           tr("exportDoneFile", { count: file.count.toLocaleString("en-US"), file: file.fileName }) +
           (file.codesUpdated ? tr("exportCodes", { count: file.codesUpdated.toLocaleString("en-US") }) : "") +
-          (file.codesSkipped ? tr("exportCodesSkipped", { count: file.codesSkipped.toLocaleString("en-US") }) : ""),
+          (file.codesSkipped ? tr("exportCodesSkipped", { count: file.codesSkipped.toLocaleString("en-US") }) : "") +
+          (file.groupName ? tr("exportGroupName", { name: file.groupName }) : ""),
       })
-      // แถว dropship ได้เลขพัสดุใหม่ — โหลดหน้าปัจจุบันใหม่ให้เห็นค่าล่าสุด
-      if (file.codesUpdated) load(filters)
+      // ทุกแถวที่ส่งออกถูกเปลี่ยนสถานะเป็น "กำลังจัดส่ง" + ตั้งกลุ่ม (และแถว dropship ได้เลขพัสดุใหม่)
+      // — โหลดหน้าปัจจุบันใหม่เสมอ แถวอาจหลุดตัวกรองสถานะเดิมไปแล้ว
+      load(filters)
     } catch (error) {
       // ข้อความจาก API บอกสาเหตุตรง ๆ (ยังไม่จับคู่ / ไม่มีไฟล์ / ไม่มีแถว) — ห้าม console.error ใน dev จะขึ้นเต็มจอ
       setExportResult({

@@ -1113,7 +1113,8 @@
     "exportConfirmDescription": "This exports every order matching the current filters ({count}), not just this page — the file may be large and take a moment.",
     "exportDoneFile": "Exported {count} orders — {file}",
     "exportCodes": " · {count} dropship tracking numbers issued",
-    "exportCodesSkipped": " ({count} skipped — carrier has no prefix)"
+    "exportCodesSkipped": " ({count} skipped — carrier has no prefix)",
+    "exportGroupName": " · group {name} · status set to \"กำลังจัดส่ง\""
   },
   "broadcasts": {
     "title": "Broadcast channels",

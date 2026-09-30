@@ -169,11 +169,14 @@ export async function deleteSoExport(id: number): Promise<SoDeleted> {
 }
 
 /** ไฟล์ที่ได้จากการส่งออก — group คือชื่อไฟล์/กลุ่ม (X-Export-Group) · count คือจำนวนแถวในไฟล์ (X-Export-Count)
- *  codesUpdated / codesSkipped — แถว dropship ที่ได้เลข shipping_code ใหม่ / ที่ข้ามเพราะขนส่งไม่มี prefix */
+ *  codesUpdated / codesSkipped — แถว dropship ที่ได้เลข shipping_code ใหม่ / ที่ข้ามเพราะขนส่งไม่มี prefix
+ *  groupName — ชื่อแถวใน export_group ที่ API สร้างให้หลังส่งออก (export-yyyymmddNNN, X-Export-Group-Name)
+ *  ว่างเมื่อเป็นเส้นเก่า (so_export-vendor) ที่ไม่ได้สร้างกลุ่ม */
 export type SoExportFile = {
   blob: Blob
   fileName: string
   group: string
+  groupName: string
   count: number
   codesUpdated: number
   codesSkipped: number
@@ -226,6 +229,7 @@ async function downloadExport(path: string, body: unknown): Promise<SoExportFile
     blob: await res.blob(),
     fileName,
     group,
+    groupName: decodeURIComponent(res.headers.get("X-Export-Group-Name") ?? ""),
     count: Number(res.headers.get("X-Export-Count") ?? 0),
     codesUpdated: Number(res.headers.get("X-Shipping-Code-Updated") ?? 0),
     codesSkipped: Number(res.headers.get("X-Shipping-Code-Skipped") ?? 0),

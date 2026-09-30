@@ -1113,7 +1113,8 @@
     "exportConfirmDescription": "จะส่งออกทุกรายการที่ตรงตัวกรองตอนนี้ ({count} รายการ) ไม่ใช่แค่หน้าที่เห็น — ไฟล์อาจใหญ่และใช้เวลาสักครู่",
     "exportDoneFile": "ส่งออกแล้ว {count} รายการ — {file}",
     "exportCodes": " · ออกเลขพัสดุ dropship {count} รายการ",
-    "exportCodesSkipped": " (ข้าม {count} รายการ — ขนส่งไม่มี prefix)"
+    "exportCodesSkipped": " (ข้าม {count} รายการ — ขนส่งไม่มี prefix)",
+    "exportGroupName": " · กลุ่ม {name} · เปลี่ยนสถานะเป็น \"กำลังจัดส่ง\" แล้ว"
   },
   "broadcasts": {
     "title": "ช่องทาง Broadcast",
