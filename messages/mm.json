@@ -1098,7 +1098,15 @@
       "shipmentTypeHint": "ရောင်းချသူ၏ ပို့ဆောင်မှု အမျိုးအစားမှ ဖြစ်သည်",
       "shippingByEmpty": "ဤရောင်းချသူတွင် ပို့ဆောင်သူ မရှိသေးပါ — ကိုယ်တိုင် ရိုက်ထည့်နိုင်သည်",
       "shippingByToggle": "ရောင်းချသူ၏ ပို့ဆောင်သူများကို ပြရန်"
-    }
+    },
+    "exportTemplate": "ထုတ်ယူမှု ပုံစံ",
+    "exportNeedTemplate": "ပုံစံကို အရင်ရွေးပါ",
+    "exportNoRows": "စစ်ထုတ်ချက်နှင့် ကိုက်ညီသော အော်ဒါ မရှိပါ",
+    "exportConfirmTitle": "အော်ဒါ {count} ခု ထုတ်ယူမလား?",
+    "exportConfirmDescription": "လက်ရှိ စစ်ထုတ်ချက်နှင့် ကိုက်ညီသော အော်ဒါ အားလုံး ({count}) ကို ထုတ်ယူမည် — ဖိုင် ကြီးနိုင်သည်",
+    "exportDoneFile": "အော်ဒါ {count} ခု ထုတ်ယူပြီး — {file}",
+    "exportCodes": " · dropship ပို့ဆောင်မှု နံပါတ် {count} ခု ထုတ်ပြီး",
+    "exportCodesSkipped": " ({count} ခု ကျော်ခဲ့သည် — prefix မရှိ)"
   },
   "broadcasts": {
     "title": "Broadcast ချန်နယ်များ",

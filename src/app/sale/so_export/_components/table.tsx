@@ -16,7 +16,7 @@ import {
 import { useTranslations } from "next-intl"
 
 import {
-  exportSoByVendor,
+  exportSoByTemplate,
   getSoExportList,
   getSoOptions,
   SO_PAGE_SIZE,
@@ -46,7 +46,18 @@ import { Badge } from "@/components/ui/badge"
 // Button ใช้แค่ปุ่มล้างรายการที่เลือก — ปุ่มในแถว (ดู / แก้ไข / ลบ) และปุ่มเพิ่มซ่อนอยู่
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+// Checkbox — เลิกใช้ 30/09/2026 (ไม่ติ๊กแถวแล้ว ส่งออกทุกแถวที่ตรงตัวกรอง)
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { getVendorExportTemplateOptions } from "@/app/vendor/vendor_export_template/_components/api"
+import type { VendorExportTemplateOption } from "@/app/vendor/vendor_export_template/_components/model"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -62,7 +73,10 @@ import { cn } from "@/lib/utils"
 
 /** คอลัมน์ checkbox + คอลัมน์ข้อมูลที่เปิดใช้อยู่ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง (ช่องปุ่มดู/แก้ไขซ่อนไว้ จึงไม่นับ)
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 11
+const COLUMN_COUNT = 10
+
+/** ส่งออกเกินจำนวนนี้ ถามยืนยันก่อน (ผู้ใช้สั่ง 30/09/2026) — ไม่กรองเลยได้ทั้งตาราง ~43,000 แถว */
+const EXPORT_CONFIRM_ROWS = 1000
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -283,11 +297,6 @@ export function Tables() {
     label: `${option.code} — ${option.name}`,
   }))
 
-  /** ผู้ขายสำหรับส่งออก — ค่าคือ id (API ใช้หา vendor.export_template) ป้ายเหมือนตัวกรองผู้ขาย */
-  const exportVendorOptions: SelectOptionItem[] = options.vendors.map((option) => ({
-    value: String(option.id),
-    label: `${option.code} — ${option.name}`,
-  }))
 
   /** ประเภทการจัดส่ง — ทะเบียน shiptment_type · ค่าคือชื่อ (ตรงกับ so.shipment_type) */
   const shipmentTypeOptions: SelectOptionItem[] = options.shipmentTypes.map((option) => ({
@@ -322,45 +331,60 @@ export function Tables() {
   const visible = list.so
 
   /**
-   * แถวที่ติ๊กไว้ — เก็บเป็น id จึงจำข้ามหน้าได้ (ไปหน้า 2 แล้วกลับมา ติ๊กเดิมยังอยู่)
-   * เปลี่ยนตัวกรองก็ไม่ล้าง · ล้างได้ด้วยปุ่ม "ล้าง" ในแถบจำนวนที่เลือกเหนือตาราง
+   * ส่งออกตามเทมเพลต (30/09/2026 — เดิมติ๊กแถวแล้วเลือกผู้ขาย)
+   * เลือกเทมเพลต แล้วเอา "ทุกแถวที่ตรงตัวกรองตอนนี้" ใส่ไฟล์ ไม่ใช่แค่หน้าที่เห็น · ไม่แก้ข้อมูลในตาราง
+   * ตัวเลือกคือเทมเพลตที่ active (/vendor-export-template-get-option) ดึงครั้งเดียวตอนเปิดหน้า
    */
-  const [selected, setSelected] = React.useState<ReadonlySet<number>>(() => new Set())
-  /** ช่องบนหัวตาราง = เลือก/ไม่เลือก "ทั้งหน้าที่เห็นอยู่" ไม่ใช่ทุกแถวที่ตรงเงื่อนไข (API ส่งมาทีละหน้า) */
-  const pageSelected = visible.filter((row) => selected.has(row.id)).length
-  const allOnPage = visible.length > 0 && pageSelected === visible.length
-  const someOnPage = pageSelected > 0 && !allOnPage
+  const [templates, setTemplates] = React.useState<VendorExportTemplateOption[]>([])
+  React.useEffect(() => {
+    let cancelled = false
+    getVendorExportTemplateOptions()
+      .then((next) => {
+        if (!cancelled) setTemplates(next)
+      })
+      // ดึงไม่ได้ก็แค่ไม่มีตัวเลือก — ห้าม console.error ใน dev จะขึ้นเต็มจอ
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  const templateOptions: SelectOptionItem[] = templates.map((option) => ({
+    value: String(option.id),
+    label: option.name,
+  }))
 
-  const toggleRow = (id: number, checked: boolean) =>
-    setSelected((prev) => {
-      const next = new Set(prev)
-      if (checked) next.add(id)
-      else next.delete(id)
-      return next
-    })
-
-  /** ผู้ขายที่จะส่งออกให้ (id เป็นข้อความตาม SelectOption) — แยกจากตัวกรองผู้ขายด้านบน ไม่กรองตาราง */
-  const [exportVendor, setExportVendor] = React.useState<string | null>(null)
+  const [exportTemplate, setExportTemplate] = React.useState<string | null>(null)
   const [exporting, setExporting] = React.useState(false)
-  /** ผลของการกดส่งออกครั้งล่าสุด — null คือยังไม่ได้กด / ถูกล้างเมื่อเปลี่ยนผู้ขาย */
+  /** กล่องยืนยันตอนแถวเยอะ (เกิน EXPORT_CONFIRM_ROWS) */
+  const [confirming, setConfirming] = React.useState(false)
+  /** ผลของการกดส่งออกครั้งล่าสุด — null คือยังไม่ได้กด / ถูกล้างเมื่อเปลี่ยนเทมเพลต */
   const [exportResult, setExportResult] = React.useState<{
     ok: boolean
     message: string
   } | null>(null)
 
-  /** ส่งออกได้เมื่อเลือกผู้ขายแล้ว และติ๊กอย่างน้อยหนึ่งรายการ (ข้ามหน้าได้) */
-  const canExport = exportVendor !== null && selected.size > 0 && !exporting
+  /** ส่งออกได้เมื่อเลือกเทมเพลตแล้ว และตัวกรองตอนนี้มีอย่างน้อยหนึ่งแถว (list.total นับทุกหน้า) */
+  const canExport = exportTemplate !== null && loaded && list.total > 0 && !exporting
 
-  /**
-   * ส่งออกตามเทมเพลตของผู้ขาย — API หาเทมเพลตเอง (ไม่มีเทมเพลต = ตอบ 400 พร้อมเหตุผล)
-   * สำเร็จ: ดาวน์โหลดไฟล์ ล้างรายการที่ติ๊ก แล้วโหลดหน้านี้ใหม่ (export_group_name ของแถวเหล่านั้นเปลี่ยนแล้ว)
-   */
+  /** ดาวน์โหลดไฟล์ของทุกแถวที่ตรงตัวกรองชุดปัจจุบัน (filters — ชุดเดียวกับที่ตารางใช้) */
   const runExport = async () => {
     if (!canExport) return
+    setConfirming(false)
     setExporting(true)
     setExportResult(null)
     try {
-      const file = await exportSoByVendor(Number(exportVendor), [...selected])
+      const file = await exportSoByTemplate(Number(exportTemplate), {
+        soCode: filters.soCode.trim(),
+        name: filters.name.trim(),
+        tel: filters.tel.trim(),
+        productName: filters.productName.trim(),
+        status: filters.status ?? "",
+        channel: filters.channel ?? "",
+        vendorName: filters.vendor ?? "",
+        shipmentType: filters.shipmentType ?? "",
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+      })
       const href = URL.createObjectURL(file.blob)
       const link = document.createElement("a")
       link.href = href
@@ -368,11 +392,17 @@ export function Tables() {
       link.click()
       // ให้ browser เริ่มดาวน์โหลดก่อนค่อยคืน URL
       setTimeout(() => URL.revokeObjectURL(href), 1000)
-      setExportResult({ ok: true, message: tr("exportDone", { group: file.group }) })
-      setSelected(new Set())
-      load(filters)
+      setExportResult({
+        ok: true,
+        message:
+          tr("exportDoneFile", { count: file.count.toLocaleString("en-US"), file: file.fileName }) +
+          (file.codesUpdated ? tr("exportCodes", { count: file.codesUpdated.toLocaleString("en-US") }) : "") +
+          (file.codesSkipped ? tr("exportCodesSkipped", { count: file.codesSkipped.toLocaleString("en-US") }) : ""),
+      })
+      // แถว dropship ได้เลขพัสดุใหม่ — โหลดหน้าปัจจุบันใหม่ให้เห็นค่าล่าสุด
+      if (file.codesUpdated) load(filters)
     } catch (error) {
-      // ข้อความจาก API บอกสาเหตุตรง ๆ (ไม่มีเทมเพลต / token ผิด) — ห้าม console.error ใน dev จะขึ้นเต็มจอ
+      // ข้อความจาก API บอกสาเหตุตรง ๆ (ยังไม่จับคู่ / ไม่มีไฟล์ / ไม่มีแถว) — ห้าม console.error ใน dev จะขึ้นเต็มจอ
       setExportResult({
         ok: false,
         message:
@@ -385,15 +415,12 @@ export function Tables() {
     }
   }
 
-  const togglePage = (checked: boolean) =>
-    setSelected((prev) => {
-      const next = new Set(prev)
-      for (const row of visible) {
-        if (checked) next.add(row.id)
-        else next.delete(row.id)
-      }
-      return next
-    })
+  /** ปุ่มส่งออก — แถวเยอะถามยืนยันก่อน ไม่เยอะส่งออกเลย */
+  const startExport = () => {
+    if (!canExport) return
+    if (list.total > EXPORT_CONFIRM_ROWS) setConfirming(true)
+    else void runExport()
+  }
 
   /** ลำดับที่โชว์แทนรหัส — นับต่อจากหน้าก่อนหน้า (หน้า 2 แถวแรกได้ 31 เมื่อหน้าละ 30)
    *  ใช้ page/per_page ที่ API ตอบกลับมา ไม่ใช่ state ของตัวกรอง เลขจึงตรงกับแถวที่เห็นจริง */
@@ -542,28 +569,28 @@ export function Tables() {
 
       <CardContent className="px-4 py-0">
         <div className="flex flex-wrap items-center justify-end gap-2 p-0 pt-3 md:p-0 md:pt-3">
-          {/* ส่งออกตามเทมเพลตผู้ขาย — ฝั่งซ้ายเหนือตาราง: เลือกผู้ขาย แล้วกดส่งออกรายการที่ติ๊กไว้ */}
+          {/* ส่งออกตามเทมเพลต — ฝั่งซ้ายเหนือตาราง: เลือกเทมเพลต แล้วกดส่งออกทุกแถวที่ตรงตัวกรอง */}
           <div className="w-full sm:w-72">
             <SelectOption
-              id="export-vendor"
-              options={exportVendorOptions}
-              value={exportVendor}
+              id="export-template"
+              options={templateOptions}
+              value={exportTemplate}
               onValueChange={(next) => {
-                setExportVendor(next)
+                setExportTemplate(next)
                 setExportResult(null)
               }}
-              placeholder={tr("exportVendor")}
-              label={tr("exportVendor")}
+              placeholder={tr("exportTemplate")}
+              label={tr("exportTemplate")}
             />
           </div>
           <Button
-            onClick={() => void runExport()}
+            onClick={startExport}
             disabled={!canExport}
             title={
-              exportVendor === null
-                ? tr("exportNeedVendor")
-                : selected.size === 0
-                  ? tr("exportNeedRows")
+              exportTemplate === null
+                ? tr("exportNeedTemplate")
+                : loaded && list.total === 0
+                  ? tr("exportNoRows")
                   : undefined
             }
             className="from-chart-1 to-chart-5 bg-gradient-to-r text-white transition-transform hover:-translate-y-0.5 hover:opacity-95"
@@ -571,23 +598,8 @@ export function Tables() {
             {exporting ? <LoaderCircle className="animate-spin" /> : <FileDown />}
             {exporting ? tr("exporting") : tr("export")}
           </Button>
-          {/* จำนวนแถวที่ติ๊กไว้ (รวมทุกหน้า) + ปุ่มล้าง — ขึ้นเฉพาะตอนเลือกอย่างน้อยหนึ่งแถว */}
-          {selected.size > 0 ? (
-            <div className="bg-primary/10 text-primary mr-auto flex items-center gap-2 rounded-lg py-1 pr-1 pl-3 text-sm font-medium">
-              {tr("selected", { count: selected.size.toLocaleString("en-US") })}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelected(new Set())}
-                className="text-primary hover:bg-primary/15 h-7"
-              >
-                {t("clear")}
-              </Button>
-            </div>
-          ) : (
-            // ดันกลุ่มส่งออกไปชิดซ้ายเสมอ ถึงจะยังไม่ได้ติ๊กอะไร
-            <div className="mr-auto" />
-          )}
+          {/* ดันกลุ่มส่งออกไปชิดซ้ายเสมอ */}
+          <div className="mr-auto" />
           {/* ปิดปุ่มเพิ่มไว้ก่อน — เปิดกลับให้เอา Plus ใน import ออกจาก comment ด้วย
               (FormModal ด้านล่างยังอยู่ ตอนนี้เข้าถึงได้แต่โหมดแก้ไขจากปุ่มดินสอในแถว
                ทั้งตารางนี้จึงกลายเป็นอ่าน+แก้ไข ไม่มีทางเพิ่มหรือลบแถวจากหน้าเว็บ
@@ -659,19 +671,9 @@ export function Tables() {
           <Table>
             <TableHeader className="bg-muted/60">
               <TableRow className="hover:bg-transparent">
-                {/* เลือกทั้งหน้า — ติ๊กครบทุกแถวในหน้า = ถูก · ติ๊กบางแถว = ขีด (indeterminate) */}
-                <TableHead className="w-10 pl-6">
-                  <Checkbox
-                    checked={allOnPage}
-                    indeterminate={someOnPage}
-                    disabled={visible.length === 0}
-                    onCheckedChange={(checked) => togglePage(checked)}
-                    aria-label={tr("selectAll")}
-                    className="bg-card"
-                  />
-                </TableHead>
+                {/* ช่อง checkbox เลือกแถว — เอาออกแล้ว (30/09/2026) ลำดับกลับมาเป็นคอลัมน์แรก */}
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
-                <TableHead className="text-muted-foreground w-14 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
                 <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("so_code")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("product_name")}</TableHead>
@@ -698,23 +700,14 @@ export function Tables() {
                 return (
                 <TableRow
                   key={row.id}
-                  data-state={selected.has(row.id) ? "selected" : undefined}
-                  className="group/row border-border/50 hover:bg-accent/40 data-[state=selected]:bg-primary/5 transition-colors"
+                  className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
                   <TableCell className="pt-1 pb-1 relative pl-6">
-                    {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ — แถวที่ติ๊กไว้ขึ้นค้าง */}
+                    {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ */}
                     <span
                       aria-hidden
-                      className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100 group-data-[state=selected]/row:opacity-100"
+                      className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
                     />
-                    <Checkbox
-                      checked={selected.has(row.id)}
-                      onCheckedChange={(checked) => toggleRow(row.id, checked)}
-                      aria-label={tr("selectRow", { code: row.so_code })}
-                      className="bg-card"
-                    />
-                  </TableCell>
-                  <TableCell className="pt-1 pb-1">
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
                   </TableCell>
                   {/* เลขที่ใบ + วันที่สั่งซื้อ (po_date) — API เรียงตาม po_date วันที่จึงอยู่คู่กับเลขที่ใบ (เดิมโชว์ create_date) */}
@@ -925,6 +918,31 @@ export function Tables() {
         so={removing ?? undefined}
         onDeleted={() => load(filters)}
       />
+      {/* ยืนยันก่อนส่งออกเมื่อแถวเยอะ (เกิน EXPORT_CONFIRM_ROWS) — ไฟล์ใหญ่ ใช้เวลานาน */}
+      <Dialog open={confirming} onOpenChange={setConfirming}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {tr("exportConfirmTitle", { count: list.total.toLocaleString("en-US") })}
+            </DialogTitle>
+            <DialogDescription>
+              {tr("exportConfirmDescription", { count: list.total.toLocaleString("en-US") })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" />}>
+              {tall("cancel")}
+            </DialogClose>
+            <Button
+              type="button"
+              onClick={() => void runExport()}
+              className="from-chart-1 to-chart-5 bg-gradient-to-r text-white"
+            >
+              <FileDown /> {tr("export")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
     </>
   )

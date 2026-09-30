@@ -165,26 +165,26 @@ export async function deleteSoExport(id: number): Promise<SoDeleted> {
   return (await post<SoDeleted>("so_export-get-delet", { id })) as SoDeleted
 }
 
-/** ไฟล์ที่ได้จากการส่งออกตามเทมเพลตผู้ขาย — group คือชื่อกลุ่มที่ถูกเขียนลง so.export_group_name แล้ว */
-export type SoVendorExport = {
+/** ไฟล์ที่ได้จากการส่งออก — group คือชื่อไฟล์/กลุ่ม (X-Export-Group) · count คือจำนวนแถวในไฟล์ (X-Export-Count)
+ *  codesUpdated / codesSkipped — แถว dropship ที่ได้เลข shipping_code ใหม่ / ที่ข้ามเพราะขนส่งไม่มี prefix */
+export type SoExportFile = {
   blob: Blob
   fileName: string
   group: string
+  count: number
+  codesUpdated: number
+  codesSkipped: number
 }
 
+/** เดิมชื่อ SoVendorExport — คงชื่อเก่าไว้ให้โค้ดที่ยังอ้างอยู่ */
+export type SoVendorExport = SoExportFile
+
 /**
- * POST /api/web/so_export-vendor — ส่งออกรายการที่เลือกตามเทมเพลตของผู้ขาย
- *
- * API หาเทมเพลตจาก vendor.export_template แล้วเติมข้อมูลลงแถว {token} ในไฟล์
- * สร้างไฟล์สำเร็จแล้วตั้ง export_group_name = "{รหัสผู้ขาย}-yymmdd-hhmmss" ให้ทุกแถวที่ส่งไป
- * สำเร็จตอบเป็นไฟล์ (ชื่อกลุ่มอยู่ใน header X-Export-Group) · ผิดพลาดตอบ JSON envelope ปกติ
+ * ยิงเส้นส่งออกแล้วรับไฟล์ — สำเร็จตอบเป็นไฟล์ · ผิดพลาดตอบ JSON envelope ปกติ
  * จึงแยกด้วย Content-Type ไม่ใช้ post() ข้างบนที่อ่านเป็น JSON อย่างเดียว
  */
-export async function exportSoByVendor(
-  vendorId: number,
-  ids: number[]
-): Promise<SoVendorExport> {
-  const url = `${API_BASE_URL}/so_export-vendor`
+async function downloadExport(path: string, body: unknown): Promise<SoExportFile> {
+  const url = `${API_BASE_URL}/${path}`
   let res: Response
 
   try {
@@ -192,7 +192,7 @@ export async function exportSoByVendor(
       method: "POST",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vendor_id: vendorId, ids }),
+      body: JSON.stringify(body),
     })
   } catch (cause) {
     throw new ApiError(
@@ -209,13 +209,64 @@ export async function exportSoByVendor(
     )
   }
 
-  const group = res.headers.get("X-Export-Group") ?? ""
-  // ชื่อไฟล์จริงอยู่ใน Content-Disposition (นามสกุลตามเทมเพลต .xlsx / .xlsm) — อ่านไม่ได้ใช้ชื่อกลุ่ม
+  // ชื่อกลุ่ม = ชื่อไฟล์ไม่มีนามสกุล — API percent-encode มา (ชื่อเทมเพลตเป็นภาษาไทยได้ header ต้องเป็น latin-1)
+  const group = decodeURIComponent(res.headers.get("X-Export-Group") ?? "")
+  // ชื่อไฟล์จริงอยู่ใน Content-Disposition (นามสกุลตามเทมเพลต .xlsx / .xlsm)
+  // อ่าน filename*=UTF-8''… ก่อน — filename="…" เป็นตัวสำรอง ASCII ที่ภาษาไทยหายไปแล้ว
   const disposition = res.headers.get("Content-Disposition") ?? ""
-  const fileName =
-    /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)?.[1] ??
-    `${group || "so_export"}.xlsx`
-  return { blob: await res.blob(), fileName: decodeURIComponent(fileName), group }
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1]
+  const plain = /filename="?([^";]+)"?/i.exec(disposition)?.[1]
+  const fileName = encoded
+    ? decodeURIComponent(encoded)
+    : (plain ?? `${group || "so_export"}.xlsx`)
+  return {
+    blob: await res.blob(),
+    fileName,
+    group,
+    count: Number(res.headers.get("X-Export-Count") ?? 0),
+    codesUpdated: Number(res.headers.get("X-Shipping-Code-Updated") ?? 0),
+    codesSkipped: Number(res.headers.get("X-Shipping-Code-Skipped") ?? 0),
+  }
+}
+
+/**
+ * POST /api/web/so_export-vendor — ส่งออกรายการที่ติ๊กไว้ตามเทมเพลตของผู้ขาย แล้วตั้ง so.export_group_name
+ * หน้าเว็บเลิกใช้แล้ว (30/09/2026 เปลี่ยนเป็น exportSoByTemplate) — เก็บไว้เผื่อกลับไปใช้
+ */
+export async function exportSoByVendor(
+  vendorId: number,
+  ids: number[]
+): Promise<SoVendorExport> {
+  return downloadExport("so_export-vendor", { vendor_id: vendorId, ids })
+}
+
+/**
+ * POST /api/web/so_export-template — ส่งออก "ทุกแถวที่ตรงตัวกรอง" (ไม่ใช่แค่หน้าที่เห็น) ตามเทมเพลตที่เลือก
+ *
+ * ส่งตัวกรองชุดเดียวกับ getSoExportList (ไม่ส่ง page/per_page) · vendor.* ในไฟล์ = ผู้ขายของสินค้าแต่ละแถว
+ * ไม่แก้ข้อมูลในตาราง so (ผู้ใช้สั่ง 30/09/2026) · ไม่มีแถวตรงตัวกรอง API ตอบ 400
+ * ชื่อไฟล์ = "{ชื่อเทมเพลต}-yymmdd-hhmmss" (อักขระที่ชื่อไฟล์ใช้ไม่ได้ถูกแทนด้วย _)
+ * หลังสร้างไฟล์ API ออกเลข so.shipping_code = {shipping.prefix}yymm00001… ให้แถว dropship (ทับเลขเดิม)
+ */
+export async function exportSoByTemplate(
+  templateId: number,
+  query: SoQuery = {}
+): Promise<SoExportFile> {
+  return downloadExport("so_export-template", {
+    template_id: templateId,
+    so_code: query.soCode ?? "",
+    name: query.name ?? "",
+    tel: query.tel ?? "",
+    status: query.status ?? "",
+    channel: query.channel ?? "",
+    item_code: query.itemCode ?? "",
+    product_name: query.productName ?? "",
+    sell_by: query.sellBy ?? "",
+    vendor_name: query.vendorName ?? "",
+    shipment_type: query.shipmentType ?? "",
+    date_from: dateParam(query.dateFrom),
+    date_to: dateParam(query.dateTo),
+  })
 }
 
 /** ยิงเส้น -get-option หนึ่งเส้น — พังก็คืน [] ช่องนั้นแค่ไม่มีตัวเลือก ไม่ลากช่องอื่นพังไปด้วย */

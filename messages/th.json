@@ -1098,7 +1098,15 @@
       "shipmentTypeHint": "มาจากประเภทการจัดส่งของผู้ขาย",
       "shippingByEmpty": "ผู้ขายนี้ยังไม่มีรายการขนส่ง — พิมพ์เองได้",
       "shippingByToggle": "เปิดรายการขนส่งของผู้ขาย"
-    }
+    },
+    "exportTemplate": "เทมเพลตส่งออก",
+    "exportNeedTemplate": "เลือกเทมเพลตก่อน",
+    "exportNoRows": "ไม่มีรายการที่ตรงตัวกรอง",
+    "exportConfirmTitle": "ส่งออก {count} รายการ?",
+    "exportConfirmDescription": "จะส่งออกทุกรายการที่ตรงตัวกรองตอนนี้ ({count} รายการ) ไม่ใช่แค่หน้าที่เห็น — ไฟล์อาจใหญ่และใช้เวลาสักครู่",
+    "exportDoneFile": "ส่งออกแล้ว {count} รายการ — {file}",
+    "exportCodes": " · ออกเลขพัสดุ dropship {count} รายการ",
+    "exportCodesSkipped": " (ข้าม {count} รายการ — ขนส่งไม่มี prefix)"
   },
   "broadcasts": {
     "title": "ช่องทาง Broadcast",
