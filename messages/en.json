@@ -77,7 +77,8 @@
     "product_item": "Product items",
     "sale": "Sale",
     "so": "Sales orders",
-    "so_export": "Sales orders export"
+    "so_export": "Sales orders export",
+    "export_group": "Export groups"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1153,6 +1154,50 @@
     "active": "Active",
     "inactive": "Inactive",
     "loadError": "Could not load channels"
+  },
+  "export_group": {
+    "title": "Export groups",
+    "description": "{count} export groups in total",
+    "columns": {
+      "no": "No.",
+      "name": "Group name",
+      "detail": "Detail",
+      "shiptment_type": "Shipment type",
+      "total_price": "Total",
+      "created_at": "Created",
+      "updated_at": "Updated"
+    },
+    "form": {
+      "addTitle": "Add export group",
+      "editTitle": "Edit export group",
+      "addDescription": "Fill in the export group to add",
+      "editDescription": "Edit the selected export group",
+      "sectionInfo": "Group details",
+      "nameHint": "Same name as so.export_group_name — renaming here does not update sales orders",
+      "shipmentEmpty": "No options — type your own",
+      "shipmentToggle": "Open shipment types",
+      "totalPriceHint": "Whole number, optional",
+      "saved": "Saved",
+      "saveError": "Could not save",
+      "deleteTitle": "Delete this export group?",
+      "deleteDescription": "“{name}” will be deleted permanently and cannot be restored — its sales orders go back to “New order” with the group name and shipping code cleared",
+      "soReset": "{count} sales orders returned to New order",
+      "deleted": "Deleted",
+      "deleteError": "Could not delete"
+    },
+    "loadError": "Could not load export groups",
+    "view": {
+      "title": "Sales orders in group",
+      "count": "{count} items",
+      "no": "No.",
+      "so_code": "SO code",
+      "product_name": "Product",
+      "vendor_name": "Vendor",
+      "amount": "Total",
+      "total": "Group total",
+      "empty": "No sales orders in this group",
+      "loadError": "Could not load sales orders"
+    }
   },
   "shippings": {
     "title": "Shipping companies",
