@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import {
+  CircleCheck,
+  Download,
   Eye,
   LoaderCircle,
   Pencil,
@@ -15,6 +17,7 @@ import { useTranslations } from "next-intl"
 
 import {
   EXPORT_GROUP_PAGE_SIZE,
+  exportExportGroup,
   getExportGroups,
   getShipmentTypeOptions,
 } from "@/app/sale/export_group/_components/api"
@@ -43,6 +46,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { PageHeader } from "@/components/page-header"
+import { cn } from "@/lib/utils"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
@@ -93,6 +97,47 @@ export function Tables() {
   const [viewing, setViewing] = React.useState<ExportGroup | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
   const [removing, setRemoving] = React.useState<ExportGroup | null>(null)
+  /** กลุ่มที่กำลังส่งออกซ้ำ — ทีละกลุ่ม ระหว่างรอปุ่มส่งออกทุกแถวกดไม่ได้ */
+  const [exportingId, setExportingId] = React.useState<number | null>(null)
+  /** ผลของการส่งออกซ้ำครั้งล่าสุด — null คือยังไม่ได้กด */
+  const [exportResult, setExportResult] = React.useState<{
+    ok: boolean
+    message: string
+  } | null>(null)
+
+  /**
+   * ส่งออกกลุ่มเดิมซ้ำ (ผู้ใช้สั่ง 01/10/2026) — so ของกลุ่มนี้ + เทมเพลตเดิม · API ไม่แก้ข้อมูลอะไร ตารางจึงไม่ต้องโหลดใหม่
+   * กลุ่มที่ไม่มี template_id ปุ่มกดไม่ได้อยู่แล้ว ถ้ายังหลุดมา API ตอบ 400 พร้อมเหตุผล
+   */
+  const exportGroup = async (group: ExportGroup) => {
+    setExportingId(group.id)
+    setExportResult(null)
+    try {
+      const file = await exportExportGroup(group.id)
+      const href = URL.createObjectURL(file.blob)
+      const link = document.createElement("a")
+      link.href = href
+      link.download = file.fileName
+      link.click()
+      // ให้ browser เริ่มดาวน์โหลดก่อนค่อยคืน URL
+      setTimeout(() => URL.revokeObjectURL(href), 1000)
+      setExportResult({
+        ok: true,
+        message: tr("export.done", { name: group.name, count: file.count, file: file.fileName }),
+      })
+    } catch (error) {
+      // ข้อความจาก API บอกสาเหตุตรง ๆ — ห้าม console.error ใน dev จะขึ้นเต็มจอ
+      setExportResult({
+        ok: false,
+        message: tr("export.error", {
+          name: group.name,
+          message: error instanceof Error ? error.message : String(error),
+        }),
+      })
+    } finally {
+      setExportingId(null)
+    }
+  }
 
   /** ตัวกรองทั้งหมดถือเป็นก้อนเดียว — load() ทุกจุดส่งก้อนนี้ไปทั้งก้อน */
   const [filters, setFilters] = React.useState<Filters>(EMPTY_FILTERS)
@@ -235,6 +280,23 @@ export function Tables() {
 
       <CardContent className="px-4 py-0">
         <div className="flex flex-wrap items-end justify-end gap-2 p-0 pt-3 md:p-0 md:pt-3">
+          {/* ผลการส่งออกซ้ำล่าสุด — สำเร็จบอกชื่อไฟล์ · ไม่สำเร็จบอกเหตุผลจาก API */}
+          {exportResult ? (
+            <p
+              role="status"
+              className={cn(
+                "mr-auto flex items-center gap-1.5 text-sm",
+                exportResult.ok ? "text-success-ink" : "text-destructive"
+              )}
+            >
+              {exportResult.ok ? (
+                <CircleCheck className="size-4 shrink-0" />
+              ) : (
+                <TriangleAlert className="size-4 shrink-0" />
+              )}
+              {exportResult.message}
+            </p>
+          ) : null}
           {/* ไล่เฉดเดียวกับโลโก้ในเมนูข้าง ให้ปุ่มหลักของหน้าเป็นจุดสีที่สะดุดตาที่สุด */}
           {CAN_EDIT ? (
             <Button
@@ -286,7 +348,7 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-32 text-right text-xs font-semibold tracking-wide uppercase">{tcol("total_price")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
                 <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("created_at")}</TableHead>
-                <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("view")}</span> </TableHead>
+                <TableHead className="w-32 pr-6 text-right"> <span className="sr-only">{t("view")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -326,6 +388,23 @@ export function Tables() {
                       >
                         <Eye />
                       </Button>
+                      {/* ส่งออกซ้ำด้วยเทมเพลตเดิม — กลุ่มที่ไม่มี template_id กดไม่ได้
+                          title อยู่ที่ span ครอบ เพราะปุ่มที่ disabled เป็น pointer-events-none ชี้แล้วไม่ขึ้น */}
+                      <span
+                        className="inline-flex"
+                        title={group.template_id == null ? tr("export.noTemplate") : tr("export.button")}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={tr("export.button")}
+                          disabled={group.template_id == null || exportingId !== null}
+                          onClick={() => exportGroup(group)}
+                          className="bg-success/12 text-success-ink hover:bg-success/20"
+                        >
+                          {exportingId === group.id ? <LoaderCircle className="animate-spin" /> : <Download />}
+                        </Button>
+                      </span>
                       {CAN_EDIT ? (
                         <Button
                           variant="ghost"

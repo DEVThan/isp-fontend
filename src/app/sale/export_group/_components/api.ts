@@ -159,6 +159,56 @@ export async function saveExportGroup(
   })) as ExportGroup
 }
 
+/** ไฟล์ที่ได้จากการส่งออกกลุ่มซ้ำ — count = จำนวนแถว so ในไฟล์ (X-Export-Count) */
+export type ExportGroupFile = {
+  blob: Blob
+  fileName: string
+  count: number
+}
+
+/**
+ * POST /api/web/export-group-export — ส่งออกกลุ่มเดิมซ้ำ: so ที่ so.export_group_name = ชื่อกลุ่ม
+ * ด้วยเทมเพลตที่บันทึกไว้ตอนส่งออก (template_id) · API อ่านอย่างเดียว ไม่ update อะไรเลย
+ * สำเร็จตอบเป็นไฟล์ · ผิดพลาดตอบ JSON envelope (เช่น 400 กลุ่มไม่มีเทมเพลต) จึงแยกด้วย Content-Type
+ * (แบบเดียวกับ downloadExport ของหน้า so_export)
+ */
+export async function exportExportGroup(id: number): Promise<ExportGroupFile> {
+  const url = `${API_BASE_URL}/export-group-export`
+  let res: Response
+
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    })
+  } catch (cause) {
+    throw new ApiError(
+      API_NETWORK_ERROR,
+      `เรียก API ไม่สำเร็จ: ${url} (${String(cause)})`
+    )
+  }
+
+  if (!res.ok || (res.headers.get("Content-Type") ?? "").includes("json")) {
+    const envelope = (await res.json().catch(() => null)) as ApiEnvelope<unknown> | null
+    throw new ApiError(
+      envelope?.resultcode ?? res.status,
+      envelope?.message ?? (res.statusText || "Invalid response")
+    )
+  }
+
+  // อ่าน filename*=UTF-8''… ก่อน — filename="…" เป็นตัวสำรอง ASCII ที่ภาษาไทย (ชื่อเทมเพลต) หายไปแล้ว
+  const disposition = res.headers.get("Content-Disposition") ?? ""
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)?.[1]
+  const plain = /filename="?([^";]+)"?/i.exec(disposition)?.[1]
+  return {
+    blob: await res.blob(),
+    fileName: encoded ? decodeURIComponent(encoded) : (plain ?? "export_group.xlsx"),
+    count: Number(res.headers.get("X-Export-Count") ?? 0),
+  }
+}
+
 /**
  * POST /api/web/export-group-delete — ลบกลุ่มตาม id (ส่งไปแค่ id เท่านั้น)
  *

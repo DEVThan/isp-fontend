@@ -16,6 +16,10 @@ import { useTranslations } from "next-intl"
 // type Accent ใช้แค่ใน SyncInfo ที่ซ่อนอยู่ — เปิด SyncInfo กลับให้ใส่ ", type Accent" คืนด้วย
 import { ACCENTS } from "@/app/sale/so/_components/accents"
 import { getSoOptions, saveSo } from "@/app/sale/so/_components/api"
+import {
+  getProductItems,
+  ITEM_PER_PAGE_MAX,
+} from "@/app/product/product_item/_components/api"
 import { CustomerSelect } from "@/app/sale/so/_components/customerselect"
 // FreeSelect (พิมพ์เองได้) — เลิกใช้กับ "ขนส่งโดย" 29/09/2026 เปลี่ยนเป็น select จากทะเบียนบริษัทขนส่ง
 // import { FreeSelect } from "@/app/sale/so/_components/freeselect"
@@ -30,7 +34,6 @@ import {
   type So,
   type SoFormMode,
   type SoFormValues,
-  type VendorOption,
 } from "@/app/sale/so/_components/model"
 import {
   SelectOption,
@@ -256,9 +259,6 @@ export function FormModal({
   const [missing, setMissing] = React.useState<RequiredField[]>([])
   /** แท็บที่เปิดอยู่ — คุมเองแทน defaultValue เพื่อพาไปแท็บที่มีช่องบังคับยังว่างได้ */
   const [tab, setTab] = React.useState("order")
-  /** รหัสผู้ขายที่เลือกใน dropdown รอบนี้ — null = ยังไม่ได้เลือก ใช้ผู้ขายที่ชื่อตรงกับ vendor_name ของแถว
-   *  (so เก็บแค่ชื่อ ชื่อผู้ขายซ้ำกันได้ จึงจำรหัสที่เลือกไว้แยก ไว้หาประเภทการจัดส่ง/รายการขนส่งให้ถูกคน) */
-  const [pickedVendor, setPickedVendor] = React.useState<string | null>(null)
   /** ผลของการกดบันทึกครั้งล่าสุด — null คือยังไม่ได้กด */
   const [result, setResult] = React.useState<{
     ok: boolean
@@ -279,7 +279,6 @@ export function FormModal({
     setSaving(false)
     setMissing([])
     setTab("order")
-    setPickedVendor(null)
   }
 
   /** ตัวเลือกของช่อง select ทั้งหมด — ดึงใหม่ทุกครั้งที่เปิด ทะเบียนอาจเพิ่ง/ปิดตัวเลือกไป */
@@ -315,7 +314,7 @@ export function FormModal({
    * เลือกจากทะเบียนได้ id ตรง ๆ · เลือกค่าเดิมของแถวที่ไม่อยู่ในทะเบียนแล้ว (เช่น "Own Fleet W"
    * ที่ถูกปิดไป) ให้คง id เดิมของแถวไว้ ไม่งั้นความเชื่อมโยงหลุดโดยไม่มีใครสั่ง
    */
-  // ไม่ได้ใช้แล้ว — ช่องประเภทการจัดส่งเป็นอ่านอย่างเดียว ตามผู้ขาย (29/09/2026) แล้วตามสินค้า (01/10/2026 ดู shipmentFromProduct)
+  // ไม่ได้ใช้แล้ว — ช่องประเภทการจัดส่งเป็นอ่านอย่างเดียว ตามผู้ขาย (29/09/2026) แล้วตามสินค้า (01/10/2026) แล้วเป็น so.shipment_type ของแถวเอง (01/10/2026)
   // เปิด select ของทะเบียนกลับ: เอา comment ออก แล้วใช้คู่กับ select("shipment_type", …, pickShipmentType)
   // const pickShipmentType = (next: string | null) => {
   //   const name = next ?? ""
@@ -491,63 +490,8 @@ export function FormModal({
       ? `${vendorMatches[0].code} — ${vendorMatches[0].name}`
       : values.vendor_name
 
-  /**
-   * ผู้ขายของแถวจาก join ที่ API ทำให้ (ผู้ใช้กำหนด 29/09/2026):
-   * so.item_code -> products.item_code -> products.vendo_code -> vendor.code (so.vendor_code)
-   * เดิมเดาจาก vendor_name ซึ่งชื่อซ้ำกันได้ · ผู้ขายที่ถูกปิดไปไม่อยู่ในตัวเลือก = undefined
-   */
-  const rowVendorCode = so?.vendor_code?.trim().toUpperCase()
-  const rowVendor = rowVendorCode
-    ? options.vendors.find((option) => option.code.toUpperCase() === rowVendorCode)
-    : undefined
-
-  /**
-   * ผู้ขายของแถวนี้ในทะเบียน — ที่เพิ่งเลือก (รู้รหัส) หรือผู้ขายจาก join ข้างบน
-   * หาไม่เจอ = undefined: ขนส่งโดยไม่มีตัวเลือก และช่องผู้ขายโชว์ชื่อที่เก็บในแถว
-   */
-  const vendor: VendorOption | undefined = pickedVendor
-    ? options.vendors.find((option) => option.code === pickedVendor)
-    : rowVendor
-
-  /** ผู้ขาย: ค่าคือรหัส (ไม่ซ้ำ) ป้ายมี code นำหน้า เพราะชื่อผู้ขายซ้ำกันได้ และค้นด้วย code ก็ได้
-   *  ชื่อเดิมของแถวที่ไม่อยู่ในทะเบียน (หรือซ้ำหลายคน) เติมเป็นตัวเลือกให้เห็น ไม่งั้นช่องดูว่างทั้งที่มีค่า */
-  const vendorOptions: SelectOptionItem[] = [
-    ...options.vendors.map((option) => ({
-      value: option.code,
-      label: `${option.code} — ${option.name}`,
-    })),
-    ...(values.vendor_name && !vendor
-      ? [{ value: `name:${values.vendor_name}`, label: values.vendor_name }]
-      : []),
-  ]
-
-  /**
-   * ประเภทการจัดส่ง — มาจากสินค้าของแถว (products.shipment_type ผ่าน so.item_code ที่ API join มา:
-   * so.product_shipment_type) อ่านอย่างเดียว · 01/10/2026 ย้ายจากผู้ขายมาอยู่ที่สินค้า เลือกผู้ขายจึงไม่เปลี่ยนค่านี้แล้ว
-   * สินค้าไม่ได้ตั้งประเภท / หาสินค้าไม่เจอ / โหมดเพิ่ม = ค่าเดิมของใบสั่งขาย (so.shipment_type) หรือ ""
-   * shipment_type_id (foreign key) ตามชื่อในทะเบียน — ชื่อที่ไม่อยู่ในทะเบียนแล้วคง id เดิมของแถว (ดู pickShipmentType)
-   */
-  const shipmentFromProduct = (current: SoFormValues) => {
-    const name = so?.product_shipment_type?.trim()
-    if (!name) {
-      return {
-        ...current,
-        shipment_type: so?.shipment_type ?? "",
-        shipment_type_id: so?.shipment_type_id != null ? String(so.shipment_type_id) : "",
-      }
-    }
-    const fromRegistry = options.shipmentTypes.find(
-      (option) => option.name.toLowerCase() === name.toLowerCase()
-    )?.id
-    const keepOwn = name === (so?.shipment_type ?? "") ? so?.shipment_type_id : null
-    return {
-      ...current,
-      shipment_type: name,
-      shipment_type_id: String(fromRegistry ?? keepOwn ?? ""),
-    }
-  }
-  /** ค่าที่ช่องประเภทการจัดส่งโชว์ และที่ถูกส่งไปตอนบันทึก — ตามสินค้าเสมอ */
-  const shipmentType = shipmentFromProduct(values).shipment_type
+  // ผู้ขาย / ประเภทการจัดส่ง อ่านอย่างเดียวทั้งคู่ (ผู้ใช้สั่ง 01/10/2026) — ไม่มี dropdown ผู้ขาย และเปลี่ยนผู้ขายไม่ไปแตะประเภทการจัดส่งแล้ว
+  // ประเภทการจัดส่งโชว์และบันทึก so.shipment_type / shipment_type_id ของแถวตรง ๆ (เลิกตาม products.shipment_type)
 
   /**
    * ตัวเลือก "ขนส่งโดย" — ทุกเจ้าในทะเบียนบริษัทขนส่ง (/shipping-get-option) พร้อมโลโก้ ค่าคือชื่อ
@@ -561,31 +505,54 @@ export function FormModal({
   }))
 
   /**
-   * รหัสผู้ส่ง (อ่านอย่างเดียว เก็บลง so.sender_code ตอนบันทึก) — จาก products.sender_code ของสินค้าในแถว
-   * (so.product_sender_code ที่ API join มา · ย้ายจาก vendor.sender_code 01/10/2026)
-   * แถวที่ shipping ตรงกับ "ขนส่งโดย" (เทียบกับชื่อหรือรหัสของบริษัทขนส่งนั้น ไม่สนตัวพิมพ์) · ไม่เจอ = ว่าง
-   * สินค้าไม่มีรหัสผู้ส่งเลย / หาสินค้าไม่เจอ / โหมดเพิ่ม = คงค่าที่เก็บไว้เดิม ไม่ล้างทิ้ง
+   * หารหัสผู้ส่งของขนส่งเจ้านี้ในรายการ [{shipping, sendercode}] ของสินค้า (products.sender_code)
+   * shipping ในรายการเทียบกับชื่อหรือรหัสของบริษัทขนส่งนั้น ไม่สนตัวพิมพ์ · ไม่เจอ = ""
    */
-  const productSenders = parseSenderCodes(so?.product_sender_code)
-  const senderCode = (() => {
-    if (!productSenders.length) return values.sender_code
-    const by = values.shipping_by.trim().toLowerCase()
+  const senderFor = (raw: string | null | undefined, shippingBy: string) => {
+    const by = shippingBy.trim().toLowerCase()
     if (!by) return ""
     const registry = options.shippings.find((option) => option.name.toLowerCase() === by)
     const keys = new Set([by, registry?.name.toLowerCase(), (registry?.code ?? "").toLowerCase()].filter(Boolean))
     return (
-      productSenders.find((row) => keys.has(row.shipping.trim().toLowerCase()))
+      parseSenderCodes(raw).find((row) => keys.has(row.shipping.trim().toLowerCase()))
         ?.sendercode ?? ""
     )
-  })()
+  }
 
-  /** เลือกผู้ขาย — เขียน vendor_name อย่างเดียว (ประเภทการจัดส่ง/รหัสผู้ส่งมาจากสินค้าแล้ว 01/10/2026
-   *  "ขนส่งโดย" ไม่แตะตั้งแต่ 30/09/2026) */
-  const pickVendor = (next: string | null) => {
-    if (next?.startsWith("name:")) return
-    const picked = next ? options.vendors.find((option) => option.code === next) : undefined
-    setPickedVendor(next)
-    setValues((current) => ({ ...current, vendor_name: picked?.name ?? "" }))
+  /**
+   * เลือก "ขนส่งโดย" (ผู้ใช้สั่ง 01/10/2026) — รหัสผู้ส่งเริ่มจาก so.sender_code และเปลี่ยนเฉพาะตอนเปลี่ยนขนส่ง:
+   * เอา so.item_code ไปหา products.sender_code ถ้ามีรหัสของขนส่งที่เลือก เติมลงช่องรหัสผู้ส่ง (บันทึกลง so.sender_code)
+   * ไม่มีข้อมูล (สินค้าไม่มีรหัสผู้ส่ง / หาสินค้าไม่เจอ / ดึงไม่ได้) หรือมีแต่ไม่ตรงกับขนส่งที่เลือก
+   * = กลับเป็นค่าเดิมของแถว (so.sender_code · โหมดเพิ่ม = ว่าง)
+   * item_code ตรงกับของแถว ใช้ so.product_sender_code ที่ so-get-list join มาให้แล้ว · โหมดเพิ่มหรือแก้ item_code ไป
+   * ยิง product-item-get-list หาสินค้ารหัสนั้นเอง (ค้นแบบ ilike จึงเลือกตัวที่รหัสตรงเป๊ะอีกที)
+   */
+  const pickShipping = async (next: string | null) => {
+    const by = next ?? ""
+    set("shipping_by", by)
+    const itemCode = values.item_code.trim()
+    let raw: string | null | undefined = null
+    if (by && itemCode) {
+      if (itemCode.toLowerCase() === (so?.item_code ?? "").trim().toLowerCase()) {
+        raw = so?.product_sender_code
+      } else {
+        try {
+          const found = await getProductItems({ itemCode, perPage: ITEM_PER_PAGE_MAX })
+          raw = found.products.find(
+            (product) => product.item_code.trim().toLowerCase() === itemCode.toLowerCase()
+          )?.sender_code
+        } catch {
+          // หาสินค้าไม่ได้ = ไม่มีข้อมูล ใช้ค่าเดิมของแถว — ห้าม console.error ใน dev จะขึ้นเต็มจอ
+        }
+      }
+    }
+    const code = senderFor(raw, by) || (so?.sender_code ?? "")
+    // ระหว่างรอ API ผู้ใช้อาจเปลี่ยนขนส่ง/รหัสสินค้าไปแล้ว — เติมเฉพาะเมื่อยังเป็นค่าเดิมอยู่
+    setValues((current) =>
+      current.shipping_by === by && current.item_code.trim() === itemCode
+        ? { ...current, sender_code: code }
+        : current
+    )
   }
 
   return (
@@ -626,10 +593,8 @@ export function FormModal({
             try {
               // โหมดของฟอร์มคือ action ที่ API ใช้ตัดสินใจ ("add" / "edit")
               // ส่งไปครบทุกคอลัมน์ ไม่งั้นของเดิมโดนเขียนทับเป็นค่าว่าง
-              // ประเภทการจัดส่งตามผู้ขายเสมอ (ช่องอ่านอย่างเดียว) — แถวที่ผู้ขายเพิ่งตั้งประเภทได้ค่าใหม่ตอนบันทึก
-              // ขนส่งโดย: แถวที่ยังว่างส่งขนส่งเจ้าแรกของผู้ขายไป (ตรงกับที่ช่องโชว์เป็นค่าที่เลือกไว้)
-              // รหัสผู้ส่ง: ค่าที่ช่องโชว์ (ดู senderCode) ถูกเขียนลง so.sender_code
-              await saveSo(mode, { ...shipmentFromProduct(values), sender_code: senderCode }, so?.id)
+              // ผู้ขาย / ประเภทการจัดส่งอ่านอย่างเดียว ส่งค่าเดิมของแถวกลับไป · รหัสผู้ส่งในช่อง (ดู pickShipping) ลง so.sender_code
+              await saveSo(mode, values, so?.id)
               setResult({ ok: true })
               onSaved?.()
               // ให้เห็นข้อความว่าสำเร็จสักครู่ก่อนปิด ไม่งั้นกล่องหายไปเลยเหมือนไม่มีอะไรเกิดขึ้น
@@ -933,47 +898,17 @@ export function FormModal({
                   โหมดเพิ่มยังกรอกได้ทุกช่อง · ค่าทุกช่องยังถูกส่งไปกับ -action เหมือนเดิม (รวม shipment_type_id)
                   ปลดล็อก: ให้ shippingLocked เป็น false */}
               <TabsContent value="shipping" className={cn(TAB_PANEL, ACCENTS.magenta.panel)}>
-                {/* แถวบน (ผู้ใช้สั่ง 30/09/2026): ผู้ขาย / ประเภทการจัดส่ง / รหัสผู้ส่ง ในแถวเดียวกัน
-                    ผู้ขาย — ย้ายมาจากแท็บสินค้า · เลือกแล้วประเภทการจัดส่งตามผู้ขาย */}
+                {/* แถวบน (ผู้ใช้สั่ง 01/10/2026): ผู้ขาย (กว้างกว่า สองช่อง) / ประเภทการจัดส่ง — อ่านอย่างเดียวทั้งคู่
+                    ประเภทการจัดส่งคือ so.shipment_type ของแถว ไม่ขึ้นกับผู้ขาย */}
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {shippingLocked ? (
-                    readonlyText("vendor_name", undefined, vendorLabel)
-                  ) : (
-                    <Field id="so-vendor_name" label={tcol("vendor_name")} select>
-                      <SelectOption
-                        id="so-vendor_name"
-                        options={vendorOptions}
-                        value={vendor?.code ?? (values.vendor_name ? `name:${values.vendor_name}` : null)}
-                        onValueChange={pickVendor}
-                        placeholder="..."
-                        label={tcol("vendor_name")}
-                      />
-                    </Field>
-                  )}
-                  {/* ประเภทการจัดส่ง — อ่านอย่างเดียว ตามสินค้า (ดู shipmentFromProduct)
-                      เดิมเป็น select ของทะเบียน (pickShipmentType ยังเก็บไว้เผื่อเปิดกลับ) */}
-                  <Field id="so-shipment_type" label={tcol("shipment_type")} hint={tform("shipmentTypeHint")}>
-                    <Input
-                      id="so-shipment_type"
-                      value={shipmentType}
-                      readOnly
-                      aria-readonly
-                      className={READONLY}
-                    />
-                  </Field>
-                  {/* รหัสผู้ส่ง — อ่านอย่างเดียว จาก products.sender_code ตามขนส่งที่เลือก (ดู senderCode) บันทึกลง so.sender_code */}
-                  <Field id="so-sender_code" label={tform("senderCode")} hint={tform("senderCodeHint")}>
-                    <Input
-                      id="so-sender_code"
-                      value={senderCode}
-                      readOnly
-                      aria-readonly
-                      className={cn(READONLY, "font-mono")}
-                    />
-                  </Field>
+                  <div className="sm:col-span-2">
+                    {readonlyText("vendor_name", undefined, vendorLabel)}
+                  </div>
+                  {readonlyText("shipment_type")}
                 </div>
+                {/* แถวสอง: ขนส่งโดย / รหัสผู้ส่ง / เลขพัสดุ */}
                 <div className="grid gap-4 sm:grid-cols-3">
-                  {/* ขนส่งโดย — select ทุกเจ้าในทะเบียนบริษัทขนส่ง พร้อมโลโก้ (ไม่มีเงื่อนไขแล้ว ดู shippingOptions)
+                  {/* ขนส่งโดย — select ทุกเจ้าในทะเบียนบริษัทขนส่ง พร้อมโลโก้ (ดู shippingOptions) เปลี่ยนแล้วเติมรหัสผู้ส่ง (pickShipping)
                       ค่าเดิมของแถวที่ไม่อยู่ในรายการ (ข้อมูลจากงาน sync เช่น "KERRY") เติมให้เห็น ไม่หายเงียบ ๆ */}
                   {shippingLocked ? (
                     readonlyText("shipping_by")
@@ -983,12 +918,22 @@ export function FormModal({
                         id="so-shipping_by"
                         options={withCurrent(shippingOptions, values.shipping_by)}
                         value={values.shipping_by || null}
-                        onValueChange={(next) => set("shipping_by", next ?? "")}
+                        onValueChange={pickShipping}
                         placeholder={t("selectRequired")}
                         label={tcol("shipping_by")}
                       />
                     </Field>
                   )}
+                  {/* รหัสผู้ส่ง — เริ่มจาก so.sender_code · เปลี่ยนขนส่งแล้วเติมจาก products.sender_code ให้ ไม่มี/ไม่ตรง = so.sender_code (ดู pickShipping) แก้เองได้ */}
+                  <Field id="so-sender_code" label={tform("senderCode")} hint={tform("senderCodeHint")}>
+                    <Input
+                      id="so-sender_code"
+                      value={values.sender_code}
+                      placeholder="..."
+                      onChange={(event) => set("sender_code", event.target.value)}
+                      className={cn(EDITABLE, "font-mono")}
+                    />
+                  </Field>
                   {/* เลขพัสดุ — ช่องเดียวในแท็บที่แก้ได้เสมอ */}
                   {text("shipping_code")}
                 </div>

@@ -1192,6 +1192,12 @@
       "deleted": "Deleted",
       "deleteError": "Could not delete"
     },
+    "export": {
+      "button": "Export again",
+      "noTemplate": "This group has no saved template (created before templates were saved) — it cannot be exported again",
+      "done": "Exported {name} ({count} rows) · file {file}",
+      "error": "Could not export {name}: {message}"
+    },
     "loadError": "Could not load export groups",
     "view": {
       "title": "Sales orders in group",
