@@ -175,7 +175,7 @@ export function ViewModal({
     )
   }
 
-  /** รหัสผู้ส่งของผู้ขาย — แต่ละขนส่งเป็นป้าย "ขนส่ง | รหัส" */
+  /** รหัสผู้ส่งของสินค้า (products.sender_code) — แต่ละขนส่งเป็นป้าย "ขนส่ง | รหัส" */
   const senderCodes = (raw: string | null) => {
     const senders = parseSenderCodes(raw).filter((sender) => sender.sendercode)
     if (!senders.length) return EMPTY
@@ -360,7 +360,7 @@ export function ViewModal({
                         )}
                       </Item>
                       <Item label={tcol("senderCode")} wide>
-                        {senderCodes(item.vendor_sender_code)}
+                        {senderCodes(item.sender_code)}
                       </Item>
                     </div>
                     <Item label={tcol("supplier_name")}>{show(item.supplier_name)}</Item>

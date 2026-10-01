@@ -36,6 +36,7 @@ import {
 } from "@/app/product/product_item/_components/model"
 import { ImagePicker } from "@/app/product/product_item/_components/image_picker"
 import { MultiSelectOption } from "@/app/product/product_item/_components/multiselectoption"
+import { SenderCodeEditor } from "@/app/product/product_item/_components/sender_code_editor"
 import {
   SelectOption,
   type SelectOptionItem,
@@ -74,7 +75,7 @@ import { cn } from "@/lib/utils"
  * (ตอนนี้ขึ้นหน้าจอครบทุกคอลัมน์แล้ว — เพิ่มช่องใหม่ได้โดยใส่คีย์ใน columns แล้วเรียก text() / num() / select())
  *
  * **ช่อง select** ตัวเลือกมาจากเส้น -get-option ของแต่ละทะเบียน ดึงใหม่ทุกครั้งที่เปิดฟอร์ม
- * เก็บลงคอลัมน์ต่างกัน: ประเภทสินค้า/การจัดส่ง/ช่องทางขาย/เอกสารสำคัญ เก็บ "ชื่อ"
+ * เก็บลงคอลัมน์ต่างกัน: ประเภทสินค้า/ประเภทการจัดส่ง/ช่องทางขาย/เอกสารสำคัญ เก็บ "ชื่อ"
  * (ช่องทางขายกับเอกสารสำคัญเลือกได้หลายตัว ชื่อต่อกันคั่นด้วย , — ดู parseNameList),
  * สถานะ KM/MOU/KM Protocall/หนังสือยินยอมฯ เก็บ "id", ผู้ขาย (vendor) เก็บ code ลง vendo_code อย่างเดียว
  * (supplier_name เป็นช่องพิมพ์ของตัวเอง แยกจาก vendor แล้ว — เลือก vendor ไม่เขียนทับ supplier_name)
@@ -720,10 +721,17 @@ export function FormModal({
                       />
                     </Field>
                   </div>
-                  {/* การจัดส่ง — ซ่อนไว้ (ผู้ใช้ขอ 29/09/2026 · เปิดกลับ: เอา comment ออก)
-                      ค่าเดิมของแถวยังอยู่ใน values และถูกส่งไปกับ -action ทุกครั้ง ไม่ถูกล้าง */}
-                  {/* {select("shipment_type", byName(options.shipmentTypes))} */}
+                  {/* ประเภทการจัดส่ง — ย้ายมาจากฟอร์มผู้ขาย (01/10/2026) เลือกจากทะเบียน shiptment_type เก็บชื่อ
+                      ใบสั่งขายอ่านค่านี้ผ่าน so.item_code -> products */}
+                  {select("shipment_type", byName(options.shipmentTypes))}
                 </div>
+                {/* รหัสผู้ส่ง — ย้ายมาจากฟอร์มผู้ขาย (01/10/2026) หลายขนส่งต่อสินค้า เก็บเป็น JSON ใน products.sender_code
+                    key = formKey: เปิดฟอร์มใหม่/สลับแถวแล้วตารางต้องอ่านค่าตั้งต้นใหม่ (ตัวมันถือแถวไว้ใน state ของตัวเอง) */}
+                <SenderCodeEditor
+                  key={formKey}
+                  value={values.sender_code}
+                  onChange={(next) => set("sender_code", next)}
+                />
                 <div className="grid gap-4 sm:grid-cols-3">
                   {/* supplier_name พิมพ์เอง — ข้อมูลเดิมเป็นข้อความอิสระ (เช่น "iShopping") ไม่ได้ผูกกับทะเบียนผู้ขาย */}
                   <div className="sm:col-span-2">{text("supplier_name")}</div>

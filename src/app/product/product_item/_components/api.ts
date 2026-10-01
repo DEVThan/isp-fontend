@@ -75,8 +75,8 @@ export type ProductItemQuery = {
   status?: string | null
   /** ชื่อประเภทสินค้าจาก dropdown — ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง */
   productType?: string | null
-  /** ชื่อประเภทการจัดส่งจาก dropdown — กรองด้วยประเภทการจัดส่งของผู้ขาย (vendor.shipment_type ผ่าน vendo_code)
-   *  ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง · เดิมกรอง products.shipment_type (เปลี่ยน 29/09/2026) */
+  /** ชื่อประเภทการจัดส่งจาก dropdown — กรอง products.shipment_type ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง
+   *  (29/09–01/10/2026 เคยกรองผ่าน vendor.shipment_type — ย้ายกลับมาที่สินค้าแล้ว) */
   shipmentType?: string | null
   /** รหัสผู้ขาย — API นับแถวเก่าที่มีแต่ supplier_name ตรงกับชื่อผู้ขายรหัสนี้ด้วย · null = ไม่กรอง */
   vendorCode?: string | null
@@ -99,7 +99,7 @@ export async function getProductItems(
     // ไม่ส่ง active_status เลยเมื่อไม่ได้กรอง — ส่งสตริงว่างไปก็ได้ แต่ไม่ส่งอ่านง่ายกว่าตอน debug
     ...(query.status ? { active_status: query.status } : {}),
     ...(query.productType ? { product_type_name: query.productType } : {}),
-    ...(query.shipmentType ? { vendor_shipment_type: query.shipmentType } : {}),
+    ...(query.shipmentType ? { shipment_type: query.shipmentType } : {}),
     ...(query.vendorCode ? { vendo_code: query.vendorCode } : {}),
     page: query.page ?? 1,
     per_page: query.perPage ?? ITEM_PAGE_SIZE,

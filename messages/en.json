@@ -661,6 +661,7 @@
       "productTypeName": "Product type",
       "supplierName": "Supplier",
       "senderCode": "Sender code",
+      "shipping": "Shipping",
       "shipmentType": "Shipment type",
       "status": "Status",
       "remark": "Remark",
@@ -721,6 +722,10 @@
       "imageHint": "JPG, PNG, GIF or WEBP, up to 5 MB",
       "viewTitle": "Product details",
       "viewDescription": "Every detail of the selected product",
+      "addSenderCode": "Add sender code",
+      "noSenderCode": "No sender codes yet",
+      "senderCodeLimit": "All carriers are already used ({count})",
+      "noShipping": "No shipping companies to choose from — add them on the shipping page",
       "addTitle": "Add product",
       "editTitle": "Edit product",
       "addDescription": "Fill in the details of the product to add",
@@ -994,11 +999,11 @@
       "customerIdHint": "Customer ID from the customer registry · leave blank for no link",
       "customerSearch": "Search by name or phone",
       "customerSearchError": "Could not search customers",
-      "shipmentTypeHint": "Comes from the vendor's shipment type",
+      "shipmentTypeHint": "Comes from the product's shipment type",
       "shippingByEmpty": "This vendor has no carriers yet — type one",
       "shippingByToggle": "Show the vendor's carriers",
       "senderCode": "Sender code",
-      "senderCodeHint": "From the vendor's sender codes for the chosen carrier"
+      "senderCodeHint": "From the product's sender codes for the chosen carrier"
     }
   },
   "so_export": {
@@ -1101,11 +1106,11 @@
       "customerIdHint": "Customer ID from the customer registry · leave blank for no link",
       "customerSearch": "Search by name or phone",
       "customerSearchError": "Could not search customers",
-      "shipmentTypeHint": "Comes from the vendor's shipment type",
+      "shipmentTypeHint": "Comes from the product's shipment type",
       "shippingByEmpty": "This vendor has no carriers yet — type one",
       "shippingByToggle": "Show the vendor's carriers",
       "senderCode": "Sender code",
-      "senderCodeHint": "From the vendor's sender codes for the chosen carrier"
+      "senderCodeHint": "From the product's sender codes for the chosen carrier"
     },
     "exportTemplate": "Export template",
     "exportNeedTemplate": "Choose a template first",

@@ -610,12 +610,12 @@ export function Tables() {
                       {row.vendor_name ? vendorCodes.get(row.vendor_name) : null}
                     </div>
                   </TableCell>
-                  {/* ประเภทการจัดส่ง — ของผู้ขาย (vendor_shipment_type ที่ API join มา: so.item_code -> products -> vendor)
+                  {/* ประเภทการจัดส่ง — ของสินค้า (product_shipment_type ที่ API join มา: so.item_code -> products · ย้ายจาก vendor 01/10/2026)
                       ไม่มีใช้ so.shipment_type ของแถว หรือว่าง (ผู้ใช้สั่ง 29/09/2026) · ตัวกรองยังกรอง so.shipment_type ฝั่ง API
                       ขึ้นบรรทัดใหม่แทน truncate — ตัดแล้ว "Own Fleet W" / "Own Fleet C" เหลือ "Own Fl…" เหมือนกันทั้งคู่ */}
                   <TableCell className="pt-1 pb-1 max-w-[80px]">
                     <div className="text-muted-foreground leading-tight whitespace-normal">
-                      {row.vendor_shipment_type || row.shipment_type || ""}
+                      {row.product_shipment_type || row.shipment_type || ""}
                     </div>
                   </TableCell>
                   <TableCell className="pt-1 pb-1 text-right tabular-nums">

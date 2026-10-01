@@ -494,9 +494,8 @@ export function Tables() {
                   >
                     {item.vendor_name ?? item.vendo_code}
                   </TableCell>
-                  {/* ประเภทการจัดส่งของผู้ขาย (vendor.shipment_type ผ่าน vendo_code) — ไม่ใช่ shipment_type ของสินค้า
-                      สินค้าที่ไม่มี vendo_code หรือผู้ขายยังไม่ได้เลือก = ช่องว่าง */}
-                  <TableCell className="pt-1 pb-1 text-muted-foreground">{item.vendor_shipment_type}</TableCell>
+                  {/* ประเภทการจัดส่งของสินค้า (products.shipment_type) — ย้ายจาก vendor มาอยู่ที่สินค้า 01/10/2026 */}
+                  <TableCell className="pt-1 pb-1 text-muted-foreground">{item.shipment_type}</TableCell>
                   <TableCell className="pt-1 pb-1 text-right font-medium tabular-nums">
                     {formatNumber(item.price, 2)}
                   </TableCell>

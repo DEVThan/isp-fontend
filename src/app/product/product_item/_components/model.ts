@@ -47,7 +47,11 @@ export type ProductItem = {
   /** อีกครึ่งของ unique key — ไม่ใส่ API จะใช้ item_code แทนให้ */
   product_group: string | null
   supplier_name: string | null
+  /** ประเภทการจัดส่ง — ชื่อจากทะเบียน shiptment_type (ย้ายมาจาก vendor 2026-10-01) · so ใช้ค่านี้ผ่าน so.item_code */
   shipment_type: string | null
+  /** รหัสผู้ส่ง (ย้ายมาจาก vendor 2026-10-01) — JSON string ของ [{shipping, sendercode}]
+   *  อ่าน/เขียนด้วย parseSenderCodes / serializeSenderCodes ของหน้า vendor (รูปแบบเดียวกับ vendor.sender_code เดิม) */
+  sender_code: string | null
   link_web: string | null
   remark: string | null
   /** รายละเอียดสินค้า — text เพิ่มเข้าตารางทีหลัง (2026-09-15) · ชื่อคอลัมน์สะกด detial ตามฐานข้อมูล ห้ามแก้เป็น detail */
@@ -108,18 +112,15 @@ export function isProductItemActive(item: ProductItem) {
 }
 
 /**
- * หนึ่งแถวของ -get-list — สินค้า + ข้อมูลผู้ขายที่ API join มาจาก vendor ด้วย vendo_code (อ่านอย่างเดียว)
+ * หนึ่งแถวของ -get-list — สินค้า + ชื่อผู้ขายที่ API join มาจาก vendor ด้วย vendo_code (อ่านอย่างเดียว)
  *
  * แยกจาก ProductItem เพราะ ProductItemFormValues สร้างจากคีย์ของ ProductItem
- * ถ้าใส่สองตัวนี้ไว้ในนั้น ฟอร์มจะถือ/ส่งฟิลด์ที่ไม่ใช่คอลัมน์ของ products ไปบันทึกด้วย
- * แถวที่ไม่มี vendo_code (ข้อมูลเก่าที่มีแต่ supplier_name) หรือหาผู้ขายไม่เจอ ได้ null ทั้งคู่
+ * ถ้าใส่ไว้ในนั้น ฟอร์มจะถือ/ส่งฟิลด์ที่ไม่ใช่คอลัมน์ของ products ไปบันทึกด้วย
+ * แถวที่ไม่มี vendo_code (ข้อมูลเก่าที่มีแต่ supplier_name) หรือหาผู้ขายไม่เจอ ได้ null
+ * (รหัสผู้ส่ง/ประเภทการจัดส่งเคย join มาจาก vendor — ย้ายมาเป็นคอลัมน์ของสินค้าเองแล้ว 2026-10-01)
  */
 export type ProductItemRow = ProductItem & {
   vendor_name: string | null
-  /** vendor.sender_code ดิบ ๆ — JSON string ของ [{shipping, sendercode}] อ่านด้วย parseSenderCodes ของหน้า vendor */
-  vendor_sender_code: string | null
-  /** vendor.shipment_type — ประเภทการจัดส่งของผู้ขาย ตารางโชว์ตัวนี้แทน shipment_type ของสินค้า (2026-09-29) */
-  vendor_shipment_type: string | null
 }
 
 /** ความยาวสูงสุดของคอลัมน์ varchar — ตรงกับ _VARCHAR ฝั่ง API เกินแล้วตอบ 400 */
@@ -247,6 +248,7 @@ export const ITEM_FIELDS = [
   "product_group",
   "supplier_name",
   "shipment_type",
+  "sender_code",
   "link_web",
   "remark",
   "detial",

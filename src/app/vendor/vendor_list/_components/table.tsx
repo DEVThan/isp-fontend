@@ -7,14 +7,12 @@ import {
   Plus,
   Search,
   SearchX,
-  Truck,
   Trash2,
   TriangleAlert,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import {
-  getShipmentTypeOptions,
   getVendors,
   VENDOR_PAGE_SIZE,
 } from "@/app/vendor/vendor_list/_components/api"
@@ -22,17 +20,14 @@ import { DeleteModal } from "@/app/vendor/vendor_list/_components/delete_modal"
 import { FormModal } from "@/app/vendor/vendor_list/_components/form_modal"
 import {
   isVendorActive,
-  parseSenderCodes,
   VENDOR_ACTIVE,
   VENDOR_INACTIVE,
   type Vendor,
   type VendorFormMode,
   type VendorList,
-  type ShipmentTypeOption,
 } from "@/app/vendor/vendor_list/_components/model"
 import { TablePagination } from "@/app/vendor/vendor_list/_components/pagination"
 import { SelectOption } from "@/app/vendor/vendor_list/_components/selectoption"
-import { SenderModal } from "@/app/vendor/vendor_list/_components/sender_modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -50,14 +45,12 @@ import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 9
+const COLUMN_COUNT = 7
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
 
-/** ผู้ขายรายนี้มีรหัสผู้ส่งกี่รายการ — 0 คือไม่ต้องโชว์ปุ่มในตาราง */
-const senderCount = (vendor: Vendor) =>
-  parseSenderCodes(vendor.sender_code).length
+// รหัสผู้ส่ง / ประเภทการจัดส่ง ย้ายไปอยู่ที่สินค้าแล้ว (01/10/2026) — คอลัมน์ ตัวกรอง และกล่องดูรหัสผู้ส่งเอาออกจากตารางนี้
 
 /**
  * รายการว่างตอนเริ่ม — ตารางดึงหน้าแรกเองตอนเปิดหน้า (page.tsx ไม่ดึงให้แล้ว)
@@ -79,7 +72,6 @@ export function Tables() {
   const tall = useTranslations("common")
   const tr = useTranslations("vendors")
   const tcol = useTranslations("vendors.columns")
-  const tform = useTranslations("vendors.form")
 
   const [list, setList] = React.useState<VendorList>(EMPTY_LIST)
   const [failed, setFailed] = React.useState(false)
@@ -95,31 +87,13 @@ export function Tables() {
   } | null>(null)
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
   const [removing, setRemoving] = React.useState<Vendor | null>(null)
-  /** แถวที่กดดูรหัสผู้ส่ง — null คือปิดกล่อง */
-  const [viewingSender, setViewingSender] = React.useState<Vendor | null>(null)
 
   /** ค้นจากรหัสผู้ขาย — แยกช่องจากชื่อ เพราะ API รับคนละพารามิเตอร์ */
   const [codeQuery, setCodeQuery] = React.useState("")
   const [nameQuery, setNameQuery] = React.useState("")
-  /** null = ไม่กรองประเภทการจัดส่ง · ค่าคือชื่อ (ตรงกับ vendor.shipment_type) */
-  const [shipmentType, setShipmentType] = React.useState<string | null>(null)
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
   const [status, setStatus] = React.useState<string | null>(null)
 
-  /** ประเภทการจัดส่งที่ active — ใช้ทั้งตัวกรอง (ฟอร์มดึงของตัวเองตอนเปิด) · ดึงครั้งเดียวตอนเปิดหน้า */
-  const [shipmentTypes, setShipmentTypes] = React.useState<ShipmentTypeOption[]>([])
-  React.useEffect(() => {
-    let cancelled = false
-    getShipmentTypeOptions()
-      .then((next) => {
-        if (!cancelled) setShipmentTypes(next)
-      })
-      // ดึงไม่ได้ ตัวกรองนี้แค่ไม่มีตัวเลือก — ห้าม console.error ใน dev จะขึ้นเต็มจอ
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [])
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(VENDOR_PAGE_SIZE)
 
@@ -144,7 +118,6 @@ export function Tables() {
       code: string
       name: string
       status: string | null
-      shipmentType: string | null
       page: number
       pageSize: number
     },
@@ -161,7 +134,6 @@ export function Tables() {
         const result = await getVendors({
           code: next.code.trim(),
           name: next.name.trim(),
-          shipmentType: next.shipmentType,
           status: next.status,
           page: next.page,
           perPage: next.pageSize,
@@ -188,7 +160,7 @@ export function Tables() {
    * dev (StrictMode) mount ซ้ำ: cleanup ยกเลิกรอบแรกก่อนยิง จึงยิงจริงครั้งเดียว
    */
   React.useEffect(() => {
-    const start = setTimeout(() => load({ code: codeQuery, name: nameQuery, status, shipmentType, page, pageSize }))
+    const start = setTimeout(() => load({ code: codeQuery, name: nameQuery, status, page, pageSize }))
     return () => clearTimeout(start)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ตั้งใจดึงแค่ตอนเปิดหน้า ที่เหลือ load ถูกเรียกจากตัวกรอง/แบ่งหน้าเอง
   }, [])
@@ -229,7 +201,7 @@ export function Tables() {
                 setCodeQuery(code)
                 setPage(1)
                 load(
-                  { code, name: nameQuery, status, shipmentType, page: 1, pageSize },
+                  { code, name: nameQuery, status, page: 1, pageSize },
                   SEARCH_DELAY_MS
                 )
               }}
@@ -252,7 +224,7 @@ export function Tables() {
                 setNameQuery(name)
                 setPage(1)
                 load(
-                  { code: codeQuery, name, status, shipmentType, page: 1, pageSize },
+                  { code: codeQuery, name, status, page: 1, pageSize },
                   SEARCH_DELAY_MS
                 )
               }}
@@ -260,32 +232,6 @@ export function Tables() {
               className="bg-card/80 focus-visible:border-primary/50 pl-8"
             />
           </div>
-        </div>
-        {/* ประเภทการจัดส่ง — ค่าคือชื่อ API เทียบ vendor.shipment_type ตรงตัว
-            ป้ายไม่ผูก htmlFor (ตัวช่องเป็นปุ่ม คลิกที่ว่างข้างป้ายแล้วรายการจะเด้งเปิด) */}
-        <div className="space-y-2">
-          <Label className="text-muted-foreground w-fit text-xs">
-            {tcol("shipmentType")}
-          </Label>
-          <SelectOption
-            id="filter-shipmentType"
-            options={shipmentTypes.map((option) => ({ value: option.name, label: option.name }))}
-            value={shipmentType}
-            onValueChange={(next) => {
-              setShipmentType(next)
-              setPage(1)
-              load({
-                code: codeQuery,
-                name: nameQuery,
-                status,
-                shipmentType: next,
-                page: 1,
-                pageSize,
-              })
-            }}
-            placeholder={tall("all")}
-            label={tcol("shipmentType")}
-          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
@@ -302,7 +248,6 @@ export function Tables() {
                 code: codeQuery,
                 name: nameQuery,
                 status: next,
-                shipmentType,
                 page: 1,
                 pageSize,
               })
@@ -363,8 +308,6 @@ export function Tables() {
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("email")}</TableHead>
                 <TableHead className="text-muted-foreground w-36 text-xs font-semibold tracking-wide uppercase">{tcol("tel")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("senderCode")}</TableHead>
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("shipmentType")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
@@ -391,23 +334,6 @@ export function Tables() {
                   <TableCell className="pt-1 pb-1 font-medium">{vendor.name}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[220px] truncate">{vendor.email}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground font-mono text-xs">{vendor.tel}</TableCell>
-                  <TableCell className="pt-1 pb-1">
-                    {/* ผู้ขายที่ยังไม่มีรหัสผู้ส่ง ปล่อยช่องว่างไว้ ไม่ต้องมีปุ่มให้กด กดไปก็เจอตารางเปล่า */}
-                    {senderCount(vendor) > 0 ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={tform("viewSenderCode")}
-                        onClick={() => setViewingSender(vendor)}
-                        className="bg-primary/10 text-primary hover:bg-primary/20 h-7 gap-1.5 px-2 text-xs font-medium"
-                      >
-                        <Truck className="size-3.5" />
-                        {senderCount(vendor)}
-                      </Button>
-                    ) : null}
-                  </TableCell>
-                  {/* ชื่อที่เก็บในแถว — ไม่เทียบทะเบียน ชื่อที่ปิดใช้ไปแล้วก็ยังโชว์ */}
-                  <TableCell className="pt-1 pb-1 text-muted-foreground">{vendor.shipment_type}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
                       variant="secondary"
@@ -482,7 +408,6 @@ export function Tables() {
               code: codeQuery,
               name: nameQuery,
               status,
-              shipmentType,
               page: next,
               pageSize,
             })
@@ -494,7 +419,6 @@ export function Tables() {
               code: codeQuery,
               name: nameQuery,
               status,
-              shipmentType,
               page: 1,
               pageSize: size,
             })
@@ -512,17 +436,8 @@ export function Tables() {
         vendor={form?.vendor}
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
         onSaved={() =>
-          load({ code: codeQuery, name: nameQuery, status, shipmentType, page, pageSize })
+          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
         }
-      />
-
-      {/* ดูรหัสผู้ส่งของแถวนั้น — อ่านอย่างเดียว แก้ไขทำที่ฟอร์ม */}
-      <SenderModal
-        open={viewingSender !== null}
-        onOpenChange={(next) => {
-          if (!next) setViewingSender(null)
-        }}
-        vendor={viewingSender ?? undefined}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
@@ -533,7 +448,7 @@ export function Tables() {
         }}
         vendor={removing ?? undefined}
         onDeleted={() =>
-          load({ code: codeQuery, name: nameQuery, status, shipmentType, page, pageSize })
+          load({ code: codeQuery, name: nameQuery, status, page, pageSize })
         }
       />
     </Card>

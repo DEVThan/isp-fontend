@@ -132,8 +132,11 @@ export type So = {
   /** ผู้ขายจาก join so.item_code -> products.item_code -> products.vendo_code -> vendor.code (so_export-get-list
    *  เหมือน so-get-list 2026-09-29) — หาไม่เจอ = null · แถวที่ได้จาก -action ไม่มีสองฟิลด์นี้ */
   vendor_code?: string | null
-  /** vendor.shipment_type ของผู้ขายข้างบน — ตารางและฟอร์มใช้เป็นประเภทการจัดส่งก่อน so.shipment_type */
-  vendor_shipment_type?: string | null
+  /** products.shipment_type ของสินค้าในแถว (join เดียวกัน) — ตารางและฟอร์มใช้เป็นประเภทการจัดส่งก่อน so.shipment_type
+   *  (01/10/2026 ย้ายจาก vendor.shipment_type มาอยู่ที่สินค้า) */
+  product_shipment_type?: string | null
+  /** products.sender_code ของสินค้าในแถว — JSON string ของ [{shipping, sendercode}] ฟอร์มเลือกรหัสผู้ส่งตาม "ขนส่งโดย" */
+  product_sender_code?: string | null
 }
 
 /**

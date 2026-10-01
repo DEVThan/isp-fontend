@@ -129,11 +129,14 @@ export type So = {
   /** timestamp จริง (ไม่ใช่ text เหมือนวันที่ตัวอื่น) — Flask ส่งมาเป็น "Thu, 24 Sep 2026 04:00:43 GMT" */
   synced_at: string | null
   updated_at: string | null
-  /** ผู้ขายจาก join so.item_code -> products.item_code -> products.vendo_code -> vendor.code (so-get-list เท่านั้น
-   *  2026-09-29) — หาไม่เจอ = null · แถวที่ได้จาก -action ไม่มีสองฟิลด์นี้ */
+  /** ผู้ขายจาก join so.item_code -> products.item_code -> products.vendo_code (so-get-list เท่านั้น
+   *  2026-09-29) — หาไม่เจอ = null · แถวที่ได้จาก -action ไม่มีฟิลด์ join พวกนี้ */
   vendor_code?: string | null
-  /** vendor.shipment_type ของผู้ขายข้างบน — ตารางและฟอร์มใช้เป็นประเภทการจัดส่งก่อน so.shipment_type */
-  vendor_shipment_type?: string | null
+  /** products.shipment_type ของสินค้าในแถว (join เดียวกัน) — ตารางและฟอร์มใช้เป็นประเภทการจัดส่งก่อน so.shipment_type
+   *  (01/10/2026 ย้ายจาก vendor.shipment_type มาอยู่ที่สินค้า) */
+  product_shipment_type?: string | null
+  /** products.sender_code ของสินค้าในแถว — JSON string ของ [{shipping, sendercode}] ฟอร์มเลือกรหัสผู้ส่งตาม "ขนส่งโดย" */
+  product_sender_code?: string | null
 }
 
 /**

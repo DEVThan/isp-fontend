@@ -1,28 +1,19 @@
 "use client"
 
 import * as React from "react"
-import { CircleCheck, LoaderCircle, Plus, Trash2, TriangleAlert } from "lucide-react"
+import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl"
 
+import { saveVendor } from "@/app/vendor/vendor_list/_components/api"
 import {
-  getShipmentTypeOptions,
-  saveVendor,
-} from "@/app/vendor/vendor_list/_components/api"
-import {
-  parseSenderCodes,
-  serializeSenderCodes,
   VENDOR_ACTIVE,
   VENDOR_INACTIVE,
   VENDOR_MAX_LEN,
-  type SenderCode,
-  type ShipmentTypeOption,
   type Vendor,
   type VendorFormMode,
   type VendorFormValues,
 } from "@/app/vendor/vendor_list/_components/model"
 import { SelectOption } from "@/app/vendor/vendor_list/_components/selectoption"
-import { getShippingOptions } from "@/app/shipping/_components/api"
-import type { ShippingOption } from "@/app/shipping/_components/model"
 // เทมเพลตส่งออก — ช่องซ่อนไว้ (ดูที่ช่องในฟอร์ม) เปิดกลับให้เอา comment สองบรรทัดนี้ออกด้วย
 // import { getVendorExportTemplateOptions } from "@/app/vendor/vendor_export_template/_components/api"
 // import type { VendorExportTemplateOption } from "@/app/vendor/vendor_export_template/_components/model"
@@ -44,14 +35,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 
 /**
@@ -59,6 +42,10 @@ import { Textarea } from "@/components/ui/textarea"
  *
  * ปุ่มที่เปิดฟอร์มเป็นคนบอกโหมดมาเอง: "add" เปิดฟอร์มเปล่า "edit" เปิดพร้อมค่าของแถวนั้น
  * กดบันทึกแล้วยิง POST /api/web/vendor-action เอง เสร็จแล้วบอกพ่อผ่าน onSaved ให้โหลดตารางใหม่
+ *
+ * รหัสผู้ส่งกับประเภทการจัดส่งย้ายไปอยู่ที่ฟอร์มสินค้าแล้ว (01/10/2026 — products.sender_code / shipment_type)
+ * ช่องถูกเอาออกจากฟอร์มนี้ แต่ค่าเดิมของแถว (vendor.sender_code / shipment_type) ยังอยู่ใน values
+ * และถูกส่งกลับไปกับ -action ทุกครั้ง — เส้นนั้นเขียนทับทั้งแถว ไม่ส่งไปคือล้างคอลัมน์ทิ้ง
  */
 // คลาสขอบแดง — ต้องสลับคลาสเอง ไม่ใช้ variant aria-invalid: เพราะ Tailwind v4 ห่อ variant
 // ด้วย :where() ความจำเพาะจึงเท่ากับ border-input แล้วแพ้ลำดับใน stylesheet
@@ -122,14 +109,6 @@ export function FormModal({
   const [codeError, setCodeError] = React.useState(false)
   /** ชื่อผู้ขายยังว่างตอนกดบันทึก — ตรวจเองแทน required ของเบราว์เซอร์ */
   const [nameError, setNameError] = React.useState(false)
-  /**
-   * แถวรหัสผู้ส่งที่กำลังแก้อยู่ — ถือเป็นความจริงของ UI ส่วน values.sender_code เป็นเงาไว้ส่ง API
-   * แยกกันเพราะ serializeSenderCodes() ตัดแถวที่ยังว่างทิ้ง ถ้า UI อ่านจากสตริงนั้นตรง ๆ
-   * แถวที่เพิ่งกดเพิ่มจะหายไปทันทีก่อนได้พิมพ์
-   */
-  const [senderRows, setSenderRows] = React.useState<SenderCode[]>(() =>
-    parseSenderCodes(vendor?.sender_code)
-  )
   /** ผลของการกดบันทึกครั้งล่าสุด — null คือยังไม่ได้กด */
   const [result, setResult] = React.useState<{
     ok: boolean
@@ -150,92 +129,12 @@ export function FormModal({
     setSaving(false)
     setCodeError(false)
     setNameError(false)
-    setSenderRows(parseSenderCodes(vendor?.sender_code))
   }
 
   const set = <K extends keyof VendorFormValues>(
     key: K,
     value: VendorFormValues[K]
   ) => setValues((current) => ({ ...current, [key]: value }))
-
-  /** แก้แถวรหัสผู้ส่งทีเดียวทั้งสองที่ — ตาราง (ที่ผู้ใช้เห็น) กับค่าที่จะส่งไปบันทึก */
-  const setSenders = (next: SenderCode[]) => {
-    setSenderRows(next)
-    set("sender_code", serializeSenderCodes(next))
-  }
-
-  /** ประเภทการจัดส่งที่ active — ดึงใหม่ทุกครั้งที่เปิดฟอร์ม ทะเบียนอาจเพิ่ง/ปิดตัวเลือกไป */
-  const [shipmentTypes, setShipmentTypes] = React.useState<ShipmentTypeOption[]>([])
-  React.useEffect(() => {
-    if (!open) return
-    let cancelled = false
-    getShipmentTypeOptions()
-      .then((next) => {
-        if (!cancelled) setShipmentTypes(next)
-      })
-      // ดึงไม่ได้ก็แค่ไม่มีตัวเลือก ฟอร์มยังบันทึกได้ — ห้าม console.error ใน dev จะขึ้นเต็มจอ
-      .catch(() => {
-        if (!cancelled) setShipmentTypes([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [open])
-
-  /**
-   * บริษัทขนส่งที่ active (/shipping-get-option) — ตัวเลือกของคอลัมน์ "ขนส่ง" ในตารางรหัสผู้ส่ง
-   * ดึงใหม่ทุกครั้งที่เปิดฟอร์ม · เก็บ "ชื่อ" ลง shipping ของแต่ละแถว (หน้าใบสั่งขายเอาไปเป็นตัวเลือก "ขนส่งโดย")
-   */
-  const [shippings, setShippings] = React.useState<ShippingOption[]>([])
-  React.useEffect(() => {
-    if (!open) return
-    let cancelled = false
-    getShippingOptions()
-      .then((next) => {
-        if (!cancelled) setShippings(next)
-      })
-      .catch(() => {
-        if (!cancelled) setShippings([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [open])
-
-  /**
-   * ตัวเลือกขนส่งของแถวที่ index — ตัดขนส่งที่แถวอื่นเลือกไปแล้ว (เลือกซ้ำไม่ได้)
-   * ค่าเดิมของแถวที่ไม่อยู่ในทะเบียน (ข้อมูลเก่าที่พิมพ์เอง หรือขนส่งที่ถูกปิดไป) เติมเข้าไปให้เห็น ไม่หายเงียบ ๆ
-   */
-  const shippingOptionsFor = (index: number) => {
-    const taken = new Set(
-      senderRows
-        .filter((_, i) => i !== index)
-        .map((row) => row.shipping.trim())
-        .filter(Boolean)
-    )
-    const own = senderRows[index]?.shipping.trim() ?? ""
-    return [
-      ...shippings
-        .filter((option) => !taken.has(option.name))
-        .map((option) => ({ value: option.name, label: option.name })),
-      ...(own && !shippings.some((option) => option.name === own)
-        ? [{ value: own, label: own }]
-        : []),
-    ]
-  }
-
-  /** เพิ่มแถวได้ไม่เกินจำนวนขนส่งในทะเบียน (แต่ละเจ้าใช้ได้แถวเดียว) */
-  const senderLimitReached = senderRows.length >= shippings.length
-
-  /** ค่าคือชื่อ (ตรงกับ vendor.shipment_type)
-   *  ชื่อที่แถวเลือกไว้แต่ถูกปิดไปแล้ว (ไม่อยู่ใน get-option) เติมเข้าไปให้เห็น ไม่งั้นช่องดูว่างทั้งที่มีค่า */
-  const shipmentTypeOptions = [
-    ...shipmentTypes.map((option) => ({ value: option.name, label: option.name })),
-    ...(values.shipment_type &&
-    !shipmentTypes.some((option) => option.name === values.shipment_type)
-      ? [{ value: values.shipment_type, label: values.shipment_type }]
-      : []),
-  ]
 
   // เทมเพลตส่งออก — ซ่อนไว้ (ผู้ใช้ขอ 29/09/2026 ให้ประเภทการจัดส่งมาแทนที่)
   // ค่า export_template เดิมของแถวยังอยู่ใน values และถูกส่งไปกับ -action ทุกครั้ง ไม่ถูกล้าง
@@ -393,132 +292,8 @@ export function FormModal({
             />
           </Field>
 
-          {/* รหัสผู้ส่ง — ผู้ขายหนึ่งรายมีได้หลายขนส่ง เก็บรวมเป็น JSON string ในคอลัมน์เดียว */}
-          <div className="space-y-2">
-            <Label className="text-muted-foreground text-xs">
-              {tcol("senderCode")}
-            </Label>
-            <div className="border-border/60 overflow-hidden rounded-lg border">
-              <Table>
-                <TableHeader className="bg-muted/60">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-muted-foreground pl-3 text-xs font-semibold tracking-wide uppercase">
-                      {tcol("shipping")}
-                    </TableHead>
-                    <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                      {tcol("senderCode")}
-                    </TableHead>
-                    <TableHead className="w-12 pr-3">
-                      <span className="sr-only">{t("delete")}</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {senderRows.map((row, index) => (
-                    // แถวไม่มี id ของตัวเอง คีย์จึงต้องเป็นตำแหน่ง — ลบแถวกลางแล้ว React
-                    // จะ reuse ช่องกรอกของแถวถัดไป ซึ่งถูกต้องอยู่แล้วเพราะค่ามาจาก state ทั้งหมด
-                    <TableRow
-                      key={index}
-                      className="border-border/50 hover:bg-transparent"
-                    >
-                      {/* ขนส่ง — เลือกจากทะเบียนบริษัทขนส่ง (เดิมพิมพ์เอง) ตัวที่แถวอื่นเลือกแล้วไม่อยู่ในรายการ */}
-                      <TableCell className="py-1 pl-3">
-                        <SelectOption
-                          id={`vendor-shipping-${index}`}
-                          options={shippingOptionsFor(index)}
-                          value={row.shipping.trim() || null}
-                          onValueChange={(next) =>
-                            setSenders(
-                              senderRows.map((current, i) =>
-                                i === index
-                                  ? { ...current, shipping: next ?? "" }
-                                  : current
-                              )
-                            )
-                          }
-                          placeholder="..."
-                          label={`${tcol("shipping")} ${index + 1}`}
-                        />
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <Input
-                          value={row.sendercode}
-                          placeholder="..."
-                          aria-label={`${tcol("senderCode")} ${index + 1}`}
-                          onChange={(event) =>
-                            setSenders(
-                              senderRows.map((current, i) =>
-                                i === index
-                                  ? {
-                                      ...current,
-                                      sendercode: event.target.value,
-                                    }
-                                  : current
-                              )
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="py-1 pr-3 text-right">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={t("delete")}
-                          onClick={() =>
-                            setSenders(
-                              senderRows.filter((_, i) => i !== index)
-                            )
-                          }
-                          className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
-                        >
-                          <Trash2 />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-
-                  {senderRows.length === 0 ? (
-                    <TableRow className="hover:bg-transparent">
-                      <TableCell
-                        colSpan={3}
-                        className="text-muted-foreground py-4 text-center text-xs"
-                      >
-                        {tform("noSenderCode")}
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </TableBody>
-              </Table>
-
-              <div className="border-border/50 flex flex-wrap items-center gap-2 border-t p-2">
-                {/* เพิ่มแถวได้ไม่เกินจำนวนขนส่งในทะเบียน — ครบแล้วปุ่มกดไม่ได้ พร้อมบอกเหตุผล */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={senderLimitReached}
-                  onClick={() =>
-                    setSenders([
-                      ...senderRows,
-                      { shipping: "", sendercode: "" },
-                    ])
-                  }
-                >
-                  <Plus /> {tform("addSenderCode")}
-                </Button>
-                {senderLimitReached ? (
-                  <span className="text-muted-foreground text-xs">
-                    {shippings.length === 0
-                      ? tform("noShipping")
-                      : tform("senderCodeLimit", { count: shippings.length })}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          {/* สถานะกินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง · ประเภทการจัดส่งกินสองช่องที่เหลือ */}
+          {/* สถานะกินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง
+              (ประเภทการจัดส่งที่เคยกินสองช่องที่เหลือ ย้ายไปฟอร์มสินค้าแล้ว 01/10/2026) */}
           <div className="grid gap-4 sm:grid-cols-3">
             {/* เทมเพลตส่งออก — ซ่อนไว้ ประเภทการจัดส่งมาแทนที่ (ดูหมายเหตุที่ templateOptions ด้านบน) */}
             {/* <div className="sm:col-span-2">
@@ -533,18 +308,6 @@ export function FormModal({
                 />
               </Field>
             </div> */}
-            <div className="sm:col-span-2">
-              <Field id="vendor-shipment-type" label={tcol("shipmentType")}>
-                <SelectOption
-                  id="vendor-shipment-type"
-                  options={shipmentTypeOptions}
-                  value={values.shipment_type || null}
-                  onValueChange={(next) => set("shipment_type", next ?? "")}
-                  placeholder="..."
-                  label={tcol("shipmentType")}
-                />
-              </Field>
-            </div>
             <Field id="vendor-status" label={tcol("status")}>
               <SelectOption
                 id="vendor-status"
