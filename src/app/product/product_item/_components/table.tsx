@@ -10,6 +10,7 @@ import {
   SearchX,
   Trash2,
   TriangleAlert,
+  Truck,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -36,6 +37,7 @@ import {
   SelectOption,
   type SelectOptionItem,
 } from "@/app/product/product_item/_components/selectoption"
+import { SenderModal } from "@/app/product/product_item/_components/sender_modal"
 import { ViewModal } from "@/app/product/product_item/_components/view_modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -50,14 +52,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { parseSenderCodes } from "@/app/vendor/vendor_list/_components/model"
 import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 9
+const COLUMN_COUNT = 10
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
+
+/** สินค้านี้มีรหัสผู้ส่งกี่รายการ — 0 คือไม่ต้องโชว์ปุ่มในตาราง */
+const senderCount = (item: ProductItem) =>
+  parseSenderCodes(item.sender_code).length
 
 /**
  * ตัวเลขในตาราง — คั่นหลักพัน · ค่าตัวเลขมาเป็นข้อความ ("0.00") และ price เป็น varchar
@@ -113,6 +120,7 @@ export function Tables() {
   const tall = useTranslations("common")
   const tr = useTranslations("productitems")
   const tcol = useTranslations("productitems.columns")
+  const tform = useTranslations("productitems.form")
 
   const [list, setList] = React.useState<ProductItemList>(EMPTY_LIST)
   const [failed, setFailed] = React.useState(false)
@@ -126,6 +134,8 @@ export function Tables() {
   const [removing, setRemoving] = React.useState<ProductItem | null>(null)
   /** แถวที่กำลังเปิดดูข้อมูลทั้งหมด — null คือปิดกล่อง */
   const [viewing, setViewing] = React.useState<ProductItemRow | null>(null)
+  /** แถวที่กดดูรหัสผู้ส่ง — null คือปิดกล่อง */
+  const [viewingSender, setViewingSender] = React.useState<ProductItemRow | null>(null)
   /**
    * เลขต่อท้าย URL รูป — เปลี่ยนทุกครั้งที่บันทึกสินค้า
    * รูปชื่อ {item_code}.{นามสกุล} เปลี่ยนรูปแล้ว URL มักเหมือนเดิม browser จะโชว์รูปเก่าจากหน่วยความจำ
@@ -443,6 +453,7 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("productTypeName")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("vendor")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("shipmentType")}</TableHead>
+                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("senderCode")}</TableHead>
                 {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
                 <TableHead className="text-muted-foreground w-28 text-right text-xs font-semibold tracking-wide uppercase">{tcol("price")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")} / {tcol("unit")}</TableHead>
@@ -496,6 +507,21 @@ export function Tables() {
                   </TableCell>
                   {/* ประเภทการจัดส่งของสินค้า (products.shipment_type) — ย้ายจาก vendor มาอยู่ที่สินค้า 01/10/2026 */}
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{item.shipment_type}</TableCell>
+                  <TableCell className="pt-1 pb-1">
+                    {/* สินค้าที่ยังไม่มีรหัสผู้ส่ง ปล่อยช่องว่างไว้ ไม่ต้องมีปุ่มให้กด กดไปก็เจอตารางเปล่า */}
+                    {senderCount(item) > 0 ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={tform("viewSenderCode")}
+                        onClick={() => setViewingSender(item)}
+                        className="bg-primary/10 text-primary hover:bg-primary/20 h-7 gap-1.5 px-2 text-xs font-medium"
+                      >
+                        <Truck className="size-3.5" />
+                        {senderCount(item)}
+                      </Button>
+                    ) : null}
+                  </TableCell>
                   <TableCell className="pt-1 pb-1 text-right font-medium tabular-nums">
                     {formatNumber(item.price, 2)}
                   </TableCell>
@@ -622,6 +648,15 @@ export function Tables() {
         }}
         item={viewing ?? undefined}
         imageVersion={imageVersion}
+      />
+
+      {/* ดูรหัสผู้ส่งของแถวนั้น — อ่านอย่างเดียว แก้ไขทำที่ฟอร์ม */}
+      <SenderModal
+        open={viewingSender !== null}
+        onOpenChange={(next) => {
+          if (!next) setViewingSender(null)
+        }}
+        item={viewingSender ?? undefined}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}

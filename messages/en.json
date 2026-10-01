@@ -724,6 +724,8 @@
       "viewDescription": "Every detail of the selected product",
       "addSenderCode": "Add sender code",
       "noSenderCode": "No sender codes yet",
+      "viewSenderCode": "View sender codes",
+      "senderDescription": "All sender codes for “{name}”",
       "senderCodeLimit": "All carriers are already used ({count})",
       "noShipping": "No shipping companies to choose from — add them on the shipping page",
       "addTitle": "Add product",
