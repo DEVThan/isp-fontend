@@ -1168,6 +1168,7 @@
     "columns": {
       "no": "စဉ်",
       "name": "အုပ်စု အမည်",
+      "template_name": "ပုံစံ",
       "detail": "အသေးစိတ်",
       "shiptment_type": "ပို့ဆောင်မှု အမျိုးအစား",
       "total_price": "စုစုပေါင်း",

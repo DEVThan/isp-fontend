@@ -50,7 +50,7 @@ import { cn } from "@/lib/utils"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 7
+const COLUMN_COUNT = 8
 
 /** ปุ่มเพิ่ม/แก้ไข — ซ่อนไว้ก่อน กลุ่มเกิดจากการส่งออกใบสั่งขายเท่านั้น (เปิดกลับเป็น true ได้ ฟอร์มยังอยู่ครบ) */
 const CAN_EDIT = false
@@ -344,6 +344,7 @@ export function Tables() {
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
                 <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
+                <TableHead className="text-muted-foreground w-44 text-xs font-semibold tracking-wide uppercase">{tcol("template_name")}</TableHead>
                 <TableHead className="text-muted-foreground w-44 text-xs font-semibold tracking-wide uppercase">{tcol("shiptment_type")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-right text-xs font-semibold tracking-wide uppercase">{tcol("total_price")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
@@ -369,6 +370,10 @@ export function Tables() {
                     <span className="bg-primary/10 text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold">
                       {group.name}
                     </span>
+                  </TableCell>
+                  {/* เทมเพลตที่ใช้ส่งออกกลุ่มนี้ — กลุ่มเก่า/สร้างมือไม่มี โชว์ขีด (ปุ่มส่งออกซ้ำของแถวนั้นกดไม่ได้ด้วย) */}
+                  <TableCell className="pt-1 pb-1 max-w-[176px] truncate" title={group.template_name ?? undefined}>
+                    {group.template_name ?? <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[176px] truncate" title={group.shiptment_type}>{group.shiptment_type}</TableCell>
                   {/* ยอดรวมเป็น integer — คั่นหลักพันแบบเดียวกับตัวเลขอื่นในระบบ · null = ไม่ได้ใส่ */}

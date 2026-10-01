@@ -28,6 +28,8 @@ export type ExportGroup = {
   /** เทมเพลตที่ใช้ส่งออกกลุ่มนี้ (vendor_export_template.id, เพิ่ม 2026-10-01) — ปุ่มส่งออกซ้ำใช้ตัวนี้
    *  null = กลุ่มที่สร้างก่อนเริ่มบันทึก หรือสร้างจากฟอร์ม → ส่งออกซ้ำไม่ได้ */
   template_id: number | null
+  /** ชื่อเทมเพลตของ template_id — มีแต่ใน -get-list (subquery ฝั่ง API) · null = ไม่มีเทมเพลต / เทมเพลตถูกลบไปแล้ว */
+  template_name?: string | null
   created_at: string | null
   updated_at: string | null
 }

@@ -1168,6 +1168,7 @@
     "columns": {
       "no": "No.",
       "name": "Group name",
+      "template_name": "Template",
       "detail": "Detail",
       "shiptment_type": "Shipment type",
       "total_price": "Total",

@@ -1168,6 +1168,7 @@
     "columns": {
       "no": "ลำดับ",
       "name": "ชื่อกลุ่ม",
+      "template_name": "เทมเพลต",
       "detail": "รายละเอียด",
       "shiptment_type": "ประเภทการจัดส่ง",
       "total_price": "ยอดรวม",
