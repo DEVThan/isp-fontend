@@ -58,7 +58,7 @@ import { cn } from "@/lib/utils"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 11
+const COLUMN_COUNT = 15
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -86,6 +86,18 @@ type Filters = {
   page: number
   pageSize: number
 }
+
+/**
+ * คอลัมน์ยอดเงินของแถว so (numeric ทั้งหมด) เรียงตามที่ผู้ใช้สั่ง (05/10/2026)
+ * หัวคอลัมน์เป็นภาษาอังกฤษทุกภาษาตามที่ผู้ใช้ขอ — จึงไม่ผ่าน tcol (คำแปลใน so.columns ยังใช้ในฟอร์ม/หน้าดู)
+ */
+const MONEY_COLUMNS = [
+  { key: "price_per_unit", label: "Price/Unit" },
+  { key: "amount", label: "Amount" },
+  { key: "pay_amount", label: "Pay Amount" },
+  { key: "shipping", label: "Shipping" },
+  { key: "discount", label: "Discount" },
+] as const
 
 /** ยอดเงิน/จำนวน — numeric มาเป็นข้อความ ("999.0") · ว่าง/ไม่ใช่ตัวเลขไม่โชว์อะไร */
 const formatNumber = (value: string | null, fractionDigits: number) => {
@@ -492,7 +504,7 @@ export function Tables() {
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ
             ไม่งั้นตัวหมุนจะจางตามไปด้วย — ใช้พื้นโปร่งของตัวคลุมแทน)
 
-            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 10 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
+            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 14 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
             มากกว่าที่เนื้อหามีให้ (1,102px ที่จอ 1440) · main ใน dashboard-shell เป็น flex item ที่
             min-width เป็น auto จึงยืดตามความกว้างขั้นต่ำของลูก แล้วทั้งหน้าเลื่อนออกนอกจอ 72px
             (วัดได้: document.scrollWidth 1512 > innerWidth 1440 — หน้าอื่นที่คอลัมน์น้อยกว่าไม่เจอ)
@@ -541,7 +553,9 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-20 text-xs leading-tight font-semibold tracking-wide whitespace-normal uppercase">{tcol("shipment_type")}</TableHead>
                 {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
                 <TableHead className="text-muted-foreground w-16 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-right text-xs font-semibold tracking-wide uppercase">{tcol("amount")}</TableHead>
+                {MONEY_COLUMNS.map((column) => (
+                  <TableHead key={column.key} className="text-muted-foreground w-24 text-right text-xs font-semibold tracking-wide whitespace-nowrap uppercase">{column.label}</TableHead>
+                ))}
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
                 {/* สองปุ่ม (ดู + แก้ไข) — w-24 · 32px ที่เพิ่มขึ้นเอามาจากคอลัมน์ชื่อสินค้า */}
@@ -621,9 +635,18 @@ export function Tables() {
                   <TableCell className="pt-1 pb-1 text-right tabular-nums">
                     {formatNumber(row.qty, 0)}
                   </TableCell>
-                  <TableCell className="pt-1 pb-1 text-right font-medium tabular-nums">
-                    {formatNumber(row.amount, 2)}
-                  </TableCell>
+                  {/* Amount ตัวหนาเหมือนเดิม — เป็นยอดหลักของแถว ที่เหลือน้ำหนักปกติ */}
+                  {MONEY_COLUMNS.map((column) => (
+                    <TableCell
+                      key={column.key}
+                      className={cn(
+                        "pt-1 pb-1 text-right tabular-nums",
+                        column.key === "amount" && "font-medium"
+                      )}
+                    >
+                      {formatNumber(row[column.key], 2)}
+                    </TableCell>
+                  ))}
                   {/* ป้ายสถานะตัดข้อความเมื่อยาวเกินคอลัมน์ ("ลูกค้าได้รับสินค้าแล้ว" กว้างกว่าหัวคอลัมน์
                       ~50px) ไม่ตัดแล้วตารางจะกว้างขึ้นทั้งตาราง แล้วปุ่มลบหลุดออกนอกกรอบที่เลื่อนได้
                       ข้อความเต็มอยู่ใน title · span ที่ truncate หดได้เองเพราะ overflow-hidden */}
