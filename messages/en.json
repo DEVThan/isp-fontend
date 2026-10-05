@@ -682,6 +682,7 @@
       "vendo_code": "Vendor code",
       "vendor": "Vendor",
       "shipment_type": "Shipment type",
+      "shipping_by": "Shipped by",
       "delivery_fee": "Delivery fee",
       "weight_kg": "Weight (kg)",
       "md_name": "MD name",

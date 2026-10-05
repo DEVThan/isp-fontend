@@ -38,6 +38,7 @@ import {
   type SelectOptionItem,
 } from "@/app/product/product_item/_components/selectoption"
 import { SenderModal } from "@/app/product/product_item/_components/sender_modal"
+import { ShippingLogo } from "@/app/product/product_item/_components/shipping_logo"
 import { ViewModal } from "@/app/product/product_item/_components/view_modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -57,7 +58,7 @@ import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 10
+const COLUMN_COUNT = 11
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -94,6 +95,8 @@ type Filters = {
   productType: string | null
   /** ชื่อประเภทการจัดส่ง */
   shipmentType: string | null
+  /** ชื่อขนส่ง (products.shipping_by) */
+  shippingBy: string | null
   /** รหัสผู้ขาย (vendor.code) */
   vendor: string | null
   page: number
@@ -150,6 +153,7 @@ export function Tables() {
   const [status, setStatus] = React.useState<string | null>(null)
   const [productType, setProductType] = React.useState<string | null>(null)
   const [shipmentType, setShipmentType] = React.useState<string | null>(null)
+  const [shippingBy, setShippingBy] = React.useState<string | null>(null)
   const [vendor, setVendor] = React.useState<string | null>(null)
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(ITEM_PAGE_SIZE)
@@ -163,6 +167,7 @@ export function Tables() {
   const [filterOptions, setFilterOptions] = React.useState<ProductItemFilterOptions>({
     productTypes: [],
     shipmentTypes: [],
+    shippings: [],
     vendors: [],
   })
   /**
@@ -201,6 +206,7 @@ export function Tables() {
     status,
     productType,
     shipmentType,
+    shippingBy,
     vendor,
     page,
     pageSize,
@@ -225,6 +231,7 @@ export function Tables() {
           status: next.status,
           productType: next.productType,
           shipmentType: next.shipmentType,
+          shippingBy: next.shippingBy,
           vendorCode: next.vendor,
           page: next.page,
           perPage: next.pageSize,
@@ -261,12 +268,25 @@ export function Tables() {
     { value: ITEM_INACTIVE, label: tr("inactive") },
   ]
 
-  /** ประเภทสินค้า / การจัดส่ง ผูกกับสินค้าด้วยชื่อ — value จึงเป็นชื่อ */
+  /** ประเภทสินค้า / การจัดส่ง / ขนส่ง ผูกกับสินค้าด้วยชื่อ — value จึงเป็นชื่อ */
   const productTypeOptions: SelectOptionItem[] = filterOptions.productTypes.map(
     (option) => ({ value: option.name, label: option.name })
   )
   const shipmentTypeOptions: SelectOptionItem[] = filterOptions.shipmentTypes.map(
     (option) => ({ value: option.name, label: option.name })
+  )
+  /** ขนส่งมีโลโก้หน้าชื่อ — ไม่มีรูป/เปิดไม่ขึ้น ShippingLogo คืน null เอง */
+  const shippingOptions: SelectOptionItem[] = filterOptions.shippings.map(
+    (option) => ({
+      value: option.name,
+      label: option.name,
+      icon: <ShippingLogo src={option.logo} alt={option.name} className="size-5" />,
+    })
+  )
+  /** โลโก้ของคอลัมน์ "ขนส่งโดย" — products.shipping_by เก็บชื่อ จับคู่ชื่อกับ /shipping-get-option
+   *  ตัวเลือกดึงหลังหน้าแรกโหลดเสร็จ โลโก้จึงขึ้นตามมาทีหลังชื่อเล็กน้อย */
+  const shippingLogos = new Map(
+    filterOptions.shippings.map((option) => [option.name, option.logo])
   )
   /** ผู้ขายชื่อซ้ำกันได้ — value เป็นรหัส ป้ายมีรหัสนำหน้า */
   const vendorOptions: SelectOptionItem[] = filterOptions.vendors.map((option) => ({
@@ -317,9 +337,9 @@ export function Tables() {
       />
 
     <Card className="border-primary/10 mt-4 overflow-hidden p-0">
-      {/* แถวบน: รหัส + ชื่อสินค้า (ช่องพิมพ์ค้น กินครึ่งแถวคนละครึ่ง) · แถวล่าง: dropdown 4 ตัว
-          ไม่ใช้ div ครอบแยกแถว — xl:col-span-2 ของสองช่องบนดันให้ 4 ตัวที่เหลือตกไปแถวล่างเอง */}
-      <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* แถวบน: รหัส + ชื่อสินค้า (ช่องพิมพ์ค้น 2 + 3 ช่อง) · แถวล่าง: dropdown 5 ตัว
+          ไม่ใช้ div ครอบแยกแถว — col-span ของสองช่องบนรวมได้ 5 ดันให้ 5 ตัวที่เหลือตกไปแถวล่างเอง */}
+      <CardContent className="from-primary/12 border-border/60 grid grid-cols-1 gap-4 border-b bg-gradient-to-r via-transparent to-transparent py-4 md:grid-cols-2 xl:grid-cols-5">
         <div className="space-y-2 xl:col-span-2">
           <Label htmlFor="filter-code" className="text-muted-foreground text-xs">
             {tcol("itemCode")}
@@ -340,7 +360,7 @@ export function Tables() {
             />
           </div>
         </div>
-        <div className="space-y-2 xl:col-span-2">
+        <div className="space-y-2 xl:col-span-3">
           <Label htmlFor="filter-name" className="text-muted-foreground text-xs">
             {tcol("productName")}
           </Label>
@@ -378,6 +398,16 @@ export function Tables() {
           (next) => {
             setShipmentType(next)
             return { ...filters, shipmentType: next, page: 1 }
+          }
+        )}
+        {selectFilter(
+          "filter-shipping_by",
+          tcol("shipping_by"),
+          shippingOptions,
+          shippingBy,
+          (next) => {
+            setShippingBy(next)
+            return { ...filters, shippingBy: next, page: 1 }
           }
         )}
         {selectFilter(
@@ -453,6 +483,7 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("productTypeName")}</TableHead>
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("vendor")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("shipmentType")}</TableHead>
+                <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("shipping_by")}</TableHead>
                 <TableHead className="text-muted-foreground w-28 text-xs font-semibold tracking-wide uppercase">{tcol("senderCode")}</TableHead>
                 {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
                 <TableHead className="text-muted-foreground w-28 text-right text-xs font-semibold tracking-wide uppercase">{tcol("price")}</TableHead>
@@ -507,6 +538,19 @@ export function Tables() {
                   </TableCell>
                   {/* ประเภทการจัดส่งของสินค้า (products.shipment_type) — ย้ายจาก vendor มาอยู่ที่สินค้า 01/10/2026 */}
                   <TableCell className="pt-1 pb-1 text-muted-foreground">{item.shipment_type}</TableCell>
+                  {/* ขนส่งโดย (products.shipping_by) — ชื่อจากทะเบียน shipping */}
+                  <TableCell className="pt-1 pb-1 text-muted-foreground">
+                    {item.shipping_by ? (
+                      <span className="flex items-center gap-2">
+                        <ShippingLogo
+                          src={shippingLogos.get(item.shipping_by)}
+                          alt={item.shipping_by}
+                          className="size-6"
+                        />
+                        {item.shipping_by}
+                      </span>
+                    ) : null}
+                  </TableCell>
                   <TableCell className="pt-1 pb-1">
                     {/* สินค้าที่ยังไม่มีรหัสผู้ส่ง ปล่อยช่องว่างไว้ ไม่ต้องมีปุ่มให้กด กดไปก็เจอตารางเปล่า */}
                     {senderCount(item) > 0 ? (

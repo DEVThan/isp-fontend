@@ -52,6 +52,8 @@ export type ProductItem = {
   /** รหัสผู้ส่ง (ย้ายมาจาก vendor 2026-10-01) — JSON string ของ [{shipping, sendercode}]
    *  อ่าน/เขียนด้วย parseSenderCodes / serializeSenderCodes ของหน้า vendor (รูปแบบเดียวกับ vendor.sender_code เดิม) */
   sender_code: string | null
+  /** ขนส่งโดย (เพิ่ม 2026-10-05) — เก็บ "ชื่อ" จาก /shipping-get-option แบบเดียวกับ so.shipping_by */
+  shipping_by: string | null
   link_web: string | null
   remark: string | null
   /** รายละเอียดสินค้า — text เพิ่มเข้าตารางทีหลัง (2026-09-15) · ชื่อคอลัมน์สะกด detial ตามฐานข้อมูล ห้ามแก้เป็น detail */
@@ -173,6 +175,9 @@ export type VendorOption = { id: number; code: string; name: string }
  */
 export type ProductCodeOption = { id: number; prefix: string; name: string }
 
+/** ตัวเลือกบริษัทขนส่งจาก /shipping-get-option — logo ไว้โชว์หน้าชื่อ "ขนส่งโดย" (path ว่างได้) */
+export type ShippingOption = NamedOption & { logo: string | null }
+
 /** ตัวเลือกช่องทางการขายจาก /status-channeltype-get-option — มี logo ติดมาด้วย (ยังไม่ได้ใช้) */
 export type ChannelTypeOption = NamedOption & { logo: string | null }
 
@@ -180,13 +185,15 @@ export type ChannelTypeOption = NamedOption & { logo: string | null }
  * ตัวเลือกของทุกช่อง select ในฟอร์มสินค้า — ดึงพร้อมกันตอนเปิดฟอร์ม
  *
  * แต่ละช่องเก็บลง products ไม่เหมือนกัน (ดูคอมเมนต์ _INTEGER ใน controller/web/product_item.py):
- * - product_type_name / shipment_type / channel_type / important_doc / status_line_my_shop เก็บ "ชื่อ" เป็นข้อความ
+ * - product_type_name / shipment_type / shipping_by / channel_type / important_doc / status_line_my_shop เก็บ "ชื่อ" เป็นข้อความ
  * - status_km / status_tv_program_footage / status_mou / status_km_protocall เก็บ "id" เป็นเลข
  * - vendo_code เก็บ code ของผู้ขาย และ supplier_name เก็บชื่อคู่กัน
  */
 export type ProductItemFormOptions = {
   productTypes: NamedOption[]
   shipmentTypes: NamedOption[]
+  /** บริษัทขนส่งจาก /shipping-get-option — shipping_by เก็บ "ชื่อ" */
+  shippings: ShippingOption[]
   vendors: VendorOption[]
   channelTypes: ChannelTypeOption[]
   kms: NamedOption[]
@@ -198,10 +205,10 @@ export type ProductItemFormOptions = {
   productCodes: ProductCodeOption[]
 }
 
-/** ตัวเลือกของตัวกรองในหน้ารายการ — ใช้แค่ 3 ทะเบียน ไม่ต้องดึงครบ 11 เส้นแบบฟอร์ม */
+/** ตัวเลือกของตัวกรองในหน้ารายการ — ใช้แค่ 4 ทะเบียน ไม่ต้องดึงครบ 12 เส้นแบบฟอร์ม */
 export type ProductItemFilterOptions = Pick<
   ProductItemFormOptions,
-  "productTypes" | "shipmentTypes" | "vendors"
+  "productTypes" | "shipmentTypes" | "shippings" | "vendors"
 >
 
 /**
@@ -249,6 +256,7 @@ export const ITEM_FIELDS = [
   "supplier_name",
   "shipment_type",
   "sender_code",
+  "shipping_by",
   "link_web",
   "remark",
   "detial",

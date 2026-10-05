@@ -15,6 +15,7 @@ import type {
   ProductItemList,
   ProductCodeOption,
   ProductItemOption,
+  ShippingOption,
   VendorOption,
 } from "@/app/product/product_item/_components/model"
 
@@ -78,6 +79,8 @@ export type ProductItemQuery = {
   /** ชื่อประเภทการจัดส่งจาก dropdown — กรอง products.shipment_type ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง
    *  (29/09–01/10/2026 เคยกรองผ่าน vendor.shipment_type — ย้ายกลับมาที่สินค้าแล้ว) */
   shipmentType?: string | null
+  /** ชื่อขนส่งจาก dropdown (/shipping-get-option) — กรอง products.shipping_by ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง */
+  shippingBy?: string | null
   /** รหัสผู้ขาย — API นับแถวเก่าที่มีแต่ supplier_name ตรงกับชื่อผู้ขายรหัสนี้ด้วย · null = ไม่กรอง */
   vendorCode?: string | null
   page?: number
@@ -100,6 +103,7 @@ export async function getProductItems(
     ...(query.status ? { active_status: query.status } : {}),
     ...(query.productType ? { product_type_name: query.productType } : {}),
     ...(query.shipmentType ? { shipment_type: query.shipmentType } : {}),
+    ...(query.shippingBy ? { shipping_by: query.shippingBy } : {}),
     ...(query.vendorCode ? { vendo_code: query.vendorCode } : {}),
     page: query.page ?? 1,
     per_page: query.perPage ?? ITEM_PAGE_SIZE,
@@ -136,13 +140,14 @@ async function options<T>(path: string): Promise<T[]> {
 }
 
 /**
- * ตัวเลือกของทุกช่อง select ในฟอร์มสินค้า — 11 เส้นยิงพร้อมกัน ไม่รับพารามิเตอร์ ได้เฉพาะตัวที่ active
+ * ตัวเลือกของทุกช่อง select ในฟอร์มสินค้า — 12 เส้นยิงพร้อมกัน ไม่รับพารามิเตอร์ ได้เฉพาะตัวที่ active
  * ไม่มีทาง throw: เส้นไหนล้มช่องนั้นว่าง ส่วนค่าเดิมของแถวยังโชว์อยู่ (ฟอร์มเติมให้เอง)
  */
 export async function getProductItemFormOptions(): Promise<ProductItemFormOptions> {
   const [
     productTypes,
     shipmentTypes,
+    shippings,
     vendors,
     channelTypes,
     kms,
@@ -155,6 +160,7 @@ export async function getProductItemFormOptions(): Promise<ProductItemFormOption
   ] = await Promise.all([
     options<NamedOption>("product-type-get-option"),
     options<NamedOption>("status-shiptmenttype-get-option"),
+    options<ShippingOption>("shipping-get-option"),
     options<VendorOption>("vendor-get-option"),
     options<ChannelTypeOption>("status-channeltype-get-option"),
     options<NamedOption>("status-km-get-option"),
@@ -168,6 +174,7 @@ export async function getProductItemFormOptions(): Promise<ProductItemFormOption
   return {
     productTypes,
     shipmentTypes,
+    shippings,
     vendors,
     channelTypes,
     kms,
@@ -180,14 +187,15 @@ export async function getProductItemFormOptions(): Promise<ProductItemFormOption
   }
 }
 
-/** ตัวเลือกของตัวกรองในหน้ารายการ — 3 เส้นพร้อมกัน ไม่มีทาง throw (เส้นไหนล้ม ตัวกรองนั้นว่าง) */
+/** ตัวเลือกของตัวกรองในหน้ารายการ — 4 เส้นพร้อมกัน ไม่มีทาง throw (เส้นไหนล้ม ตัวกรองนั้นว่าง) */
 export async function getProductItemFilterOptions(): Promise<ProductItemFilterOptions> {
-  const [productTypes, shipmentTypes, vendors] = await Promise.all([
+  const [productTypes, shipmentTypes, shippings, vendors] = await Promise.all([
     options<NamedOption>("product-type-get-option"),
     options<NamedOption>("status-shiptmenttype-get-option"),
+    options<ShippingOption>("shipping-get-option"),
     options<VendorOption>("vendor-get-option"),
   ])
-  return { productTypes, shipmentTypes, vendors }
+  return { productTypes, shipmentTypes, shippings, vendors }
 }
 
 /**

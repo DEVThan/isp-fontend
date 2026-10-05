@@ -1,5 +1,6 @@
 "use client"
 
+import type * as React from "react"
 import { Combobox } from "@base-ui/react/combobox"
 import { Check, ChevronDown, Search, X } from "lucide-react"
 import { useTranslations } from "next-intl"
@@ -17,8 +18,14 @@ import { cn } from "@/lib/utils"
  * ผู้เรียกส่งแค่ options เข้ามา (เช่น active / inactive) แล้วรับค่ากลับเป็น value ของตัวเลือก
  */
 
-/** ตัวเลือกหนึ่งอัน — label คือข้อความที่โชว์และใช้ค้นหา ส่วน value คือค่าที่ส่งกลับ */
-export type SelectOptionItem = { value: string; label: string }
+/** ตัวเลือกหนึ่งอัน — label คือข้อความที่โชว์และใช้ค้นหา ส่วน value คือค่าที่ส่งกลับ
+ *  icon: รูปเล็กหน้าป้าย (ไม่บังคับ) — หน้านี้ใช้โลโก้ขนส่งจาก /shipping-get-option (คัดมาจาก sale/so)
+ *  ค้นหายังใช้ label เหมือนเดิม รูปไม่เกี่ยวกับการค้น */
+export type SelectOptionItem = {
+  value: string
+  label: string
+  icon?: React.ReactNode
+}
 
 export function SelectOption({
   id,
@@ -60,11 +67,18 @@ export function SelectOption({
           aria-invalid={invalid || undefined}
           // cn (tailwind-merge) ให้ border-destructive ทับ border-input จริง — ต่อสตริงเฉย ๆ ตัวไหนชนะขึ้นกับลำดับใน stylesheet
           className={cn(
-            "border-input bg-card/80 data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-between gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30",
+            "border-input bg-card/80 data-placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-ring/50 flex h-8 w-full items-center justify-start gap-2 rounded-lg border py-1 pr-14 pl-2.5 text-left text-sm transition-colors outline-none select-none focus-visible:ring-3 md:text-sm dark:bg-input/30",
             invalid &&
               "border-destructive ring-3 ring-destructive/20 dark:border-destructive/50 dark:ring-destructive/40"
           )}
         >
+          {/* justify-start (ไม่ใช่ between): ตัวเลือกที่ส่ง icon มาแต่รูปไม่มี/เปิดไม่ขึ้น span ว่างจะดันชื่อไปชิดขวา
+              ปุ่มล้าง/ลูกศรวางแบบ absolute อยู่แล้ว ไม่ต้องพึ่ง between */}
+          {/* รูปของตัวเลือกที่เลือกอยู่ — วางเองนอก Combobox.Value เพราะ Value รับได้แต่ข้อความ */}
+          {selected?.icon ? (
+            // empty:hidden — icon ที่ render เป็น null (โลโก้ไม่มี/เปิดไม่ขึ้น) ไม่เหลือช่องว่าง gap ค้าง
+            <span className="flex shrink-0 items-center empty:hidden">{selected.icon}</span>
+          ) : null}
           {/* Value ไม่ได้ render element ของตัวเอง (ไม่มี className) จึงต้องมี span ครอบ */}
           <span className="truncate">
             <Combobox.Value placeholder={placeholder} />
@@ -111,6 +125,9 @@ export function SelectOption({
                   value={option}
                   className="data-highlighted:bg-accent data-highlighted:text-accent-foreground relative flex cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-none select-none"
                 >
+                  {option.icon ? (
+                    <span className="flex shrink-0 items-center">{option.icon}</span>
+                  ) : null}
                   <span className="flex-1 truncate">{option.label}</span>
                   <Combobox.ItemIndicator className="absolute right-2 flex size-4 items-center justify-center">
                     <Check className="size-4" />

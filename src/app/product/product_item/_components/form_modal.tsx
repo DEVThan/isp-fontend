@@ -37,6 +37,7 @@ import {
 import { ImagePicker } from "@/app/product/product_item/_components/image_picker"
 import { MultiSelectOption } from "@/app/product/product_item/_components/multiselectoption"
 import { SenderCodeEditor } from "@/app/product/product_item/_components/sender_code_editor"
+import { ShippingLogo } from "@/app/product/product_item/_components/shipping_logo"
 import {
   SelectOption,
   type SelectOptionItem,
@@ -189,6 +190,7 @@ type ShownField =
 type SelectField =
   | "product_type_name"
   | "shipment_type"
+  | "shipping_by"
   | "status_km"
   | "status_tv_program_footage"
   | "status_mou"
@@ -201,6 +203,7 @@ type SelectField =
 const NO_OPTIONS: ProductItemFormOptions = {
   productTypes: [],
   shipmentTypes: [],
+  shippings: [],
   vendors: [],
   channelTypes: [],
   kms: [],
@@ -442,6 +445,13 @@ export function FormModal({
       </Field>
     )
   }
+
+  /** ขนส่งโดย: เก็บชื่อ แต่ละตัวเลือกมีโลโก้หน้าชื่อ (ไม่มีรูป/เปิดไม่ขึ้น ShippingLogo คืน null เอง) */
+  const shippingOptions: SelectOptionItem[] = options.shippings.map((option) => ({
+    value: option.name,
+    label: option.name,
+    icon: <ShippingLogo src={option.logo} alt={option.name} className="size-5" />,
+  }))
 
   /** ผู้ขาย: ป้ายมี code นำหน้า เพราะชื่อผู้ขายซ้ำกันได้ และค้นด้วย code ก็ได้ */
   const vendorOptions: SelectOptionItem[] = options.vendors.map((vendor) => ({
@@ -735,6 +745,8 @@ export function FormModal({
                 <div className="grid gap-4 sm:grid-cols-3">
                   {/* supplier_name พิมพ์เอง — ข้อมูลเดิมเป็นข้อความอิสระ (เช่น "iShopping") ไม่ได้ผูกกับทะเบียนผู้ขาย */}
                   <div className="sm:col-span-2">{text("supplier_name")}</div>
+                  {/* ขนส่งโดย (05/10/2026) — เลือกจากทะเบียน /shipping-get-option เก็บชื่อ แบบเดียวกับ so.shipping_by */}
+                  {select("shipping_by", shippingOptions)}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-3">
                   {num("delivery_fee", { integer: true })}

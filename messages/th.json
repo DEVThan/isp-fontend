@@ -682,6 +682,7 @@
       "vendo_code": "รหัสผู้ขาย",
       "vendor": "ผู้ขาย (Vendor)",
       "shipment_type": "ประเภทการจัดส่ง",
+      "shipping_by": "ขนส่งโดย",
       "delivery_fee": "ค่าจัดส่ง",
       "weight_kg": "น้ำหนัก (กก.)",
       "md_name": "ชื่อ MD",

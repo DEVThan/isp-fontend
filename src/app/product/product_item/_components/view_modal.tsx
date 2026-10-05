@@ -25,6 +25,7 @@ import {
   type ProductItemRow,
 } from "@/app/product/product_item/_components/model"
 import { ProductImage } from "@/app/product/product_item/_components/product_image"
+import { ShippingLogo } from "@/app/product/product_item/_components/shipping_logo"
 import { parseSenderCodes } from "@/app/vendor/vendor_list/_components/model"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -365,6 +366,21 @@ export function ViewModal({
                     </div>
                     <Item label={tcol("supplier_name")}>{show(item.supplier_name)}</Item>
                     <Item label={tcol("shipment_type")}>{show(item.shipment_type)}</Item>
+                    {/* ขนส่งโดย — โลโก้จับคู่ด้วยชื่อกับ /shipping-get-option (ตัวเลือกยังไม่มา/ไม่มีโลโก้ ก็โชว์แค่ชื่อ) */}
+                    <Item label={tcol("shipping_by")}>
+                      {item.shipping_by ? (
+                        <span className="inline-flex items-center gap-2">
+                          <ShippingLogo
+                            src={options?.shippings.find((option) => option.name === item.shipping_by)?.logo}
+                            alt={item.shipping_by}
+                            className="size-5"
+                          />
+                          {item.shipping_by}
+                        </span>
+                      ) : (
+                        show(item.shipping_by)
+                      )}
+                    </Item>
                     <Item label={tcol("delivery_fee")} numeric>
                       {num(item.delivery_fee, { integer: true })}
                     </Item>
