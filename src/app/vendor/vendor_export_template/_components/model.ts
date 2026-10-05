@@ -24,6 +24,8 @@ export type VendorExportTemplate = {
   detail: string | null
   /** ไฟล์ Excel ที่อัปโหลดไว้ — /uploads/vendor_export_template/{id}/template/{ชื่อไฟล์} · "" คือยังไม่มีไฟล์ */
   path: string | null
+  /** ประเภทการจัดส่ง (เพิ่ม 2026-10-05) — "ชื่อ" จาก /status-shiptmenttype-get-option · null = ยังไม่ระบุ */
+  shipment_type: string | null
   active_status: string
   /** ชีต / แถวหัวตาราง ที่จับคู่คอลัมน์ไว้ — null = ยังไม่ได้จับคู่ (อัปโหลดไฟล์ใหม่ล้างทิ้ง) */
   sheet: string | null
@@ -56,6 +58,9 @@ export type VendorExportTemplateOption = {
   path: string | null
 }
 
+/** ตัวเลือกประเภทการจัดส่งจาก /status-shiptmenttype-get-option — เทมเพลตเก็บ "ชื่อ" */
+export type ShipmentTypeOption = { id: number; name: string }
+
 /** ปุ่มไหนเป็นคนเปิดฟอร์ม — ค่าเดียวกับ action ที่ POST /api/web/vendor-export-template-action รับ */
 export type VendorExportTemplateFormMode = "add" | "edit"
 
@@ -65,6 +70,8 @@ export type VendorExportTemplateFormValues = {
   name: string
   detail: string
   path: string
+  /** ชื่อประเภทการจัดส่ง — "" = ไม่ระบุ (API เก็บเป็น NULL) */
+  shipment_type: string
   active_status: string
 }
 

@@ -15,6 +15,7 @@ import {
 import { useTranslations } from "next-intl"
 
 import {
+  getShipmentTypeOptions,
   getVendorExportTemplates,
   TEMPLATE_PAGE_SIZE,
 } from "@/app/vendor/vendor_export_template/_components/api"
@@ -49,7 +50,7 @@ import { PageHeader } from "@/components/page-header"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 7
+const COLUMN_COUNT = 8
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -95,6 +96,8 @@ export function Tables() {
   const [nameQuery, setNameQuery] = React.useState("")
   /** null = ไม่กรองสถานะ (ทั้งหมด) */
   const [status, setStatus] = React.useState<string | null>(null)
+  /** ชื่อประเภทการจัดส่ง — null = ไม่กรอง */
+  const [shipmentType, setShipmentType] = React.useState<string | null>(null)
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(TEMPLATE_PAGE_SIZE)
 
@@ -110,6 +113,9 @@ export function Tables() {
     []
   )
 
+  /** เงื่อนไขชุดปัจจุบัน — ที่ที่เปลี่ยนเงื่อนไขเอาไปทับเฉพาะตัวที่เปลี่ยนแล้วส่งเข้า load */
+  const filters = { name: nameQuery, shipmentType, status, page, pageSize }
+
   /**
    * ยิง API ใหม่ทุกครั้งที่เงื่อนไขเปลี่ยน — ค้นหา กรองสถานะ และแบ่งหน้า ทำที่เซิร์ฟเวอร์ทั้งหมด
    * ต้องส่งค่าใหม่เข้ามาเป็น argument เพราะ state ที่เพิ่ง set ยังไม่อัปเดตในรอบนี้
@@ -117,6 +123,7 @@ export function Tables() {
   const load = (
     next: {
       name: string
+      shipmentType: string | null
       status: string | null
       page: number
       pageSize: number
@@ -133,6 +140,7 @@ export function Tables() {
       try {
         const result = await getVendorExportTemplates({
           name: next.name.trim(),
+          shipmentType: next.shipmentType,
           status: next.status,
           page: next.page,
           perPage: next.pageSize,
@@ -159,7 +167,7 @@ export function Tables() {
    * dev (StrictMode) mount ซ้ำ: cleanup ยกเลิกรอบแรกก่อนยิง จึงยิงจริงครั้งเดียว
    */
   React.useEffect(() => {
-    const start = setTimeout(() => load({ name: nameQuery, status, page, pageSize }))
+    const start = setTimeout(() => load(filters))
     return () => clearTimeout(start)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ตั้งใจดึงแค่ตอนเปิดหน้า ที่เหลือ load ถูกเรียกจากตัวกรอง/แบ่งหน้าเอง
   }, [])
@@ -168,6 +176,23 @@ export function Tables() {
     { value: TEMPLATE_ACTIVE, label: tr("active") },
     { value: TEMPLATE_INACTIVE, label: tr("inactive") },
   ]
+
+  /** ตัวเลือกประเภทการจัดส่งของตัวกรอง — ดึงครั้งเดียวหลังหน้าแรกโหลดเสร็จ (ยิงพร้อมรายการแล้วรายการช้าลง)
+   *  value เป็นชื่อ เพราะเทมเพลตเก็บชื่อ */
+  const [shipmentTypeOptions, setShipmentTypeOptions] = React.useState<
+    { value: string; label: string }[]
+  >([])
+  React.useEffect(() => {
+    if (!loaded) return
+    let cancelled = false
+    getShipmentTypeOptions().then((next) => {
+      if (!cancelled)
+        setShipmentTypeOptions(next.map((option) => ({ value: option.name, label: option.name })))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [loaded])
 
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
   const visible = list.vendorexporttemplates
@@ -199,15 +224,29 @@ export function Tables() {
                 const name = event.target.value
                 setNameQuery(name)
                 setPage(1)
-                load(
-                  { name, status, page: 1, pageSize },
-                  SEARCH_DELAY_MS
-                )
+                load({ ...filters, name, page: 1 }, SEARCH_DELAY_MS)
               }}
               placeholder={t("search")}
               className="bg-card/80 focus-visible:border-primary/50 pl-8"
             />
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="filter-shipment_type" className="text-muted-foreground text-xs">
+            {tcol("shipment_type")}
+          </Label>
+          <SelectOption
+            id="filter-shipment_type"
+            options={shipmentTypeOptions}
+            value={shipmentType}
+            onValueChange={(next) => {
+              setShipmentType(next)
+              setPage(1)
+              load({ ...filters, shipmentType: next, page: 1 })
+            }}
+            placeholder={tall("all")}
+            label={tcol("shipment_type")}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="filter-status" className="text-muted-foreground text-xs">
@@ -220,12 +259,7 @@ export function Tables() {
             onValueChange={(next) => {
               setStatus(next)
               setPage(1)
-              load({
-                name: nameQuery,
-                status: next,
-                page: 1,
-                pageSize,
-              })
+              load({ ...filters, status: next, page: 1 })
             }}
             placeholder={tall("all")}
             label={tcol("status")}
@@ -282,6 +316,7 @@ export function Tables() {
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("path")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("mapping")}</TableHead>
+                <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("shipment_type")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("detail")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
                 <TableHead className="w-32 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
@@ -332,6 +367,8 @@ export function Tables() {
                       )
                     ) : null}
                   </TableCell>
+                  {/* ประเภทการจัดส่ง (05/10/2026) — ชื่อจากทะเบียน shiptment_type · ยังไม่ระบุ = ช่องว่าง */}
+                  <TableCell className="pt-1 pb-1 text-muted-foreground">{template.shipment_type}</TableCell>
                   <TableCell className="pt-1 pb-1 text-muted-foreground max-w-[320px] truncate">{template.detail}</TableCell>
                   <TableCell className="pt-1 pb-1">
                     <Badge
@@ -416,22 +453,12 @@ export function Tables() {
           total={list.total}
           onPageChange={(next) => {
             setPage(next)
-            load({
-              name: nameQuery,
-              status,
-              page: next,
-              pageSize,
-            })
+            load({ ...filters, page: next })
           }}
           onPageSizeChange={(size) => {
             setPageSize(size)
             setPage(1)
-            load({
-              name: nameQuery,
-              status,
-              page: 1,
-              pageSize: size,
-            })
+            load({ ...filters, page: 1, pageSize: size })
           }}
         />
       </CardContent>
@@ -447,7 +474,7 @@ export function Tables() {
         // บันทึกเสร็จแล้วดึงข้อมูลหน้าปัจจุบันใหม่ ด้วยเงื่อนไขค้นหา/กรองเดิม
         // มีไฟล์ใหม่ = การจับคู่ถูกล้าง เปิดหน้าจับคู่ต่อให้เลย (หลังฟอร์มปิด ~1.4 วิ)
         onSaved={(saved, fileChanged) => {
-          load({ name: nameQuery, status, page, pageSize })
+          load(filters)
           if (saved && fileChanged) setTimeout(() => setMapping(saved.id), 1500)
         }}
       />
@@ -459,7 +486,7 @@ export function Tables() {
           if (!next) setMapping(null)
         }}
         templateId={mapping ?? undefined}
-        onSaved={() => load({ name: nameQuery, status, page, pageSize })}
+        onSaved={() => load(filters)}
       />
 
       {/* ถามยืนยันก่อนลบ — โหลดตารางใหม่เฉพาะตอนลบสำเร็จเท่านั้น */}
@@ -470,7 +497,7 @@ export function Tables() {
         }}
         template={removing ?? undefined}
         onDeleted={() =>
-          load({ name: nameQuery, status, page, pageSize })
+          load(filters)
         }
       />
     </Card>

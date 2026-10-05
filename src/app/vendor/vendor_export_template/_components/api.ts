@@ -11,6 +11,7 @@ import type {
   VendorExportTemplateFormValues,
   VendorExportTemplateList,
   VendorExportTemplateOption,
+  ShipmentTypeOption,
 } from "@/app/vendor/vendor_export_template/_components/model"
 
 /**
@@ -64,6 +65,8 @@ async function post<T>(path: string, body: unknown): Promise<T | undefined> {
 export type VendorExportTemplateQuery = {
   /** ค้นจาก vendor_export_template.name ฝั่งเซิร์ฟเวอร์ (ilike ไม่สนตัวพิมพ์เล็ก/ใหญ่) — ไม่ส่ง = ไม่กรอง */
   name?: string
+  /** ชื่อประเภทการจัดส่งจาก dropdown — ตรงตัว ไม่สนตัวพิมพ์ · null = ไม่กรอง */
+  shipmentType?: string | null
   /** "active" / "inactive" — null หรือไม่ส่ง = ไม่กรองสถานะ */
   status?: string | null
   page?: number
@@ -85,6 +88,7 @@ export async function getVendorExportTemplates(
       name: query.name ?? "",
       // ไม่ส่ง active_status เลยเมื่อไม่ได้กรอง — ส่งสตริงว่างไปก็ได้ แต่ไม่ส่งอ่านง่ายกว่าตอน debug
       ...(query.status ? { active_status: query.status } : {}),
+      ...(query.shipmentType ? { shipment_type: query.shipmentType } : {}),
       page: query.page ?? 1,
       per_page: query.perPage ?? TEMPLATE_PAGE_SIZE,
     }
@@ -111,6 +115,18 @@ export async function getVendorExportTemplateOptions(): Promise<
       {}
     )) ?? []
   )
+}
+
+/**
+ * POST /api/web/status-shiptmenttype-get-option — ประเภทการจัดส่งที่ active (id + name) ไม่รับพารามิเตอร์
+ * ใช้ทั้งในฟอร์มและตัวกรอง · พังก็คืน [] ช่องนั้นแค่ไม่มีตัวเลือก (ห้าม console.error — dev overlay ขึ้นเต็มจอ)
+ */
+export async function getShipmentTypeOptions(): Promise<ShipmentTypeOption[]> {
+  try {
+    return (await post<ShipmentTypeOption[]>("status-shiptmenttype-get-option", {})) ?? []
+  } catch {
+    return []
+  }
 }
 
 /**

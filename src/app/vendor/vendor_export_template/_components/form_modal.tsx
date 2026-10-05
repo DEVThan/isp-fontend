@@ -5,6 +5,7 @@ import { CircleCheck, LoaderCircle, TriangleAlert } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import {
+  getShipmentTypeOptions,
   saveVendorExportTemplate,
   uploadVendorExportTemplateFile,
 } from "@/app/vendor/vendor_export_template/_components/api"
@@ -13,6 +14,7 @@ import {
   TEMPLATE_ACTIVE,
   TEMPLATE_INACTIVE,
   TEMPLATE_NAME_MAX_LEN,
+  type ShipmentTypeOption,
   type VendorExportTemplate,
   type VendorExportTemplateFormMode,
   type VendorExportTemplateFormValues,
@@ -54,6 +56,7 @@ const emptyValues: VendorExportTemplateFormValues = {
   name: "",
   detail: "",
   path: "",
+  shipment_type: "",
   active_status: TEMPLATE_ACTIVE,
 }
 
@@ -66,6 +69,7 @@ const toValues = (
         // คอลัมน์พวกนี้ nullable ในฐานข้อมูล แต่ฟอร์มถือเป็นสตริงเสมอ
         detail: template.detail ?? "",
         path: template.path ?? "",
+        shipment_type: template.shipment_type ?? "",
         active_status: template.active_status,
       }
     : emptyValues
@@ -139,6 +143,30 @@ export function FormModal({
     { value: TEMPLATE_ACTIVE, label: tr("active") },
     { value: TEMPLATE_INACTIVE, label: tr("inactive") },
   ]
+
+  /** ประเภทการจัดส่ง — ดึงใหม่ทุกครั้งที่เปิดฟอร์ม (ทะเบียนอาจเพิ่ง/ปิดตัวเลือกไป) · ดึงไม่ได้ = ไม่มีตัวเลือก */
+  const [shipmentTypes, setShipmentTypes] = React.useState<ShipmentTypeOption[]>([])
+  React.useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    getShipmentTypeOptions().then((next) => {
+      if (!cancelled) setShipmentTypes(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [open])
+  /** เก็บ "ชื่อ" · ค่าเดิมของแถวที่ไม่อยู่ในทะเบียน (ถูกปิด/สะกดต่าง) เติมต่อท้ายให้เห็น ไม่หายเงียบ ๆ */
+  const shipmentTypeOptions = shipmentTypes.map((option) => ({
+    value: option.name,
+    label: option.name,
+  }))
+  if (
+    values.shipment_type &&
+    !shipmentTypeOptions.some((option) => option.value === values.shipment_type)
+  ) {
+    shipmentTypeOptions.push({ value: values.shipment_type, label: values.shipment_type })
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -250,8 +278,18 @@ export function FormModal({
             onUploadingChange={setUploadingFile}
           />
 
-          {/* สถานะอยู่แถวของตัวเอง — กินช่องเดียวในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง */}
+          {/* ประเภทการจัดส่ง (05/10/2026) + สถานะ อยู่แถวเดียวกัน — คนละช่องในสามช่อง ไม่งั้นกล่องเลือกยืดเต็มความกว้าง */}
           <div className="grid gap-4 sm:grid-cols-3">
+            <Field id="template-shipment_type" label={tcol("shipment_type")}>
+              <SelectOption
+                id="template-shipment_type"
+                options={shipmentTypeOptions}
+                value={values.shipment_type || null}
+                onValueChange={(next) => set("shipment_type", next ?? "")}
+                placeholder="..."
+                label={tcol("shipment_type")}
+              />
+            </Field>
             <Field id="template-status" label={tcol("status")}>
               <SelectOption
                 id="template-status"

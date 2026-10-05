@@ -801,6 +801,7 @@
       "detail": "Detail",
       "status": "Status",
       "mapping": "Column mapping",
+      "shipment_type": "Shipment type",
       "mapped": "Mapped",
       "notMapped": "Not mapped",
       "openMapping": "Map columns"
