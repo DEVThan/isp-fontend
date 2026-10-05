@@ -35,6 +35,7 @@ import {
   PAYMENT_STYLE,
   STATUS_STYLE,
 } from "@/app/sale/so/_components/status_style"
+import { SyncButton } from "@/app/sale/so/_components/sync_button"
 import { ViewModal } from "@/app/sale/so/_components/view_modal"
 import {
   SelectOption,
@@ -499,6 +500,8 @@ export function Tables() {
           >
             <Plus /> {t("add")}
           </Button> */}
+          {/* อัปเดตข้อมูล (05/10/2026) — สั่งงาน sync ผ่าน /so-sync รอจนงานจบ แล้วโหลดตารางใหม่แบบเดียวกับหลังแก้ไขเสร็จ */}
+          <SyncButton onSynced={() => load(filters)} />
         </div>
 
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ

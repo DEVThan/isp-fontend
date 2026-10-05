@@ -1008,6 +1008,17 @@
       "shippingByToggle": "Show the vendor's carriers",
       "senderCode": "Sender code",
       "senderCodeHint": "From the product's sender codes for the chosen carrier"
+    },
+    "sync": {
+      "button": "Update data",
+      "buttonRunning": "Updating…",
+      "running": "Updating data",
+      "runningHint": "Pulling the latest sales orders from the source system. This can take several minutes — the table reloads when it finishes.",
+      "alreadyRunning": "An update is already running — waiting for it to finish",
+      "success": "Data updated",
+      "failed": "Data update failed",
+      "error": "Could not start the update",
+      "timeout": "Timed out waiting — the job may still be running; reload the page later"
     }
   },
   "so_export": {

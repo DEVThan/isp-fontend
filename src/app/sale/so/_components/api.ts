@@ -39,8 +39,13 @@ export const SO_PER_PAGE_MAX = 100
 export const SO_PAGE_SIZE = 30
 
 /** ยิง POST พร้อม body แล้วแกะ envelope มาตรฐานของ /api/web ให้ — ผิดพลาดจะโยน ApiError */
-async function post<T>(path: string, body: unknown): Promise<T | undefined> {
-  const url = `${API_BASE_URL}/${path}`
+async function post<T>(
+  path: string,
+  body: unknown,
+  /** ต้นทางอื่นแทน API_BASE_URL — ใช้กับเส้น sync ที่ไปคนละ API (ดู SO_SYNC_BASE_URL) */
+  baseUrl: string = API_BASE_URL
+): Promise<T | undefined> {
+  const url = `${baseUrl}/${path}`
   let res: Response
 
   try {
@@ -235,4 +240,43 @@ export async function getCustomerOptions(
       tel: byTel ? digits : "",
     })) ?? []
   )
+}
+
+/**
+ * สถานะงาน sync SO บนเครื่อง sync (systemd unit ishopping-sync.service) — ตามที่ /so-sync และ /so-sync-status คืน
+ * state: activating / active = กำลังรัน · inactive = จบแล้ว · failed = พัง · result: success / exit-code ของรอบล่าสุด
+ */
+export type SoSyncState = {
+  state: string | null
+  sub_state: string | null
+  result: string | null
+  exit_status: string | null
+  started_at: string | null
+  finished_at: string | null
+  /** เฉพาะ /so-sync-status — log ท้ายสุดของงาน (อ่านไม่ได้ = []) */
+  log?: string[]
+}
+
+/**
+ * เส้น sync วิ่งไป API production (https://api-isp.softtechnw.com/api/web) ผ่าน rewrite /api/sync/* ใน next.config.ts
+ * — API ในเครื่องไม่มี SO_SYNC_SSH_PASS และ production ไม่เปิด CORS จึงยิงตรงจาก browser ไม่ได้
+ * เปลี่ยนปลายทางได้ด้วย env SO_SYNC_API_BASE_URL (ฝั่งเซิร์ฟเวอร์ ต้อง restart dev server)
+ */
+const SO_SYNC_BASE_URL = "/api/sync"
+
+/** state ที่ถือว่างาน sync ยังไม่จบ — ชุดเดียวกับที่ so_sync.py ใช้กันสั่งซ้ำ */
+export const SO_SYNC_RUNNING = ["activating", "active", "reloading"]
+
+/**
+ * POST /api/web/so-sync — สั่งงาน sync SO (ssh ไปสั่ง systemctl start --no-block) ตอบทันทีที่สั่งได้
+ * งานจริงรันต่อเบื้องหลัง ต้องถาม getSoSyncStatus() ซ้ำจนกว่า state จะไม่อยู่ใน SO_SYNC_RUNNING
+ * กำลังรันอยู่แล้ว API ตอบ 409 (ApiError.code 409) · ssh/sudo ไม่ผ่าน ตอบ 502
+ */
+export async function startSoSync(): Promise<SoSyncState | undefined> {
+  return post<SoSyncState>("so-sync", {}, SO_SYNC_BASE_URL)
+}
+
+/** POST /api/web/so-sync-status — สถานะรอบล่าสุด + log ท้ายสุด */
+export async function getSoSyncStatus(): Promise<SoSyncState | undefined> {
+  return post<SoSyncState>("so-sync-status", {}, SO_SYNC_BASE_URL)
 }
