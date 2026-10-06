@@ -78,7 +78,8 @@
     "sale": "Sale",
     "so": "Sales orders",
     "so_export": "Sales orders export",
-    "export_group": "Export groups"
+    "export_group": "Export groups",
+    "so_update": "SO update"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1224,6 +1225,81 @@
       "total": "Group total",
       "empty": "No sales orders in this group",
       "loadError": "Could not load sales orders"
+    }
+  },
+  "so_update": {
+    "title": "SO update",
+    "description": "Upload an Excel file to update sales order status, payment status or tracking number",
+    "fields": {
+      "status": {
+        "tab": "Order status",
+        "column": "status",
+        "source": "PO status registry",
+        "rule": "Values must match the PO status registry (case-insensitive) — the template has a dropdown",
+        "current": "Current status",
+        "next": "New status"
+      },
+      "is_payment": {
+        "tab": "Payment status",
+        "column": "is_payment",
+        "source": "Payment status registry",
+        "rule": "Values must match the payment status registry (case-insensitive) — the template has a dropdown",
+        "current": "Current payment",
+        "next": "New payment"
+      },
+      "shipping_code": {
+        "tab": "Tracking number",
+        "column": "shipping_code",
+        "source": "Tracking number",
+        "rule": "The tracking number is saved as entered (trimmed) · empty = skipped, the old value is kept",
+        "current": "Current tracking no.",
+        "next": "New tracking no."
+      }
+    },
+    "previewTitle": "File check — {what}",
+    "pickFile": "Choose Excel file",
+    "checking": "Checking file…",
+    "downloadTemplate": "Download template",
+    "fileHint": ".xlsx file with so_code and {column} columns",
+    "headerRow": "header on row {row}",
+    "format": {
+      "title": "File format",
+      "template": "Click “Download template” — the file already has the headers; fill it in and upload it back",
+      "columns": "The first sheet needs a so_code column and a {column} column — other columns are ignored",
+      "match": "Matched by so_code — every line of that order is updated",
+      "limit": "Up to 5,000 rows / 10 MB · checked and previewed first; nothing is saved until you confirm"
+    },
+    "filterAll": "All",
+    "result": {
+      "update": "Will update",
+      "same": "Unchanged",
+      "not_found": "so_code not found",
+      "unknown_value": "Not in registry",
+      "empty_value": "Empty",
+      "duplicate": "Duplicate so_code"
+    },
+    "columns": {
+      "row": "Row",
+      "so_code": "SO no.",
+      "lines": "Lines",
+      "result": "Result"
+    },
+    "duplicateOf": "row {row} is used",
+    "shownOf": "Showing {shown} of {total} rows",
+    "showMore": "Show more",
+    "problemsSkipped": "{count} rows have problems — they will be skipped",
+    "cancel": "Choose another file",
+    "confirm": "Update {count} orders",
+    "nothingToUpdate": "Nothing to update",
+    "applied": "Updated {what} on {so} orders ({lines} lines)",
+    "appliedSkipped": "Skipped {count} rows (data changed after preview, or problems)",
+    "errors": {
+      "title": "Could not complete",
+      "extension": "Only .xlsx / .xlsm files (save .xls as .xlsx first)",
+      "size": "File must not exceed 10 MB",
+      "preview": "Could not check the file",
+      "apply": "Could not update",
+      "template": "Could not download the template"
     }
   },
   "shippings": {
