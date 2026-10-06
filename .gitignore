@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# docker image ที่ save ไว้อัปโหลดขึ้น server (DEPLOY_GUIDE.md ขั้นตอนที่ 2)
+*.tar.gz

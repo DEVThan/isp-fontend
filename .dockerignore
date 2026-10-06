@@ -12,3 +12,5 @@ Dockerfile
 docker-compose*.yml
 .dockerignore
 .claude
+# image ที่ save ไว้ (DEPLOY_GUIDE.md) — ไม่งั้น COPY . . ลากไฟล์ ~70 MB เข้า image รอบถัดไป
+*.tar.gz

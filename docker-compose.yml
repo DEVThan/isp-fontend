@@ -18,7 +18,7 @@ services:
     container_name: isp-web
     restart: unless-stopped
     ports:
-      # ฟังแค่ 127.0.0.1 — ให้ nginx บนเครื่องเป็นคนรับจากข้างนอก (ตั้ง WEB_BIND=0.0.0.0 ถ้าจะเปิดพอร์ตตรง)
-      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3000}:3000"
+      # เครื่อง 203.151.56.169 มี node อื่นใช้ 3000 อยู่ จึงใช้ 3001 · ฟังแค่ 127.0.0.1 — ให้ nginx บนเครื่องเป็นคนรับจากข้างนอก (ตั้ง WEB_BIND=0.0.0.0 ถ้าจะเปิดพอร์ตตรง)
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3001}:3000"
     environment:
       - TZ=Asia/Bangkok
