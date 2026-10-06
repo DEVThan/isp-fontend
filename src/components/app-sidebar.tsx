@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { ChevronRight } from "lucide-react"
 import { useTranslations } from "next-intl"
 
+import { BrandLogo } from "@/components/brand-logo"
 import { NavUser } from "@/components/nav-user"
 import {
   Collapsible,
@@ -31,7 +32,6 @@ import {
 } from "@/components/ui/sidebar"
 import {
   DASHBOARD_ROOT,
-  brand,
   fallbackIcon,
   iconByName,
   isItemActive,
@@ -213,7 +213,6 @@ export function AppSidebar({
   const pathname = usePathname()
   const t = useTranslations("nav")
   const tc = useTranslations("common")
-  const BrandIcon = brand.icon
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -221,9 +220,8 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href={DASHBOARD_ROOT} />}>
-              <div className="from-chart-1 to-chart-5 flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br text-white">
-                <BrandIcon className="size-4" />
-              </div>
+              {/* โลโก้ iShopping (06/10/2026) — แทนไอคอน Router บนพื้นไล่เฉดเดิม */}
+              <BrandLogo className="size-8" />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
                   {tc("appName")}

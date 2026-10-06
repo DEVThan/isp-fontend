@@ -226,10 +226,6 @@ export const fallbackIcon = Circle
 //     .filter((group) => group.items.length > 0)
 // }
 
-export const brand = {
-  icon: Router,
-}
-
 /** เมนูหลักถือว่า active เมื่ออยู่ที่ตัวมันเองหรือหน้าลูก */
 export function isItemActive(item: NavItem, pathname: string) {
   // แดชบอร์ดไม่มีหน้าลูก เทียบตรง ๆ พอ

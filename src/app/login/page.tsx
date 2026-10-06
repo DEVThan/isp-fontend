@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
-import { CreditCard, Activity, Router, Users } from "lucide-react"
+import { CreditCard, Activity, Users } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 
+import { BrandLogo } from "@/components/brand-logo"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { Card, CardContent } from "@/components/ui/card"
 import { LoginForm } from "@/app/login/components/login-form"
@@ -36,9 +37,7 @@ export default async function LoginPage() {
         />
 
         <div className="relative flex items-center gap-3">
-          <div className="from-chart-1 to-chart-5 flex size-10 items-center justify-center rounded-xl bg-gradient-to-br text-white">
-            <Router className="size-5" />
-          </div>
+          <BrandLogo className="size-10 rounded-xl" />
           <div className="leading-tight">
             <p className="font-semibold text-white">{tc("appName")}</p>
             <p className="text-xs opacity-70">{tc("appSubtitle")}</p>
@@ -76,9 +75,7 @@ export default async function LoginPage() {
         <div className="mx-auto w-full max-w-sm space-y-8">
           {/* โลโก้โผล่เฉพาะจอเล็กที่ไม่มีแผงซ้าย */}
           <div className="flex items-center gap-3 lg:hidden">
-            <div className="from-chart-1 to-chart-5 flex size-10 items-center justify-center rounded-xl bg-gradient-to-br text-white">
-              <Router className="size-5" />
-            </div>
+            <BrandLogo className="size-10 rounded-xl" />
             <div className="leading-tight">
               <p className="font-semibold">{tc("appName")}</p>
               <p className="text-muted-foreground text-xs">
