@@ -95,6 +95,35 @@
       "downFromLastMonth": "ลดลงจากเดือนก่อน",
       "openOver24h": "เปิดค้างเกิน 24 ชม."
     },
+    "month": {
+      "vsSamePeriod": "เทียบช่วงเดียวกันเดือนก่อน ({value})",
+      "prevTotal": "{month} ทั้งเดือน {value}",
+      "loadError": "ดึงข้อมูลไม่สำเร็จ"
+    },
+    "soMonth": {
+      "label": "ใบสั่งขายเดือนนี้",
+      "unit": "ใบ",
+      "lines": "{lines} ใบสั่งขาย",
+      "total": "รวม",
+      "cancelled": "ยกเลิก",
+      "net": "สุทธิ"
+    },
+    "revenueMonth": {
+      "label": "รายได้เดือนนี้",
+      "orders": "จาก {count} ใบ (ไม่นับยกเลิก)"
+    },
+    "completedMonth": {
+      "label": "สำเร็จเดือนนี้",
+      "unit": "ใบ",
+      "amount": "ยอดเงิน",
+      "prevAmount": "เดือนก่อนสำเร็จ {value}"
+    },
+    "cancelledMonth": {
+      "label": "ยกเลิกเดือนนี้",
+      "unit": "ใบ",
+      "amount": "ยอดเงิน",
+      "prevAmount": "เดือนก่อนยกเลิก {value}"
+    },
     "traffic": {
       "title": "ปริมาณทราฟฟิกวันนี้",
       "description": "หน่วย Gbps · พีคสูงสุด {peak} Gbps เวลา {hour}:00"

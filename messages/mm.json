@@ -95,6 +95,35 @@
       "downFromLastMonth": "ယခင်လထက် ကျဆင်း",
       "openOver24h": "24 နာရီကျော် ဖွင့်ထားသည်"
     },
+    "month": {
+      "vsSamePeriod": "ယမန်လ တူညီသောကာလနှင့် နှိုင်းယှဉ် ({value})",
+      "prevTotal": "{month} စုစုပေါင်း {value}",
+      "loadError": "ဒေတာ ရယူ၍ မရပါ"
+    },
+    "soMonth": {
+      "label": "ယခုလ အရောင်းအော်ဒါ",
+      "unit": "ခု",
+      "lines": "အရောင်းအော်ဒါ {lines} တန်း",
+      "total": "စုစုပေါင်း",
+      "cancelled": "ပယ်ဖျက်",
+      "net": "အသားတင်"
+    },
+    "revenueMonth": {
+      "label": "ယခုလ ဝင်ငွေ",
+      "orders": "အော်ဒါ {count} ခုမှ (ပယ်ဖျက်ထားသည်များ မပါ)"
+    },
+    "completedMonth": {
+      "label": "ယခုလ ပြီးစီး",
+      "unit": "ခု",
+      "amount": "ပမာဏ",
+      "prevAmount": "ယမန်လ ပြီးစီး {value}"
+    },
+    "cancelledMonth": {
+      "label": "ယခုလ ပယ်ဖျက်",
+      "unit": "ခု",
+      "amount": "ပမာဏ",
+      "prevAmount": "ယမန်လ ပယ်ဖျက် {value}"
+    },
     "traffic": {
       "title": "ယနေ့ ဒေတာသွားလာမှု",
       "description": "Gbps ဖြင့် · အမြင့်ဆုံး {peak} Gbps ({hour}:00 နာရီ)"

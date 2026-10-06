@@ -2,9 +2,12 @@ import Link from "next/link"
 import { ArrowRight, Download, Plus } from "lucide-react"
 import { getLocale, getTranslations } from "next-intl/server"
 
+import { CancelledMonthCard } from "@/app/dashboard/_components/cancelled_month_card"
+import { CompletedMonthCard } from "@/app/dashboard/_components/completed_month_card"
+import { RevenueMonthCard } from "@/app/dashboard/_components/revenue_month_card"
+import { SoMonthCard } from "@/app/dashboard/_components/so_month_card"
 import { PackageMix } from "@/components/package-mix"
 import { PageHeader } from "@/components/page-header"
-import { StatCard } from "@/components/stat-card"
 import { StatusBadge } from "@/components/status-badge"
 import { TrafficChart } from "@/components/traffic-chart"
 import { Button } from "@/components/ui/button"
@@ -23,45 +26,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatTHB, invoices, stats, tickets, traffic } from "@/lib/mock-data"
-import { intlLocale } from "@/i18n/config"
+import { formatTHB, invoices, tickets, traffic } from "@/lib/mock-data"
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard")
   const ti = await getTranslations("invoices.columns")
   const tc = await getTranslations("common")
   const locale = await getLocale()
-  const nf = new Intl.NumberFormat(intlLocale(locale))
 
   return (
     <>
       <PageHeader title={t("title")} description={t("description")}>
-        <Button variant="outline">
+        {/* <Button variant="outline">
           <Download />
           {t("exportReport")}
         </Button>
         <Button>
           <Plus />
           {t("addCustomer")}
-        </Button>
+        </Button> */}
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard
-            key={stat.labelKey}
-            label={t(`stats.${stat.labelKey}`)}
-            value={
-              stat.format === "currency"
-                ? formatTHB(stat.value, locale)
-                : nf.format(stat.value)
-            }
-            delta={stat.delta}
-            trend={stat.trend}
-            hint={t(`stats.${stat.hintKey}`)}
-            tone={stat.tone}
-          />
-        ))}
+        {/* ข้อมูลจริง ดึงเองใน component (06/10/2026): ใบสั่งขายเดือนนี้ แทน "ลูกค้าทั้งหมด" ·
+            รายได้เดือนนี้ = sum(so.pay_amount) แทนตัวอย่างเดิม — ทั้ง 4 card เป็นข้อมูลจริงแล้ว */}
+        <SoMonthCard />
+        <RevenueMonthCard />
+        {/* สำเร็จเดือนนี้ (ลูกค้าได้รับสินค้าแล้ว) — ข้อมูลจริง (06/10/2026 แทน "ค้างชำระ" ตัวอย่างใบสุดท้าย) */}
+        <CompletedMonthCard />
+        {/* ยกเลิกเดือนนี้ — ข้อมูลจริง (06/10/2026 แทน "งานแจ้งซ่อมค้าง") */}
+        <CancelledMonthCard />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

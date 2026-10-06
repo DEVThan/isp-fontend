@@ -63,6 +63,7 @@ export type StatTone = "info" | "success" | "warning" | "danger"
 /** คีย์ใต้ "dashboard.stats" — พิมพ์ผิดแล้วไม่ compile */
 type StatKey = keyof Messages["dashboard"]["stats"]
 
+/** ไม่ได้แสดงแล้ว (06/10/2026) — แถวบนของ dashboard เป็นข้อมูลจริงครบ 4 card (app/dashboard/_components) เก็บไว้เป็นตัวอย่าง */
 export const stats: {
   labelKey: StatKey
   value: number
@@ -72,10 +73,10 @@ export const stats: {
   hintKey: StatKey
   tone: StatTone
 }[] = [
-  { labelKey: "customers", value: 1284, format: "number", delta: "+4.2%", trend: "up", hintKey: "vsLastMonth", tone: "info" },
-  { labelKey: "revenue", value: 1842300, format: "currency", delta: "+8.1%", trend: "up", hintKey: "vsLastMonth", tone: "success" },
+  // "customers" ถูกแทนด้วย SoMonthCard (ข้อมูลจริง จำนวน SO เดือนนี้) — 06/10/2026
+  // "revenue" ถูกแทนด้วย RevenueMonthCard (ข้อมูลจริง sum(so.pay_amount) เดือนนี้) — 06/10/2026
   { labelKey: "outstanding", value: 96400, format: "currency", delta: "-2.4%", trend: "down", hintKey: "downFromLastMonth", tone: "warning" },
-  { labelKey: "openTickets", value: 23, format: "number", delta: "+5", trend: "up", hintKey: "openOver24h", tone: "danger" },
+  // "openTickets" ถูกแทนด้วย CancelledMonthCard (ข้อมูลจริง ใบสั่งขายยกเลิกเดือนนี้) — 06/10/2026
 ]
 
 /** สัดส่วนลูกค้าตามแพ็กเกจ — ใช้สีชุดกราฟตามลำดับสล็อต */

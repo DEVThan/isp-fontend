@@ -95,6 +95,35 @@
       "downFromLastMonth": "down from last month",
       "openOver24h": "open for over 24h"
     },
+    "month": {
+      "vsSamePeriod": "vs same period last month ({value})",
+      "prevTotal": "{month}: {value} in total",
+      "loadError": "Could not load data"
+    },
+    "soMonth": {
+      "label": "Sales orders this month",
+      "unit": "orders",
+      "lines": "{lines} sales order rows",
+      "total": "Total",
+      "cancelled": "Cancelled",
+      "net": "Net"
+    },
+    "revenueMonth": {
+      "label": "Revenue this month",
+      "orders": "from {count} orders (excl. cancelled)"
+    },
+    "completedMonth": {
+      "label": "Completed this month",
+      "unit": "orders",
+      "amount": "Amount",
+      "prevAmount": "last month completed {value}"
+    },
+    "cancelledMonth": {
+      "label": "Cancelled this month",
+      "unit": "orders",
+      "amount": "Amount",
+      "prevAmount": "last month cancelled {value}"
+    },
     "traffic": {
       "title": "Traffic today",
       "description": "In Gbps · peak {peak} Gbps at {hour}:00"
