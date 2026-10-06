@@ -25,6 +25,8 @@
 ssh SOFTTECH@203.151.56.169
 uname -m              # x86_64 = ใช้ --platform linux/amd64 ตามขั้นตอนที่ 1 · aarch64 = เปลี่ยนเป็น linux/arm64
 docker --version      # ไม่มี → ติดตั้ง: curl -fsSL https://get.docker.com | sudo sh
+systemctl is-enabled docker containerd    # ต้อง enabled ทั้งคู่ (ไม่งั้น reboot แล้ว container ไม่กลับมา)
+                                          # disabled → sudo systemctl enable docker containerd
 sudo ss -ltnp | grep ':3001 '   # ต้องว่าง — ไม่ว่าง ให้ใช้เลขอื่น แล้วแก้ทั้งขั้นตอนที่ 4 และ proxy_pass ในขั้นตอนที่ 6
                                 # (3000 ไม่ว่าง: node /root/… ของ root ใช้อยู่ — อย่าหยุดมัน)
 ```
@@ -87,13 +89,20 @@ sudo docker rm -f isp-web
 # Start container ใหม่ — ฟังแค่ 127.0.0.1 ให้ nginx เป็นคนรับจากข้างนอก
 sudo docker run -d --name isp-web --restart unless-stopped \
   -p 127.0.0.1:3001:3000 -e TZ=Asia/Bangkok \
+  --add-host api-isp.softtechnw.com:host-gateway \
   isp-web
+# --add-host: เครื่องนี้เรียกโดเมนของตัวเองผ่าน IP สาธารณะไม่ได้ (ไม่มี hairpin NAT — request ค้าง)
+# ให้ container วิ่งเข้า nginx ของเครื่องตรง ๆ แทน — ไม่ใส่ = หน้าเว็บเปิดได้แต่ login/โหลดข้อมูลค้าง
 
 # เช็คว่าทำงาน
 sudo docker ps | grep isp-web
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3001/login    # ต้องได้ 200
+sudo docker exec isp-web wget -qO- -T 10 https://api-isp.softtechnw.com/api/web/ping; echo   # ต้องได้ "db":true
 sudo docker ps -a --filter name=isp-web --format '{{.Status}}  {{.Ports}}'   # ต้องเป็น Up — ค้างที่ Created = start ไม่ได้ (มักเป็นพอร์ตชน)
 sudo docker logs --tail 50 isp-web
+
+# server reboot แล้วกลับมาเองไหม — ต้องได้ unless-stopped (กลับมาเอง ยกเว้นเคยสั่ง docker stop ไว้ก่อน reboot)
+sudo docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' isp-web
 
 # ลบ image เก่าที่ไม่ใช้แล้ว (ไม่บังคับ)
 # sudo docker image prune -f
@@ -186,9 +195,59 @@ curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: isp.softtechnw.com' http://12
 
 ```bash
 sudo certbot --nginx -d isp.softtechnw.com      # ถามเรื่อง redirect → เลือก redirect
-sudo certbot renew --dry-run                    # เช็คว่าต่ออายุอัตโนมัติได้
+sudo certbot renew --dry-run                    # จำลองการต่ออายุ (บนเครื่องนี้ดู ⚠️ ข้างล่าง)
 # เปิดในเบราว์เซอร์: https://isp.softtechnw.com
 ```
+
+### ต่ออายุ SSL อัตโนมัติ — 🖥️ Server
+
+ใบรับรอง Let's Encrypt อายุ **90 วัน** · certbot ต่อให้เองเมื่อเหลือ **ไม่ถึง 30 วัน** — ไม่ต้องทำอะไรประจำ
+แค่เช็คครั้งแรกว่ากลไก 3 ส่วนนี้พร้อม (เครื่องนี้พร้อมแล้ว ณ 06/10/2026):
+
+**1) ตัวตั้งเวลา (timer) ต้องทำงานอยู่** — รันวันละ 2 ครั้ง
+
+```bash
+systemctl list-timers | grep -i certbot
+# ต้องเห็น certbot.timer (ติดตั้งผ่าน apt) หรือ snap.certbot.renew.timer (ติดตั้งผ่าน snap)
+# ไม่เห็นเลย → sudo systemctl enable --now certbot.timer
+```
+
+**2) ไฟล์ต่ออายุของโดเมนต้องเป็นแบบ nginx** — certbot จะ reload nginx ให้เองหลังได้ใบใหม่
+
+```bash
+sudo grep -E '^(authenticator|installer|account)' /etc/letsencrypt/renewal/isp.softtechnw.com.conf
+# ต้องได้ authenticator = nginx · installer = nginx · account = <รหัส>
+```
+
+**3) (แนะนำ) hook reload nginx กันพลาด** — ทำครั้งเดียว ใช้กับทุกโดเมนบนเครื่อง
+
+```bash
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh > /dev/null <<'EOF'
+#!/bin/sh
+# ได้ใบรับรองใหม่แล้ว reload nginx ให้ใช้ใบใหม่ทันที (รันเฉพาะตอนต่ออายุสำเร็จ)
+nginx -t && systemctl reload nginx
+EOF
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+```
+
+**ดูวันหมดอายุ / ตรวจภายหลัง**
+
+```bash
+sudo certbot certificates 2>/dev/null | grep -A1 'isp.softtechnw.com' | grep Expiry   # VALID: xx days
+journalctl -u certbot.service --since '-7 days' --no-pager | tail -20                # ผลการต่ออายุรอบล่าสุด
+echo | openssl s_client -connect isp.softtechnw.com:443 -servername isp.softtechnw.com 2>/dev/null \
+  | openssl x509 -noout -enddate                                                      # วันหมดอายุของใบที่ nginx ใช้จริง
+```
+
+**ต่ออายุเองทันที (กรณีฉุกเฉิน)** — ใช้ server จริง ไม่ใช่ dry-run
+
+```bash
+sudo certbot renew --cert-name isp.softtechnw.com --force-renewal
+```
+
+> ⚠️ ห้ามรัน `--force-renewal` ถี่ ๆ — Let's Encrypt จำกัด 5 ใบ/โดเมนเดียวกัน/สัปดาห์
+> ⚠️ `certbot renew --dry-run` บนเครื่องนี้ขึ้น `Please choose an account` — **ไม่ใช่ปัญหาจริง** (ดูตารางแก้ปัญหา)
+> ℹ️ Let's Encrypt เลิกส่งอีเมลเตือนใกล้หมดอายุแล้ว (ตั้งแต่ปี 2025) — ถ้าอยากได้การแจ้งเตือน ให้ใช้บริการตรวจ SSL ภายนอก
 
 ---
 
@@ -200,6 +259,7 @@ sudo certbot renew --dry-run                    # เช็คว่าต่อ
 
 | อาการ | ดูที่ |
 |---|---|
+| หน้าเว็บเปิดได้ แต่ login ค้าง / ข้อมูลไม่ขึ้น | container เรียก API ไม่ถึง (เรียกโดเมนตัวเองแล้ววนกลับไม่ได้) → รันใหม่พร้อม `--add-host api-isp.softtechnw.com:host-gateway` (ขั้นตอนที่ 4) · เช็คด้วย `sudo docker exec isp-web wget -qO- -T 10 https://api-isp.softtechnw.com/api/web/ping` |
 | เปิดหน้าเว็บได้ 502 Bad Gateway | container ไม่รัน → `sudo docker ps -a` / `sudo docker logs isp-web` |
 | login ไม่ได้ / ข้อมูลไม่ขึ้น | API → `curl https://api-isp.softtechnw.com/api/web/ping` ต้องได้ `"db":true` |
 | รูป/โลโก้ไม่ขึ้น, export ด้วยเทมเพลตพัง | ยังไม่ได้ทำขั้นตอนที่ 5 |
