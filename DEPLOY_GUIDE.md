@@ -204,4 +204,5 @@ sudo certbot renew --dry-run                    # เช็คว่าต่อ
 | login ไม่ได้ / ข้อมูลไม่ขึ้น | API → `curl https://api-isp.softtechnw.com/api/web/ping` ต้องได้ `"db":true` |
 | รูป/โลโก้ไม่ขึ้น, export ด้วยเทมเพลตพัง | ยังไม่ได้ทำขั้นตอนที่ 5 |
 | ปุ่ม "อัปเดตข้อมูล" (so) ขึ้น `SO_SYNC_SSH_PASS is not set` | ค่า `SO_SYNC_*` ใน `/opt/api-isp-crm/.env` ของ API |
+| `certbot renew --dry-run` ขึ้น `Please choose an account` | **ไม่ใช่ปัญหาจริง** — dry-run ใช้บัญชีของ server ทดสอบ (`/etc/letsencrypt/accounts/acme-staging-v02…` มี 2 บัญชี) · การต่ออายุจริงใช้ `account =` ในแต่ละไฟล์ `/etc/letsencrypt/renewal/*.conf` · เช็คว่า `systemctl list-timers \| grep certbot` ยังมีอยู่ก็พอ |
 | หน้าเว็บยังเรียก localhost:8081 | image build ผิดที่ — ต้อง build ด้วย `docker build` (ขั้นตอนที่ 1) ไม่ใช่ `npm run build` บนเครื่อง dev |
