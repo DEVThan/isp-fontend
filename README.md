@@ -11,6 +11,21 @@ npm run build    # production build
 npm run lint
 ```
 
+## Deploy ด้วย Docker
+
+```bash
+git pull
+cp .env.docker.example .env      # ครั้งแรกเท่านั้น — แก้ปลายทาง API / พอร์ตตามเครื่อง
+docker compose up -d --build     # build + รัน (container: isp-web, ฟังที่ 127.0.0.1:3000)
+docker compose logs -f web
+```
+
+- ใช้ `output: "standalone"` — image มีแค่ `server.js` + ไฟล์ที่ใช้จริง (~55 MB ไม่รวม node)
+- ปลายทาง API: **dev** อ่าน `.env.local` ของเครื่อง (localhost:8081) · **production** อ่าน `.env.production` ที่ commit ไว้ (`https://api-isp.softtechnw.com/api/web`)
+- **ปลายทาง API ถูกฝังตอน build** (rewrites ใน `next.config.ts`) — แก้ค่าแล้วต้อง `--build` ใหม่ · ทับเฉพาะเครื่องได้ด้วย `.env` ของ docker compose
+- container ฟังแค่ `127.0.0.1` — ให้ nginx บนเครื่อง proxy โดเมนมาที่ `http://127.0.0.1:3000`
+- รูป/โลโก้/ไฟล์เทมเพลต Excel อยู่ที่ API (`/uploads/*` ถูกส่งต่อไป API) ไม่ได้อยู่ใน image นี้
+
 ## โครงสร้าง
 
 ```

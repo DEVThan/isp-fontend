@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+.DS_Store
+*.tsbuildinfo
+npm-debug.log*
+# env ในเครื่อง (.env.local ชี้ localhost:8081) ห้ามหลุดเข้า image — ใช้ .env.production ที่ commit ไว้แทน
+.env*
+!.env.production
+Dockerfile
+docker-compose*.yml
+.dockerignore
+.claude

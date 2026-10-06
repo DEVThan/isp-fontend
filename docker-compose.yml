@@ -1,0 +1,24 @@
+# docker-compose.yml — หน้าเว็บ ISP
+#
+#   docker compose up -d --build     build + รัน (ครั้งแรก / หลัง git pull / หลังเปลี่ยนปลายทาง API)
+#   docker compose logs -f web       ดู log
+#   docker compose down              หยุด
+#
+# ปลายทาง API มาจาก .env.production (https://api-isp.softtechnw.com/api/web)
+# ค่าเฉพาะเครื่อง (พอร์ต / ทับปลายทาง API) ใส่ในไฟล์ .env ข้าง ๆ ไฟล์นี้ (ดู .env.docker.example)
+services:
+  web:
+    build:
+      context: .
+      args:
+        # ว่าง = ใช้ .env.production · ถูกฝังตอน build แก้แล้วต้อง --build ใหม่
+        API_BASE_URL: ${API_BASE_URL:-}
+        SO_SYNC_API_BASE_URL: ${SO_SYNC_API_BASE_URL:-}
+    image: isp-web
+    container_name: isp-web
+    restart: unless-stopped
+    ports:
+      # ฟังแค่ 127.0.0.1 — ให้ nginx บนเครื่องเป็นคนรับจากข้างนอก (ตั้ง WEB_BIND=0.0.0.0 ถ้าจะเปิดพอร์ตตรง)
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3000}:3000"
+    environment:
+      - TZ=Asia/Bangkok

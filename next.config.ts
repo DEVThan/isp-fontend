@@ -2,12 +2,16 @@ import path from "node:path";
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
 
-/** ที่อยู่จริงของ Flask API — อ่านฝั่งเซิร์ฟเวอร์เท่านั้น ไม่หลุดไป browser */
+/**
+ * ที่อยู่จริงของ Flask API — อ่านฝั่งเซิร์ฟเวอร์เท่านั้น ไม่หลุดไป browser
+ * dev: จาก .env.local ของเครื่อง (ปกติ localhost:8081) · production (build/Docker): จาก .env.production (api-isp.softtechnw.com)
+ */
 const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:8081/api/web";
 
 /**
  * API ที่ปุ่ม "อัปเดตข้อมูล" ของหน้า so ใช้ (/so-sync, /so-sync-status) — แยกจาก API_BASE_URL (05/10/2026)
- * ค่าเริ่มต้นเป็น API production ที่ตั้ง SO_SYNC_* ไว้แล้ว (API ในเครื่องที่รันด้วย run_remote.sh ไม่มีรหัส ssh)
+ * ไม่ตั้งไว้ = API production แม้ตอน dev (API ในเครื่องที่รันด้วย run_remote.sh ไม่มีรหัส ssh ของเครื่อง sync)
+ * จะให้ dev ยิงเครื่องตัวเองก็ใส่ SO_SYNC_API_BASE_URL ใน .env.local
  */
 const syncApiBaseUrl =
   process.env.SO_SYNC_API_BASE_URL ?? "https://api-isp.softtechnw.com/api/web";
@@ -16,6 +20,13 @@ const syncApiBaseUrl =
 const apiOrigin = apiBaseUrl.replace(/\/api\/web\/?$/, "");
 
 const nextConfig: NextConfig = {
+  /**
+   * docker (06/10/2026): ได้ .next/standalone ที่มี server.js + node_modules เท่าที่ใช้ — image ไม่ต้องลง node_modules ทั้งก้อน
+   * ระวัง: next.config ถูกอ่านตอน build แล้วฝังลง output — ปลายทาง rewrites ข้างล่าง (API_BASE_URL / SO_SYNC_API_BASE_URL)
+   * มาจาก .env.production ตอน build · เปลี่ยน env ตอนรัน container อย่างเดียวไม่พอ ต้อง build ใหม่
+   */
+  output: "standalone",
+
   // ปักหมุด root ไว้ที่โปรเจกต์นี้ กัน Turbopack ไปหยิบ lockfile จากโฟลเดอร์แม่
   turbopack: {
     root: path.resolve(import.meta.dirname),
