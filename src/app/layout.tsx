@@ -9,13 +9,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 // ฟอนต์ตามภาษา — Noto Sans Thai ไม่มีอักษรพม่า จึงต้องสลับทั้งชุดเมื่อเลือกภาษาเมียนมา
+// ตัวแปรแยกชื่อกัน แล้วให้ globals.css เลือกเป็น --font-app ตาม <html lang> (:lang(my)) — ดูเหตุผลที่ <html className> ข้างล่าง
 const thaiSans = Noto_Sans_Thai({
-  variable: "--font-sans",
+  variable: "--font-thai",
   subsets: ["thai", "latin"],
 });
 
 const myanmarSans = Noto_Sans_Myanmar({
-  variable: "--font-sans",
+  variable: "--font-myanmar",
   subsets: ["myanmar", "latin"],
 });
 
@@ -39,14 +40,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // ภาษามาจาก cookie ไม่ใช่ URL — ดู src/i18n/locale.ts
   const locale = await getLocale();
-  // เทียบจาก bcp47 ไม่ใช่ literal "mm" — จะได้ไม่พังตอนปิด/เปิดภาษาพม่าใน locales
-  const sans = bcp47[locale] === "my" ? myanmarSans : thaiSans;
-
   return (
+    // className ของ <html> ต้องเหมือนเดิมทุกภาษา: next-themes ใส่ class "dark" ที่ <html> เองฝั่ง browser
+    // ถ้า className เปลี่ยนตอนเปลี่ยนภาษา (router.refresh) React จะเขียนทับทั้งก้อน แล้ว "dark" หาย
+    // (08/10/2026 เปลี่ยนเป็นพม่าแล้วกลายเป็นโหมดสว่าง) — ฟอนต์จึงสลับด้วย lang ใน CSS แทนการสลับ class
     <html
       lang={bcp47[locale]}
       suppressHydrationWarning
-      className={`${sans.variable} ${mono.variable} h-full antialiased`}
+      className={`${thaiSans.variable} ${myanmarSans.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>

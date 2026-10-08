@@ -80,21 +80,23 @@ export function SoTodayChart() {
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        <CardTitle>
+      {/* หัว card เป็น flex-wrap (ไม่ใช่ grid ของ CardHeader): ที่ไม่พอ (มือถือ) ตัวเลือกวันลงบรรทัดใหม่เอง
+          คำอธิบายเต็มความกว้างบรรทัดสุดท้ายเสมอ ไม่ถูกบีบข้างปุ่ม */}
+      <CardHeader className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <CardTitle className="min-w-40 flex-1">
           {date ? t("titleDay") : t("title")}
           {stats ? (
             <span className="text-muted-foreground font-normal"> · {dayLabel(stats.today)}</span>
           ) : null}
         </CardTitle>
-        <CardAction>
+        <CardAction className="shrink-0">
           {shown ? (
             <DayPicker value={shown} onChange={changeDate} />
           ) : failed ? null : (
             <Skeleton className="h-8 w-44" />
           )}
         </CardAction>
-        <CardDescription>
+        <CardDescription className="order-last basis-full">
           {stats ? (
             peakHour >= 0 ? (
               t("description", {

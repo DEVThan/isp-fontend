@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-app);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-app);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-active: var(--sidebar-active);
   --color-sidebar-border: var(--sidebar-border);
@@ -180,6 +180,14 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* ฟอนต์ตามภาษา: --font-thai / --font-myanmar มาจาก next/font ใน layout.tsx (ใส่ทั้งคู่ที่ <html> เสมอ)
+     เลือกด้วย lang แทนการสลับ class ของ <html> — ไม่งั้นตอนเปลี่ยนภาษา class "dark" ของ next-themes ถูกเขียนทับหาย */
+  :root {
+    --font-app: var(--font-thai);
+  }
+  :root:lang(my) {
+    --font-app: var(--font-myanmar);
   }
   html {
     @apply font-sans;

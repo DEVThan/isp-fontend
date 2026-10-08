@@ -73,9 +73,11 @@ export function TopChannelsCard() {
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        <CardTitle>{date ? t("titleDay") : t("title")}</CardTitle>
-        <CardDescription>
+      {/* หัว card เป็น flex-wrap (ไม่ใช่ grid ของ CardHeader): ที่ไม่พอ (มือถือ) ตัวเลือกวันลงบรรทัดใหม่เอง
+          คำอธิบายเต็มความกว้างบรรทัดสุดท้ายเสมอ ไม่ถูกบีบข้างปุ่ม */}
+      <CardHeader className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <CardTitle className="min-w-40 flex-1">{date ? t("titleDay") : t("title")}</CardTitle>
+        <CardDescription className="order-last basis-full">
           {stats ? (
             stats.channels.length ? (
               t("description", {
@@ -94,7 +96,7 @@ export function TopChannelsCard() {
             <Skeleton className="h-4 w-48" />
           )}
         </CardDescription>
-        <CardAction>
+        <CardAction className="shrink-0">
           {shown ? (
             <DayPicker value={shown} onChange={changeDate} />
           ) : failed ? null : (

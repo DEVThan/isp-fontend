@@ -39,7 +39,7 @@ export default async function DashboardPage() {
         <CancelledMonthCard />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
         <div className="lg:col-span-2">
           {/* ใบสั่งขายวันนี้แยกรายชั่วโมง (po_date) — ข้อมูลจริง (08/10/2026 แทน "ปริมาณทราฟฟิกวันนี้" ตัวอย่าง) */}
           <SoTodayChart />
@@ -48,7 +48,9 @@ export default async function DashboardPage() {
         <TopItemsCard />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* [&>*]:min-w-0: ช่อง grid ปกติไม่ยอมแคบกว่าเนื้อหา — ตารางช่องทางบนมือถือจะดันทั้งหน้าให้กว้างเกินจอ
+          ใส่แล้วตาราง (overflow-x-auto ใน Table) เลื่อนซ้ายขวาในตัว card แทน · ใส่ทั้งสองแถวกันกรณีเดียวกัน */}
+      <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
         {/* ช่องทาง (broadcast) ขายดี 5 อันดับ (group so.channel) เลือกวันได้ — ข้อมูลจริง (08/10/2026 แทน "ใบแจ้งหนี้ล่าสุด" ตัวอย่าง) */}
         <div className="lg:col-span-2">
           <TopChannelsCard />

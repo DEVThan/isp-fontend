@@ -151,7 +151,9 @@
       "empty": "No products sold on this day",
       "unit": "pcs",
       "detail": "{orders} orders · {items} products",
-      "share": "Share of the day's units"
+      "share": "Share of the day's units",
+      "other": "Other",
+      "otherDetail": "{types} types"
     },
     "topItems": {
       "title": "Top products today",

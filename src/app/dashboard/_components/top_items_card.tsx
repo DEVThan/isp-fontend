@@ -65,10 +65,11 @@ export function TopItemsCard() {
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        {/* card นี้แคบ (1 ใน 3 ของแถว) — ให้คำอธิบายลงไปเต็มความกว้างใต้หัว/ตัวเลือกวัน ไม่ถูกบีบข้างปุ่ม */}
-        <CardTitle className="self-center">{date ? t("titleDay") : t("title")}</CardTitle>
-        <CardDescription className="col-span-2">
+      {/* หัว card เป็น flex-wrap (ไม่ใช่ grid ของ CardHeader): ที่ไม่พอ (มือถือ) ตัวเลือกวันลงบรรทัดใหม่เอง
+          คำอธิบายเต็มความกว้างบรรทัดสุดท้ายเสมอ ไม่ถูกบีบข้างปุ่ม */}
+      <CardHeader className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <CardTitle className="min-w-40 flex-1">{date ? t("titleDay") : t("title")}</CardTitle>
+        <CardDescription className="order-last basis-full">
           {stats ? (
             stats.items.length ? (
               t("description", {
@@ -87,7 +88,7 @@ export function TopItemsCard() {
             <Skeleton className="h-4 w-40" />
           )}
         </CardDescription>
-        <CardAction className="row-span-1">
+        <CardAction className="shrink-0">
           {shown ? (
             <DayPicker value={shown} onChange={changeDate} />
           ) : failed ? null : (

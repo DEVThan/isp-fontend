@@ -30,7 +30,8 @@ export function SiteHeader({ groups }: { groups: NavGroup[] }) {
   return (
     <header className="bg-background/80 sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b px-4 backdrop-blur">
       <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-1 h-4" />
+      {/* เส้นคั่นสูงเต็มแถบ (self-stretch ใน Separator) — เดิม h-4 ทำให้เส้นสั้นลอยชิดบน ไม่อยู่กลาง */}
+      <Separator orientation="vertical" className="mr-1" />
 
       <Breadcrumb className="min-w-0">
         {/* ห้ามตกบรรทัด — แถบนี้สูงคงที่ 56px */}
