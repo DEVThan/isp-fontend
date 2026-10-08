@@ -124,6 +124,51 @@
       "amount": "Amount",
       "prevAmount": "last month cancelled {value}"
     },
+    "dayPicker": {
+      "pickDate": "Pick a date",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "today": "Today"
+    },
+    "topChannels": {
+      "title": "Top channels today",
+      "titleDay": "Top channels",
+      "description": "{orders} orders across {channels} channels · cancelled excluded",
+      "empty": "No sales through any channel on this day",
+      "columns": {
+        "rank": "Rank",
+        "channel": "Channel",
+        "orders": "Orders",
+        "qty": "Pcs",
+        "amount": "Amount",
+        "share": "Order share"
+      }
+    },
+    "topTypes": {
+      "title": "Top product types today",
+      "titleDay": "Top product types",
+      "description": "{qty} pcs across {types} types · cancelled excluded",
+      "empty": "No products sold on this day",
+      "unit": "pcs",
+      "detail": "{orders} orders · {items} products",
+      "share": "Share of the day's units"
+    },
+    "topItems": {
+      "title": "Top products today",
+      "titleDay": "Top products",
+      "description": "{qty} pcs across {items} products · cancelled excluded",
+      "empty": "No products sold on this day",
+      "unit": "pcs",
+      "orders": "{value} orders",
+      "share": "Share of the day's units"
+    },
+    "soToday": {
+      "title": "Sales orders today",
+      "description": "By order time · {total} orders in total · peak {peak} at {hour}:00",
+      "tooltip": "{value} orders",
+      "titleDay": "Sales orders by hour",
+      "empty": "No sales orders on this day"
+    },
     "traffic": {
       "title": "Traffic today",
       "description": "In Gbps · peak {peak} Gbps at {hour}:00"

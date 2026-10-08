@@ -22,6 +22,8 @@ const TONES = {
   info: { bar: "bg-info", chip: "bg-info/12 text-info-ink" },
   success: { bar: "bg-success", chip: "bg-success/12 text-success-ink" },
   danger: { bar: "bg-danger", chip: "bg-danger/12 text-danger-ink" },
+  /** สีทอง — ใช้ token warning (#fab219) · ทองอ่อนกว่าสีอื่น พื้นจึงเข้มกว่า (18%) แบบปุ่มแก้ไข */
+  gold: { bar: "bg-warning", chip: "bg-warning/18 text-warning-ink" },
 } as const
 
 export type MonthCardData = {

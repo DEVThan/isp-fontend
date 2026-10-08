@@ -46,7 +46,7 @@ export function CompletedMonthCard() {
     <MonthCard
       label={t("label")}
       icon={PackageCheck}
-      tone="success"
+      tone="gold"
       failed={failed}
       data={
         stats && {
@@ -62,7 +62,7 @@ export function CompletedMonthCard() {
       breakdown={
         stats ? (
           // ยอดเงินของใบที่สำเร็จ (sum pay_amount ของบรรทัดสถานะลูกค้าได้รับสินค้าแล้ว)
-          <p className="text-success-ink bg-success/12 inline-flex w-fit items-center gap-1 rounded-md px-2 py-0.5 text-xs">
+          <p className="text-warning-ink bg-warning/18 inline-flex w-fit items-center gap-1 rounded-md px-2 py-0.5 text-xs">
             <span className="opacity-80">{t("amount")}</span>
             <span className="font-semibold tabular-nums">{formatTHB(stats.amount, locale)}</span>
           </p>
