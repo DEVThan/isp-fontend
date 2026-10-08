@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 /**
  * so_today_chart.tsx — กราฟ "ใบสั่งขายวันนี้" ของหน้า dashboard (08/10/2026 แทน "ปริมาณทราฟฟิกวันนี้" ที่เป็นข้อมูลตัวอย่าง)
@@ -39,13 +40,28 @@ export function SoTodayChart() {
   /** วันที่ของตัวเลือก — จำไว้แยกจาก stats ระหว่างโหลดวันใหม่ปุ่มจะได้ไม่หาย */
   const [shown, setShown] = React.useState("")
 
+  /** แท่งที่แตะเลือกไว้ (มือถือไม่มี hover) — ป้ายตัวเลขค้างจนแตะซ้ำหรือแตะนอกกราฟ */
+  const [picked, setPicked] = React.useState<number | null>(null)
+  const barsRef = React.useRef<HTMLDivElement>(null)
+
   const changeDate = (next: string) => {
     // ล้างผลเก่าตรงนี้ (ไม่ใช่ใน effect) — กราฟกลับเป็น skeleton ระหว่างโหลดวันใหม่
     setDate(next === toDayKey(new Date()) ? "" : next)
     setShown(next)
     setStats(null)
     setFailed(false)
+    setPicked(null)
   }
+
+  // แตะนอกแท่งกราฟ = ปิดป้าย (ฟังเฉพาะตอนมีแท่งที่เลือกอยู่)
+  React.useEffect(() => {
+    if (picked === null) return
+    const close = (event: PointerEvent) => {
+      if (!barsRef.current?.contains(event.target as Node)) setPicked(null)
+    }
+    document.addEventListener("pointerdown", close)
+    return () => document.removeEventListener("pointerdown", close)
+  }, [picked])
 
   React.useEffect(() => {
     let cancelled = false
@@ -132,17 +148,26 @@ export function SoTodayChart() {
           </div>
 
           {stats ? (
-            <div className="absolute inset-0 flex items-end gap-[2px] pl-10">
+            <div ref={barsRef} className="absolute inset-0 flex items-end gap-[2px] pl-10">
               {hours.map((value, hour) => {
                 const isPeak = hour === peakHour
+                const isPicked = hour === picked
+                const time = `${String(hour).padStart(2, "0")}:00`
                 return (
-                  <div key={hour} className="group relative flex h-full flex-1 items-end">
+                  // ทั้งคอลัมน์เป็นปุ่ม (สูงเต็มกราฟ) — แท่งเตี้ย/ศูนย์ก็ยังแตะโดน · hover: ของ Tailwind v4 ทำงานเฉพาะอุปกรณ์ที่ hover ได้
+                  <button
+                    key={hour}
+                    type="button"
+                    aria-label={`${time} · ${t("tooltip", { value: nf.format(value) })}`}
+                    aria-pressed={isPicked}
+                    onClick={() => setPicked(isPicked ? null : hour)}
+                    className="group relative flex h-full flex-1 cursor-pointer items-end outline-none"
+                  >
                     <div
-                      className={
-                        isPeak
-                          ? "bg-chart-1 w-full rounded-t-[4px]"
-                          : "bg-chart-1/65 group-hover:bg-chart-1 w-full rounded-t-[4px] transition-colors"
-                      }
+                      className={cn(
+                        "w-full rounded-t-[4px] transition-colors",
+                        isPeak || isPicked ? "bg-chart-1" : "bg-chart-1/65 group-hover:bg-chart-1"
+                      )}
                       style={{ height: `${(value / scaleMax) * 100}%` }}
                     />
                     {/* ป้ายกำกับค่าพีค — ไม่ต้อง hover ก็อ่านได้ */}
@@ -151,15 +176,21 @@ export function SoTodayChart() {
                         {nf.format(value)}
                       </span>
                     ) : null}
-                    {/* tooltip ตอน hover */}
-                    <div className="bg-popover text-popover-foreground ring-border pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 rounded-md px-2 py-1 text-xs whitespace-nowrap shadow-md ring-1 group-hover:block">
-                      <span className="tabular-nums">{String(hour).padStart(2, "0")}:00</span>
+                    {/* tooltip ตอน hover หรือแตะเลือก — แท่งริมซ้าย/ขวาชิดขอบแทนการกึ่งกลาง ไม่งั้นล้นออกนอก card บนมือถือ */}
+                    <div
+                      className={cn(
+                        "bg-popover text-popover-foreground ring-border pointer-events-none absolute bottom-full z-10 mb-1.5 rounded-md px-2 py-1 text-xs whitespace-nowrap shadow-md ring-1",
+                        hour < 3 ? "left-0" : hour > 20 ? "right-0" : "left-1/2 -translate-x-1/2",
+                        isPicked ? "block" : "hidden group-hover:block"
+                      )}
+                    >
+                      <span className="tabular-nums">{time}</span>
                       <span className="text-muted-foreground"> · </span>
                       <span className="font-medium tabular-nums">
                         {t("tooltip", { value: nf.format(value) })}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
