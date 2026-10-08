@@ -127,20 +127,21 @@
 }
 
 .dark {
-  --background: #0b0f17;
+  /* พื้นหลัง/การ์ดสว่างขึ้นจากเดิมสองขั้น (ผู้ใช้ขอ 08/10/2026 สองรอบ: เดิม background #0b0f17 card #131926) — ฮิวน้ำเงินเทาเดิม */
+  --background: #1d2433;
   --foreground: #e8edf5;
-  --card: #131926;
+  --card: #262e40;
   --card-foreground: #e8edf5;
-  --popover: #131926;
+  --popover: #262e40;
   --popover-foreground: #e8edf5;
 
   --primary: #3987e5;
   --primary-foreground: #06101d;
-  --secondary: #1b2434;
+  --secondary: #313b51;
   --secondary-foreground: #e8edf5;
-  --muted: #1b2434;
-  --muted-foreground: #94a3b8;
-  --accent: #1e2c44;
+  --muted: #313b51;
+  --muted-foreground: #a0adc1; /* เดิม #94a3b8 — พื้น muted สว่างขึ้นแล้วเหลือ 4.37:1 · ค่านี้ 4.9:1 บน muted, 6:1 บน card */
+  --accent: #34446a;
   --accent-foreground: #cfe0f7;
   --destructive: #e66767;
   --border: oklch(1 0 0 / 10%);
@@ -163,11 +164,11 @@
   --info: #3987e5;
   --info-ink: #7fb2f0;
 
-  --sidebar: #0c1220;
+  --sidebar: #182033;
   --sidebar-foreground: #c3d0e3;
   --sidebar-primary: #3987e5;
   --sidebar-primary-foreground: #06101d;
-  --sidebar-accent: #18233a;
+  --sidebar-accent: #283653;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: #3987e5;
