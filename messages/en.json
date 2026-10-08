@@ -124,6 +124,24 @@
       "amount": "Amount",
       "prevAmount": "last month cancelled {value}"
     },
+    "sections": {
+      "monthly": "Monthly",
+      "daily": "Daily"
+    },
+    "monthPicker": {
+      "pickMonth": "Pick a month",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "prevYear": "Previous year",
+      "nextYear": "Next year",
+      "thisMonth": "This month"
+    },
+    "soDaily": {
+      "title": "Sales orders by day",
+      "description": "By order date · {total} orders · sales {amount} · peak {peak} on {day}",
+      "amount": "Sales {value}",
+      "empty": "No sales orders in this month"
+    },
     "dayPicker": {
       "pickDate": "Pick a date",
       "prevDay": "Previous day",
@@ -153,7 +171,16 @@
       "detail": "{orders} orders · {items} products",
       "share": "Share of the day's units",
       "other": "Other",
-      "otherDetail": "{types} types"
+      "otherDetail": "{types} types",
+      "titleMonth": "Top product types this month",
+      "emptyMonth": "No products sold in this month"
+    },
+    "topItemsMonth": {
+      "title": "Top products this month",
+      "titleOther": "Top products by month",
+      "empty": "No products sold in this month",
+      "other": "Other",
+      "otherDetail": "{items} other products"
     },
     "topItems": {
       "title": "Top products today",
@@ -166,7 +193,8 @@
     },
     "soToday": {
       "title": "Sales orders today",
-      "description": "By order time · {total} orders in total · peak {peak} at {hour}:00",
+      "description": "By order time · {total} orders · sales {amount} · peak {peak} at {hour}:00",
+      "amount": "Sales {value}",
       "tooltip": "{value} orders",
       "titleDay": "Sales orders by hour",
       "empty": "No sales orders on this day"

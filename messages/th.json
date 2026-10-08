@@ -124,6 +124,24 @@
       "amount": "ยอดเงิน",
       "prevAmount": "เดือนก่อนยกเลิก {value}"
     },
+    "sections": {
+      "monthly": "ข้อมูลรายเดือน",
+      "daily": "ข้อมูลรายวัน"
+    },
+    "monthPicker": {
+      "pickMonth": "เลือกเดือน",
+      "prevMonth": "เดือนก่อนหน้า",
+      "nextMonth": "เดือนถัดไป",
+      "prevYear": "ปีก่อนหน้า",
+      "nextYear": "ปีถัดไป",
+      "thisMonth": "เดือนนี้"
+    },
+    "soDaily": {
+      "title": "ใบสั่งขายรายวัน",
+      "description": "แยกตามวันที่สั่งซื้อ · รวม {total} ใบ · ยอดขาย {amount} · มากสุด {peak} ใบ วันที่ {day}",
+      "amount": "ยอดขาย {value}",
+      "empty": "ไม่มีใบสั่งขายในเดือนนี้"
+    },
     "dayPicker": {
       "pickDate": "เลือกวันที่",
       "prevDay": "วันก่อนหน้า",
@@ -153,7 +171,16 @@
       "detail": "{orders} ใบ · {items} รายการสินค้า",
       "share": "สัดส่วนของยอดชิ้นทั้งวัน",
       "other": "อื่น ๆ",
-      "otherDetail": "{types} ประเภท"
+      "otherDetail": "{types} ประเภท",
+      "titleMonth": "ประเภทสินค้าขายดีเดือนนี้",
+      "emptyMonth": "ไม่มีสินค้าขายในเดือนนี้"
+    },
+    "topItemsMonth": {
+      "title": "สินค้าขายดีเดือนนี้",
+      "titleOther": "สินค้าขายดีรายเดือน",
+      "empty": "ไม่มีสินค้าขายในเดือนนี้",
+      "other": "อื่น ๆ",
+      "otherDetail": "สินค้าอื่น {items} รายการ"
     },
     "topItems": {
       "title": "สินค้าขายดีวันนี้",
@@ -166,7 +193,8 @@
     },
     "soToday": {
       "title": "ใบสั่งขายวันนี้",
-      "description": "แยกตามเวลาสั่งซื้อ · รวม {total} ใบ · มากสุด {peak} ใบ เวลา {hour}:00",
+      "description": "แยกตามเวลาสั่งซื้อ · รวม {total} ใบ · ยอดขาย {amount} · มากสุด {peak} ใบ เวลา {hour}:00",
+      "amount": "ยอดขาย {value}",
       "tooltip": "{value} ใบ",
       "titleDay": "ใบสั่งขายรายชั่วโมง",
       "empty": "ไม่มีใบสั่งขายในวันนี้"

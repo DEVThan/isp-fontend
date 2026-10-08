@@ -5,8 +5,10 @@ import { TriangleAlert } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 
 import { getSoTodayStats, type SoTodayStats } from "@/app/dashboard/_components/api"
+import { CountBars } from "@/app/dashboard/_components/count_bars"
 import { DayPicker, toDayKey } from "@/app/dashboard/_components/day_picker"
 import { intlLocale } from "@/i18n/config"
+import { formatTHB } from "@/lib/mock-data"
 import {
   Card,
   CardAction,
@@ -16,13 +18,12 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 
 /**
  * so_today_chart.tsx — กราฟ "ใบสั่งขายวันนี้" ของหน้า dashboard (08/10/2026 แทน "ปริมาณทราฟฟิกวันนี้" ที่เป็นข้อมูลตัวอย่าง)
  *
  * จำนวนใบ (so_code ไม่ซ้ำ) ของวันนี้แยกรายชั่วโมงตาม so.po_date (เวลาไทย) — ดึงเองฝั่ง client แบบเดียวกับ card รายเดือน
- * หน้าตายกมาจาก components/traffic-chart.tsx (แท่ง CSS ล้วน ซีรีส์เดียวสี chart-1 ไม่ต้องมี legend)
+ * แท่งกราฟอยู่ที่ count_bars.tsx (ใช้ร่วมกับ so_daily_chart.tsx รายวันของเดือน)
  * มุมขวาบนเลือกวันอื่นได้ (day_picker.tsx) — date ว่าง = วันนี้ ให้ API ตัดสินวันนี้ตามเวลาไทย
  * ตัวเลือกวันโชว์หลังโหลดรอบแรกเสร็จ (ใช้ stats.today) — เรนเดอร์ฝั่ง server ไม่รู้วันของเครื่องผู้ใช้ จะ hydrate ไม่ตรง
  */
@@ -40,28 +41,13 @@ export function SoTodayChart() {
   /** วันที่ของตัวเลือก — จำไว้แยกจาก stats ระหว่างโหลดวันใหม่ปุ่มจะได้ไม่หาย */
   const [shown, setShown] = React.useState("")
 
-  /** แท่งที่แตะเลือกไว้ (มือถือไม่มี hover) — ป้ายตัวเลขค้างจนแตะซ้ำหรือแตะนอกกราฟ */
-  const [picked, setPicked] = React.useState<number | null>(null)
-  const barsRef = React.useRef<HTMLDivElement>(null)
-
   const changeDate = (next: string) => {
     // ล้างผลเก่าตรงนี้ (ไม่ใช่ใน effect) — กราฟกลับเป็น skeleton ระหว่างโหลดวันใหม่
     setDate(next === toDayKey(new Date()) ? "" : next)
     setShown(next)
     setStats(null)
     setFailed(false)
-    setPicked(null)
   }
-
-  // แตะนอกแท่งกราฟ = ปิดป้าย (ฟังเฉพาะตอนมีแท่งที่เลือกอยู่)
-  React.useEffect(() => {
-    if (picked === null) return
-    const close = (event: PointerEvent) => {
-      if (!barsRef.current?.contains(event.target as Node)) setPicked(null)
-    }
-    document.addEventListener("pointerdown", close)
-    return () => document.removeEventListener("pointerdown", close)
-  }, [picked])
 
   React.useEffect(() => {
     let cancelled = false
@@ -83,8 +69,6 @@ export function SoTodayChart() {
   const hours = stats?.hours ?? []
   const peak = hours.length ? Math.max(...hours) : 0
   const peakHour = peak > 0 ? hours.indexOf(peak) : -1
-  // เพดานแกนให้หาร 4 ลงตัว เส้นกริดจะเป็นจำนวนเต็มเสมอ (นับเป็นใบ) — วันที่ยังไม่มีใบเลยก็ไม่หารศูนย์
-  const scaleMax = Math.max(4, Math.ceil(peak / 4) * 4)
 
   /** วันนี้ตามภาษาที่เลือก เช่น "8 ตุลาคม 2569" */
   const dayLabel = (ymd: string) => {
@@ -95,7 +79,7 @@ export function SoTodayChart() {
   }
 
   return (
-    <Card className="h-full">
+    <Card className="flex h-full flex-col">
       {/* หัว card เป็น flex-wrap (ไม่ใช่ grid ของ CardHeader): ที่ไม่พอ (มือถือ) ตัวเลือกวันลงบรรทัดใหม่เอง
           คำอธิบายเต็มความกว้างบรรทัดสุดท้ายเสมอ ไม่ถูกบีบข้างปุ่ม */}
       <CardHeader className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
@@ -117,6 +101,7 @@ export function SoTodayChart() {
             peakHour >= 0 ? (
               t("description", {
                 total: nf.format(stats.total),
+                amount: stats.total_amount == null ? "–" : formatTHB(stats.total_amount, locale),
                 peak: nf.format(peak),
                 hour: String(peakHour).padStart(2, "0"),
               })
@@ -133,79 +118,21 @@ export function SoTodayChart() {
           )}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="relative h-52">
-          {/* เส้นกริดจาง ๆ ไว้อ่านระดับ */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
-            {[100, 75, 50, 25, 0].map((pct) => (
-              <div key={pct} className="flex items-center gap-2">
-                <span className="text-muted-foreground w-8 shrink-0 text-right text-[10px] tabular-nums">
-                  {stats ? nf.format((scaleMax * pct) / 100) : ""}
-                </span>
-                <span className="border-border/70 flex-1 border-t border-dashed" />
-              </div>
-            ))}
-          </div>
-
-          {stats ? (
-            <div ref={barsRef} className="absolute inset-0 flex items-end gap-[2px] pl-10">
-              {hours.map((value, hour) => {
-                const isPeak = hour === peakHour
-                const isPicked = hour === picked
-                const time = `${String(hour).padStart(2, "0")}:00`
-                return (
-                  // ทั้งคอลัมน์เป็นปุ่ม (สูงเต็มกราฟ) — แท่งเตี้ย/ศูนย์ก็ยังแตะโดน · hover: ของ Tailwind v4 ทำงานเฉพาะอุปกรณ์ที่ hover ได้
-                  <button
-                    key={hour}
-                    type="button"
-                    aria-label={`${time} · ${t("tooltip", { value: nf.format(value) })}`}
-                    aria-pressed={isPicked}
-                    onClick={() => setPicked(isPicked ? null : hour)}
-                    className="group relative flex h-full flex-1 cursor-pointer items-end outline-none"
-                  >
-                    <div
-                      className={cn(
-                        "w-full rounded-t-[4px] transition-colors",
-                        isPeak || isPicked ? "bg-chart-1" : "bg-chart-1/65 group-hover:bg-chart-1"
-                      )}
-                      style={{ height: `${(value / scaleMax) * 100}%` }}
-                    />
-                    {/* ป้ายกำกับค่าพีค — ไม่ต้อง hover ก็อ่านได้ */}
-                    {isPeak ? (
-                      <span className="text-chart-1 absolute bottom-full left-1/2 mb-1 -translate-x-1/2 text-[10px] font-semibold tabular-nums">
-                        {nf.format(value)}
-                      </span>
-                    ) : null}
-                    {/* tooltip ตอน hover หรือแตะเลือก — แท่งริมซ้าย/ขวาชิดขอบแทนการกึ่งกลาง ไม่งั้นล้นออกนอก card บนมือถือ */}
-                    <div
-                      className={cn(
-                        "bg-popover text-popover-foreground ring-border pointer-events-none absolute bottom-full z-10 mb-1.5 rounded-md px-2 py-1 text-xs whitespace-nowrap shadow-md ring-1",
-                        hour < 3 ? "left-0" : hour > 20 ? "right-0" : "left-1/2 -translate-x-1/2",
-                        isPicked ? "block" : "hidden group-hover:block"
-                      )}
-                    >
-                      <span className="tabular-nums">{time}</span>
-                      <span className="text-muted-foreground"> · </span>
-                      <span className="font-medium tabular-nums">
-                        {t("tooltip", { value: nf.format(value) })}
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          ) : failed ? null : (
-            <Skeleton className="absolute inset-y-0 right-0 left-10" />
-          )}
-        </div>
-
-        <div className="text-muted-foreground mt-2 flex justify-between pl-10 text-xs tabular-nums">
-          <span>00:00</span>
-          <span>06:00</span>
-          <span>12:00</span>
-          <span>18:00</span>
-          <span>23:00</span>
-        </div>
+      <CardContent className="flex flex-1 flex-col">
+        <CountBars
+          key={stats?.today}
+          values={stats ? hours : null}
+          failed={failed}
+          label={(hour) => `${String(hour).padStart(2, "0")}:00`}
+          tooltip={(value) => t("tooltip", { value: nf.format(value) })}
+          // API ตัวเก่า (ก่อน restart) ยังไม่ส่ง amounts — ไม่โชว์บรรทัดยอดขายแทนการโชว์ ฿0 ที่ทำให้เข้าใจผิด
+          detail={
+            stats?.amounts
+              ? (index) => t("amount", { value: formatTHB(stats.amounts[index] ?? 0, locale) })
+              : undefined
+          }
+          ticks={[0, 6, 12, 18, 23]}
+        />
       </CardContent>
     </Card>
   )

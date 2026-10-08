@@ -125,6 +125,10 @@ export type SoTodayStats = {
   total: number
   /** จำนวนใบ (so_code ไม่ซ้ำ) ชั่วโมง 00–23 — 24 ช่องเสมอ */
   hours: number[]
+  /** ยอดขาย (บาท) รายชั่วโมง = sum(pay_amount) ไม่นับยกเลิก — 24 ช่อง (เพิ่ม 08/10/2026) */
+  amounts: number[]
+  /** ยอดขายทั้งวัน (บาท) */
+  total_amount: number
 }
 
 /** POST /api/web/dashboard-so-today — ใบสั่งขายวันนี้ แยกรายชั่วโมง · date "YYYY-MM-DD" ดูวันอื่นแทน (ไม่ส่ง = วันนี้) */
@@ -217,3 +221,41 @@ export type TopTypesStats = {
 /** POST /api/web/dashboard-top-types — ประเภทสินค้าขายดี 5 อันดับ · date "YYYY-MM-DD" (ไม่ส่ง = วันนี้) */
 export const getTopTypesStats = (date?: string) =>
   fetchStats<TopTypesStats>("dashboard-top-types", date ? { date } : {})
+
+/** ผลของ POST /api/web/dashboard-so-daily — ใบสั่งขายของเดือนแยกรายวัน ตาม so.po_date (เวลาไทย) รวมใบยกเลิก */
+export type SoDailyStats = {
+  /** เดือนของข้อมูล "YYYY-MM" — เดือนนี้ หรือ month ที่ส่งไป */
+  month: string
+  /** จำนวนใบทั้งเดือน — ไม่ใช่ sum(days) เพราะใบเดียวอาจมีบรรทัดอยู่หลายวัน */
+  total: number
+  /** จำนวนใบ (so_code ไม่ซ้ำ) ของวันที่ 1… — ยาวเท่าจำนวนวันของเดือน (28–31) */
+  days: number[]
+  /** ยอดขาย (บาท) รายวัน = sum(pay_amount) ไม่นับยกเลิก — ยาวเท่า days */
+  amounts: number[]
+  /** ยอดขายทั้งเดือน (บาท) */
+  total_amount: number
+}
+
+/** POST /api/web/dashboard-so-daily — ใบสั่งขายรายวันของเดือน · month "YYYY-MM" (ไม่ส่ง = เดือนนี้) */
+export const getSoDailyStats = (month?: string) =>
+  fetchStats<SoDailyStats>("dashboard-so-daily", month ? { month } : {})
+
+/** ผลของ POST /api/web/dashboard-top-types-month — เหมือน /dashboard-top-types แต่ทั้งเดือน (มี month แทน today) */
+export type TopTypesMonthStats = Omit<TopTypesStats, "today"> & {
+  /** เดือนของข้อมูล "YYYY-MM" */
+  month: string
+}
+
+/** POST /api/web/dashboard-top-types-month — ประเภทสินค้าขายดี 5 อันดับของเดือน · month "YYYY-MM" (ไม่ส่ง = เดือนนี้) */
+export const getTopTypesMonthStats = (month?: string) =>
+  fetchStats<TopTypesMonthStats>("dashboard-top-types-month", month ? { month } : {})
+
+/** ผลของ POST /api/web/dashboard-top-items-month — เหมือน /dashboard-top-items แต่ทั้งเดือน (มี month แทน today) */
+export type TopItemsMonthStats = Omit<TopItemsStats, "today"> & {
+  /** เดือนของข้อมูล "YYYY-MM" */
+  month: string
+}
+
+/** POST /api/web/dashboard-top-items-month — สินค้าขายดี 5 อันดับของเดือน · month "YYYY-MM" (ไม่ส่ง = เดือนนี้) */
+export const getTopItemsMonthStats = (month?: string) =>
+  fetchStats<TopItemsMonthStats>("dashboard-top-items-month", month ? { month } : {})
