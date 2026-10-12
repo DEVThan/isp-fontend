@@ -137,7 +137,7 @@
       "thisMonth": "This month"
     },
     "soDaily": {
-      "title": "Sales orders by day",
+      "title": "Sales orders by month",
       "description": "By order date · {total} orders · sales {amount} · peak {peak} on {day}",
       "amount": "Sales {value}",
       "empty": "No sales orders in this month"
