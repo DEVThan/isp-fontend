@@ -36,6 +36,7 @@ import {
   PAYMENT_STYLE,
   STATUS_STYLE,
 } from "@/app/sale/so/_components/status_style"
+import { SheetButton } from "@/app/sale/so/_components/sheet_button"
 import { SyncButton } from "@/app/sale/so/_components/sync_button"
 import { ViewModal } from "@/app/sale/so/_components/view_modal"
 import {
@@ -57,6 +58,9 @@ import {
 } from "@/components/ui/table"
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
+
+/** สถานะออเดอร์ที่ตัวกรองเลือกไว้ตอนเปิดหน้า — ค่าต้องตรงกับชื่อในทะเบียน status_po (= ค่าใน so.status) */
+const DEFAULT_STATUS = "ออเดอร์ใหม่"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
@@ -183,7 +187,8 @@ export function Tables() {
   // setTel ปิดไว้คู่กับช่องค้นหาเบอร์โทรที่ซ่อนอยู่ — tel คงเป็นค่าว่างตลอด (ไม่กรอง)
   const [tel /* , setTel */] = React.useState("")
   const [productName, setProductName] = React.useState("")
-  const [status, setStatus] = React.useState<string | null>(null)
+  // เปิดหน้ามากรอง "ออเดอร์ใหม่" ไว้ก่อน (12/10/2026 ผู้ใช้ขอ) — ล้างตัวเลือกในช่อง = ทั้งหมด
+  const [status, setStatus] = React.useState<string | null>(DEFAULT_STATUS)
   // setChannel ปิดไว้คู่กับตัวกรองช่องทางที่ซ่อนอยู่ — channel คงเป็น null (ไม่กรอง)
   const [channel /* , setChannel */] = React.useState<string | null>(null)
   const [vendor, setVendor] = React.useState<string | null>(null)
@@ -524,7 +529,19 @@ export function Tables() {
             <Plus /> {t("add")}
           </Button> */}
           {/* อัปเดตข้อมูล (05/10/2026) — สั่งงาน sync ผ่าน /so-sync รอจนงานจบ แล้วโหลดตารางใหม่แบบเดียวกับหลังแก้ไขเสร็จ */}
-          <SyncButton onSynced={() => load(filters)} />
+          {/* อัปเดตจาก Google Sheet (12/10/2026) — /so-sheet-apply ล้าง so แล้วลงใหม่ทั้งตาราง จึงมีกล่องยืนยันที่ตรวจ sheet ก่อน
+              ลงเสร็จตารางกลับไปหน้า 1 (id ของทุกแถวเปลี่ยน หน้าเดิมไม่มีความหมายแล้ว) */}
+          <SyncButton
+            onSynced={() => load(filters)}
+            extra={
+              <SheetButton
+                onApplied={() => {
+                  setPage(1)
+                  load({ ...filters, page: 1 })
+                }}
+              />
+            }
+          />
         </div>
 
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ

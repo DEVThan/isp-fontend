@@ -280,3 +280,52 @@ export async function startSoSync(): Promise<SoSyncState | undefined> {
 export async function getSoSyncStatus(): Promise<SoSyncState | undefined> {
   return post<SoSyncState>("so-sync-status", {}, SO_SYNC_BASE_URL)
 }
+
+/**
+ * ผลของ /so-sheet-preview — ตรวจ Google Sheet เทียบกับตาราง so โดยยังไม่เขียนอะไร (API: controller/web/so_sheet.py)
+ * current = ตาราง so ตอนนี้ และสิ่งที่จะหายเมื่อกด apply
+ */
+export type SoSheetPreview = {
+  url: string
+  sheet_rows: number
+  will_insert: number
+  skipped_count: number
+  current: {
+    so_rows: number
+    so_codes: number
+    /** แถวที่ผูกกลุ่มส่งออกไว้ (export_group_name) */
+    export_group_rows: number
+    /** แถวที่ถูกแก้หลังงาน sync เขียน (updated_at > synced_at) = แก้มือผ่านหน้าเว็บ */
+    edited_rows: number
+    so_codes_not_in_sheet: number
+    so_codes_not_in_sheet_sample: string[]
+  }
+  ignored_columns: string[]
+}
+
+/** ผลของ /so-sheet-apply — protocall_sync คือผลการสั่งงาน sync ต้นทางต่อท้าย (สั่งไม่ได้ก็ไม่ทำให้ apply ล้ม) */
+export type SoSheetApplyResult = {
+  url: string
+  sheet_rows: number
+  deleted: number
+  inserted: number
+  backup_table: string
+  skipped_count: number
+  protocall_sync?: { started: boolean; message: string; state?: string | null }
+}
+
+/**
+ * POST /api/web/so-sheet-preview — ดึง Google Sheet (ไม่ส่ง url = sheet ค่าตั้งต้นฝั่ง API) แล้วบอกว่าจะลงกี่แถว/อะไรจะหาย
+ * อ่านอย่างเดียว · ไฟล์ ~50 MB ใช้เวลาเป็นนาทีได้ (ดู experimental.proxyTimeout ใน next.config.ts)
+ */
+export async function previewSoSheet(): Promise<SoSheetPreview | undefined> {
+  return post<SoSheetPreview>("so-sheet-preview", {})
+}
+
+/**
+ * POST /api/web/so-sheet-apply — **ล้างตาราง so ทั้งหมดแล้วลงใหม่จาก Google Sheet** (สำรองไว้ที่ so_bak_sheet) แล้วสั่ง sync ต้นทางต่อ
+ * ทำลายข้อมูล: เรียกหลังผู้ใช้ยืนยันในกล่อง SheetButton เท่านั้น · มีรอบอื่นทำอยู่ API ตอบ 409
+ */
+export async function applySoSheet(): Promise<SoSheetApplyResult | undefined> {
+  return post<SoSheetApplyResult>("so-sheet-apply", {})
+}

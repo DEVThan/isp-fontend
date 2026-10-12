@@ -27,6 +27,15 @@ const nextConfig: NextConfig = {
    */
   output: "standalone",
 
+  /**
+   * rewrites ข้างล่างตัดการเชื่อมต่อที่ 30 วินาทีเป็นค่าตั้งต้น — /so-sheet-preview และ /so-sheet-apply (12/10/2026)
+   * ต้องโหลด Google Sheet ~50 MB แล้วลงหลายหมื่นแถว นานกว่านั้น · 150 วิ = เกิน timeout 120 วิของ gunicorn ฝั่ง API เล็กน้อย
+   * (ถ้า browser โดนตัดก่อน งานฝั่ง API ยังเดินต่อจนจบ — หน้าเว็บจะรายงานว่าล้มทั้งที่ข้อมูลถูกล้างไปแล้ว)
+   */
+  experimental: {
+    proxyTimeout: 150_000,
+  },
+
   // ปักหมุด root ไว้ที่โปรเจกต์นี้ กัน Turbopack ไปหยิบ lockfile จากโฟลเดอร์แม่
   turbopack: {
     root: path.resolve(import.meta.dirname),

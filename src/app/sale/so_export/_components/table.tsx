@@ -72,6 +72,9 @@ import {
 import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
 
+/** สถานะออเดอร์ที่ตัวกรองเลือกไว้ตอนเปิดหน้า — ค่าต้องตรงกับชื่อในทะเบียน status_po (= ค่าใน so.status) */
+const DEFAULT_STATUS = "ออเดอร์ใหม่"
+
 /** คอลัมน์ checkbox + คอลัมน์ข้อมูลที่เปิดใช้อยู่ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง (ช่องปุ่มดู/แก้ไขซ่อนไว้ จึงไม่นับ)
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
 const COLUMN_COUNT = 14
@@ -178,7 +181,8 @@ export function Tables() {
   // setTel ปิดไว้คู่กับช่องค้นหาเบอร์โทรที่ซ่อนอยู่ — tel คงเป็นค่าว่างตลอด (ไม่กรอง)
   const [tel /* , setTel */] = React.useState("")
   const [productName, setProductName] = React.useState("")
-  const [status, setStatus] = React.useState<string | null>(null)
+  // เปิดหน้ามากรอง "ออเดอร์ใหม่" ไว้ก่อน (12/10/2026 ผู้ใช้ขอ) — ล้างตัวเลือกในช่อง = ทั้งหมด · หน้านี้ปุ่มส่งออกใช้ตัวกรองชุดเดียวกัน ค่าเริ่มต้นจึงส่งออกเฉพาะออเดอร์ใหม่
+  const [status, setStatus] = React.useState<string | null>(DEFAULT_STATUS)
   // setChannel ปิดไว้คู่กับตัวกรองช่องทางที่ซ่อนอยู่ — channel คงเป็น null (ไม่กรอง)
   const [channel /* , setChannel */] = React.useState<string | null>(null)
   const [vendor, setVendor] = React.useState<string | null>(null)

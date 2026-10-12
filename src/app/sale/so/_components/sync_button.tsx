@@ -44,7 +44,14 @@ type Notice = {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export function SyncButton({ onSynced }: { onSynced: () => void }) {
+export function SyncButton({
+  onSynced,
+  extra,
+}: {
+  onSynced: () => void
+  /** ปุ่มอื่นของหัวตารางที่วางแถวเดียวกัน ทางซ้ายของปุ่มนี้ (เช่น SheetButton) — กล่องแจ้งผลยังอยู่ใต้แถวปุ่ม */
+  extra?: React.ReactNode
+}) {
   const tsync = useTranslations("so.sync")
 
   const [running, setRunning] = React.useState(false)
@@ -121,15 +128,18 @@ export function SyncButton({ onSynced }: { onSynced: () => void }) {
 
   return (
     <div className="flex w-full flex-col items-end gap-2">
-      <Button
-        variant="outline"
-        onClick={sync}
-        disabled={running}
-        className="border-primary/30 text-primary hover:bg-primary/10 hover:text-primary gap-1.5"
-      >
-        {running ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
-        {running ? tsync("buttonRunning") : tsync("button")}
-      </Button>
+      <div className="flex flex-wrap justify-end gap-2">
+        {extra}
+        <Button
+          variant="outline"
+          onClick={sync}
+          disabled={running}
+          className="border-primary bg-primary hover:bg-primary/90 dark:border-primary dark:bg-primary dark:hover:bg-primary/90 cursor-pointer gap-1.5 text-white hover:text-white disabled:cursor-not-allowed"
+        >
+          {running ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+          {running ? tsync("buttonRunning") : tsync("button")}
+        </Button>
+      </div>
 
       {notice ? (
         <Alert variant={notice.kind} aria-live="polite" className="mb-1">
