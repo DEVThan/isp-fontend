@@ -1484,11 +1484,11 @@
     "submitting": "Signing in…",
     "needHelp": "Trouble signing in?",
     "contactSupport": "Contact support",
-    "brandTagline": "Customers, invoices and network — in one place",
+    "brandTagline": "Sales orders, products and shipping — in one place",
     "highlights": {
-      "customers": "Manage customers and packages",
-      "billing": "Issue invoices and track payments",
-      "network": "Watch traffic and support tickets"
+      "customers": "Manage customers and products",
+      "billing": "Create sales orders and track payments",
+      "network": "Track shipping and sales"
     },
     "errors": {
       "usernameRequired": "Username is required",

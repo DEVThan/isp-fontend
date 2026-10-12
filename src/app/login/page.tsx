@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { CreditCard, Activity, Users } from "lucide-react"
+import { ShoppingCart, Truck, Users } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 
 import { BrandLogo } from "@/components/brand-logo"
@@ -19,8 +19,8 @@ export default async function LoginPage() {
 
   const highlights = [
     { key: "customers", icon: Users },
-    { key: "billing", icon: CreditCard },
-    { key: "network", icon: Activity },
+    { key: "billing", icon: ShoppingCart },
+    { key: "network", icon: Truck },
   ] as const
 
   return (
