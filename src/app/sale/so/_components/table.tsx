@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import {
+  Ellipsis,
   Eye,
   LoaderCircle,
   Pencil,
@@ -60,6 +61,16 @@ import { cn } from "@/lib/utils"
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
 const COLUMN_COUNT = 15
+
+/**
+ * คอลัมน์ปุ่มที่ตรึงชิดซ้าย (12/10/2026) — sticky อยู่ในกรอบเลื่อนแนวนอนของ <Table>
+ * เป็นคอลัมน์ที่ 2 ต่อจากลำดับ: ยังไม่เลื่อนก็อยู่ที่ของมัน พอเลื่อนขวาลำดับเลื่อนหายแล้วคอลัมน์นี้เกาะขอบซ้ายไว้
+ * พื้นต้องทึบ: หัวตารางเป็น bg-muted/60 แถวที่ชี้เป็น bg-accent/40 และแถวที่เปิดปุ่มอยู่เป็น bg-muted/50
+ * (has-aria-expanded ของ TableRow) ซึ่งโปร่งทั้งหมด จึงผสมสีเดียวกันนั้นกับ --card ให้ได้สีทึบที่ตาเห็นเท่ากับส่วนที่เหลือของแถว
+ */
+const STICKY_EDGE = "sticky left-0 z-[1]"
+const STICKY_HEAD = `${STICKY_EDGE} bg-[color-mix(in_oklab,var(--muted)_60%,var(--card))]`
+const STICKY_CELL = `${STICKY_EDGE} bg-card transition-colors group-has-aria-expanded/row:bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))] group-hover/row:bg-[color-mix(in_oklab,var(--accent)_40%,var(--card))]`
 
 /** หน่วงก่อนยิง API ตอนพิมพ์ค้นหา — พิมพ์รัว ๆ จะได้ไม่ยิงทุกตัวอักษร */
 const SEARCH_DELAY_MS = 350
@@ -152,6 +163,18 @@ export function Tables() {
   } | null>(null)
   /** แถวที่กำลังดูข้อมูล (กล่องอ่านอย่างเดียว ปุ่มรูปตา) — null คือปิดกล่อง */
   const [viewing, setViewing] = React.useState<So | null>(null)
+  /** แถวที่กดเปิดปุ่มไว้ (id) — ชี้เมาส์เปิดด้วย CSS อยู่แล้ว state นี้มีไว้ให้จอสัมผัสและคีย์บอร์ด */
+  const [actionsFor, setActionsFor] = React.useState<number | null>(null)
+  // กดที่อื่นนอกกลุ่มปุ่มของแถวนั้น = ปิด (ฟังเฉพาะตอนที่มีแถวเปิดอยู่)
+  React.useEffect(() => {
+    if (actionsFor === null) return
+    const close = (event: PointerEvent) => {
+      const target = event.target instanceof Element ? event.target : null
+      if (!target?.closest(`[data-actions="${actionsFor}"]`)) setActionsFor(null)
+    }
+    document.addEventListener("pointerdown", close)
+    return () => document.removeEventListener("pointerdown", close)
+  }, [actionsFor])
   /** แถวที่กำลังถามยืนยันจะลบ — null คือปิดกล่อง */
   const [removing, setRemoving] = React.useState<So | null>(null)
 
@@ -545,8 +568,13 @@ export function Tables() {
             <TableHeader className="bg-muted/60">
               <TableRow className="hover:bg-transparent">
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
-                <TableHead className="text-muted-foreground w-14 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                <TableHead className="text-muted-foreground w-14 pl-6 text-right text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                {/* ปุ่มของแถว — คอลัมน์ที่ 2 ตรึงชิดซ้าย (12/10/2026): ตารางกว้างกว่าจอต้องเลื่อนแนวนอน ปุ่มที่เคยอยู่ขวาสุดหลุดสายตา
+                    แสดงไอคอนเดียว ชี้หรือกดแล้วปุ่มดู + แก้ไขจึงโผล่ทางขวา · ตามด้วยเลขที่ใบ สถานะ สถานะชำระเงิน ให้เห็นก่อนเลื่อน */}
+                <TableHead className={cn("w-12", STICKY_HEAD)}> <span className="sr-only">{t("actions")}</span> </TableHead>
                 <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("so_code")}</TableHead>
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("product_name")}</TableHead>
                 {/* ช่องทางออกอากาศ — ซ่อนไว้ แสดงผู้ขายแทน (เปิดกลับ: เอา comment ออก ทั้งหัวคอลัมน์และเซลล์) */}
@@ -557,12 +585,8 @@ export function Tables() {
                 {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
                 <TableHead className="text-muted-foreground w-16 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")}</TableHead>
                 {MONEY_COLUMNS.map((column) => (
-                  <TableHead key={column.key} className="text-muted-foreground w-24 text-right text-xs font-semibold tracking-wide whitespace-nowrap uppercase">{column.label}</TableHead>
+                  <TableHead key={column.key} className="text-muted-foreground w-24 text-right text-xs font-semibold tracking-wide whitespace-nowrap uppercase last:pr-6">{column.label}</TableHead>
                 ))}
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
-                {/* สองปุ่ม (ดู + แก้ไข) — w-24 · 32px ที่เพิ่มขึ้นเอามาจากคอลัมน์ชื่อสินค้า */}
-                <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -574,13 +598,81 @@ export function Tables() {
                   key={row.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
-                  <TableCell className="pt-1 pb-1 relative pl-6">
+                  <TableCell className="pt-1 pb-1 relative pl-6 text-right tabular-nums">
                     {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ */}
                     <span
                       aria-hidden
                       className="bg-primary absolute inset-y-1 left-0 w-[3px] rounded-r-full opacity-0 transition-opacity group-hover/row:opacity-100"
                     />
                     <span className="text-muted-foreground font-mono text-xs">{rowNumber(index)}</span>
+                  </TableCell>
+                  <TableCell className={cn("pt-1 pb-1", STICKY_CELL)}>
+                    {/* ไอคอนเดียว + กลุ่มปุ่มที่ลอยออกทางขวาทับคอลัมน์ถัดไป (ไม่กินความกว้างตาราง)
+                        เปิดได้สองทาง: ชี้เมาส์ (group-hover — Tailwind v4 ใช้เฉพาะอุปกรณ์ที่ชี้ได้) หรือกดไอคอน (actionsFor)
+                        กลุ่มปุ่มเริ่มที่ left-full ติดกับไอคอนพอดี (pl-1 เป็นสะพาน) เมาส์เลื่อนข้ามไปแล้วไม่หลุด hover
+                        ซ่อนด้วย invisible ไม่ใช่แค่ opacity — ปุ่มที่มองไม่เห็นต้องกดไม่ได้และ Tab ไม่ถึง */}
+                    <div data-actions={row.id} className="group/act relative inline-flex">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("actions")}
+                        aria-expanded={actionsFor === row.id}
+                        onClick={() => setActionsFor((current) => (current === row.id ? null : row.id))}
+                        className="text-muted-foreground hover:bg-primary/10 hover:text-primary aria-expanded:bg-primary/10 aria-expanded:text-primary"
+                      >
+                        <Ellipsis />
+                      </Button>
+                      <div
+                        className={cn(
+                          "invisible absolute top-1/2 left-full z-10 -translate-y-1/2 pl-1 opacity-0 transition-opacity group-hover/act:visible group-hover/act:opacity-100",
+                          actionsFor === row.id && "visible opacity-100"
+                        )}
+                      >
+                        <div className="bg-card ring-border/70 flex gap-0.5 rounded-lg p-0.5 shadow-md ring-1">
+                          {/* ดูข้อมูลทั้งหมดแบบอ่านอย่างเดียว — สี info แยกจากส้ม (แก้ไข) เหมือนหน้าสินค้า */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t("view")}
+                            title={t("view")}
+                            onClick={() => {
+                              setActionsFor(null)
+                              setViewing(row)
+                            }}
+                            className="bg-info/12 text-info-ink hover:bg-info/20"
+                          >
+                            <Eye />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t("edit")}
+                            title={t("edit")}
+                            onClick={() => {
+                              setActionsFor(null)
+                              setForm({ mode: "edit", so: row })
+                            }}
+                            className="bg-warning/18 text-warning-ink hover:bg-orange-50 hover:text-orange-300"
+                          >
+                            <Pencil />
+                          </Button>
+                          {/* ปิดปุ่มลบไว้ก่อน — เปิดกลับให้เอา Trash2 ใน import ออกจาก comment ด้วย
+                              (DeleteModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด) */}
+                          {/* <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={tall("delete")}
+                            onClick={() => {
+                              setActionsFor(null)
+                              setRemoving(row)
+                            }}
+                            className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
+                          >
+                            <Trash2 />
+                          </Button> */}
+                        </div>
+                      </div>
+                    </div>
                   </TableCell>
                   {/* เลขที่ใบ + วันที่สั่งซื้อ (po_date) — API เรียงตาม po_date วันที่จึงอยู่คู่กับเลขที่ใบ (เดิมโชว์ create_date) */}
                   <TableCell className="pt-1 pb-1">
@@ -590,6 +682,40 @@ export function Tables() {
                     <div className="text-muted-foreground mt-0.5 font-mono text-xs">
                       {formatDateTime(row.po_date)}
                     </div>
+                  </TableCell>
+                  {/* ป้ายสถานะตัดข้อความเมื่อยาวเกินคอลัมน์ ("ลูกค้าได้รับสินค้าแล้ว" กว้างกว่าหัวคอลัมน์
+                      ~50px) ไม่ตัดแล้วตารางจะกว้างขึ้นทั้งตาราง แล้วปุ่มลบหลุดออกนอกกรอบที่เลื่อนได้
+                      ข้อความเต็มอยู่ใน title · span ที่ truncate หดได้เองเพราะ overflow-hidden */}
+                  <TableCell className="pt-1 pb-1 max-w-[112px]">
+                    {row.status ? (
+                      <Badge
+                        variant="secondary"
+                        title={row.status}
+                        className={cn(
+                          "max-w-full gap-1 border-transparent font-medium",
+                          statusStyle?.className ?? NEUTRAL_STYLE
+                        )}
+                      >
+                        {StatusIcon ? <StatusIcon className="size-3 shrink-0" /> : null}
+                        <span className="truncate">{row.status}</span>
+                      </Badge>
+                    ) : null}
+                  </TableCell>
+                  {/* สถานะชำระเงิน + วิธีชำระตัวจางบรรทัดล่าง */}
+                  <TableCell className="pt-1 pb-1">
+                    {row.is_payment ? (
+                      <Badge
+                        variant="secondary"
+                        title={row.is_payment}
+                        className={cn(
+                          "max-w-full border-transparent font-medium",
+                          PAYMENT_STYLE[row.is_payment] ?? NEUTRAL_STYLE
+                        )}
+                      >
+                        <span className="truncate">{row.is_payment}</span>
+                      </Badge>
+                    ) : null}
+                    <div className="text-muted-foreground mt-0.5 text-xs">{row.pay_by}</div>
                   </TableCell>
                   {/* ชื่อผู้สั่ง + เบอร์โทรตัวจางบรรทัดล่าง (170 -> 150 ตอนเพิ่มคอลัมน์ประเภทการจัดส่ง) */}
                   <TableCell className="pt-1 pb-1 max-w-[150px]">
@@ -643,81 +769,23 @@ export function Tables() {
                     <TableCell
                       key={column.key}
                       className={cn(
-                        "pt-1 pb-1 text-right tabular-nums",
+                        "pt-1 pb-1 text-right tabular-nums last:pr-6",
                         column.key === "amount" && "font-medium"
                       )}
                     >
-                      {formatNumber(row[column.key], 2)}
+                      {/* Pay Amount ใส่ป้ายสีทอง (12/10/2026) — โทนเดียวกับการ์ด "สำเร็จ" บนแดชบอร์ด (warning tokens)
+                          ค่าว่างไม่มีป้าย · ป้ายอยู่ในความกว้างคอลัมน์เดิม ตารางไม่กว้างขึ้น */}
+                      {column.key === "pay_amount" ? (
+                        formatNumber(row.pay_amount, 2) !== null ? (
+                          <span className="bg-warning/18 text-warning-ink inline-block rounded-md px-2 py-0.5 font-semibold">
+                            {formatNumber(row.pay_amount, 2)}
+                          </span>
+                        ) : null
+                      ) : (
+                        formatNumber(row[column.key], 2)
+                      )}
                     </TableCell>
                   ))}
-                  {/* ป้ายสถานะตัดข้อความเมื่อยาวเกินคอลัมน์ ("ลูกค้าได้รับสินค้าแล้ว" กว้างกว่าหัวคอลัมน์
-                      ~50px) ไม่ตัดแล้วตารางจะกว้างขึ้นทั้งตาราง แล้วปุ่มลบหลุดออกนอกกรอบที่เลื่อนได้
-                      ข้อความเต็มอยู่ใน title · span ที่ truncate หดได้เองเพราะ overflow-hidden */}
-                  <TableCell className="pt-1 pb-1 max-w-[112px]">
-                    {row.status ? (
-                      <Badge
-                        variant="secondary"
-                        title={row.status}
-                        className={cn(
-                          "max-w-full gap-1 border-transparent font-medium",
-                          statusStyle?.className ?? NEUTRAL_STYLE
-                        )}
-                      >
-                        {StatusIcon ? <StatusIcon className="size-3 shrink-0" /> : null}
-                        <span className="truncate">{row.status}</span>
-                      </Badge>
-                    ) : null}
-                  </TableCell>
-                  {/* สถานะชำระเงิน + วิธีชำระตัวจางบรรทัดล่าง */}
-                  <TableCell className="pt-1 pb-1">
-                    {row.is_payment ? (
-                      <Badge
-                        variant="secondary"
-                        title={row.is_payment}
-                        className={cn(
-                          "max-w-full border-transparent font-medium",
-                          PAYMENT_STYLE[row.is_payment] ?? NEUTRAL_STYLE
-                        )}
-                      >
-                        <span className="truncate">{row.is_payment}</span>
-                      </Badge>
-                    ) : null}
-                    <div className="text-muted-foreground mt-0.5 text-xs">{row.pay_by}</div>
-                  </TableCell>
-                  <TableCell className="pt-1 pb-1 pr-6 text-right">
-                    <div className="flex justify-end gap-0.5">
-                      {/* ดูข้อมูลทั้งหมดแบบอ่านอย่างเดียว — สี info แยกจากส้ม (แก้ไข) เหมือนหน้าสินค้า */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={t("view")}
-                        onClick={() => setViewing(row)}
-                        className="bg-info/12 text-info-ink hover:bg-info/20"
-                      >
-                        <Eye />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={t("edit")}
-                        onClick={() => setForm({ mode: "edit", so: row })}
-                        className="bg-warning/18 text-warning-ink hover:bg-orange-50 hover:text-orange-300"
-                      >
-                        <Pencil />
-                      </Button>
-                      {/* ปิดปุ่มลบไว้ก่อน — เปิดกลับให้เอา Trash2 ใน import ออกจาก comment ด้วย
-                          (DeleteModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด) */}
-                      {/* <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={tall("delete")}
-                        onClick={() => setRemoving(row)}
-                        className="bg-danger/12 text-danger-ink hover:bg-red-50 hover:text-red-300"
-                      >
-                        <Trash2 />
-                      </Button> */}
-                    </div>
-                  </TableCell>
                 </TableRow>
                 )
               })}

@@ -74,7 +74,19 @@ import { cn } from "@/lib/utils"
 
 /** คอลัมน์ checkbox + คอลัมน์ข้อมูลที่เปิดใช้อยู่ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง (ช่องปุ่มดู/แก้ไขซ่อนไว้ จึงไม่นับ)
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 10
+const COLUMN_COUNT = 14
+
+/**
+ * คอลัมน์ยอดเงินของแถว so (numeric ทั้งหมด) เรียงตามที่ผู้ใช้สั่ง (05/10/2026)
+ * หัวคอลัมน์เป็นภาษาอังกฤษทุกภาษาตามที่ผู้ใช้ขอ — จึงไม่ผ่าน tcol (คำแปลใน so.columns ยังใช้ในฟอร์ม/หน้าดู)
+ */
+const MONEY_COLUMNS = [
+  { key: "price_per_unit", label: "Price/Unit" },
+  { key: "amount", label: "Amount" },
+  { key: "pay_amount", label: "Pay Amount" },
+  { key: "shipping", label: "Shipping" },
+  { key: "discount", label: "Discount" },
+] as const
 
 /** ส่งออกเกินจำนวนนี้ ถามยืนยันก่อน (ผู้ใช้สั่ง 30/09/2026) — ไม่กรองเลยได้ทั้งตาราง ~43,000 แถว */
 const EXPORT_CONFIRM_ROWS = 1000
@@ -656,7 +668,7 @@ export function Tables() {
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ
             ไม่งั้นตัวหมุนจะจางตามไปด้วย — ใช้พื้นโปร่งของตัวคลุมแทน)
 
-            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 10 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
+            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 14 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
             มากกว่าที่เนื้อหามีให้ (1,102px ที่จอ 1440) · main ใน dashboard-shell เป็น flex item ที่
             min-width เป็น auto จึงยืดตามความกว้างขั้นต่ำของลูก แล้วทั้งหน้าเลื่อนออกนอกจอ 72px
             (วัดได้: document.scrollWidth 1512 > innerWidth 1440 — หน้าอื่นที่คอลัมน์น้อยกว่าไม่เจอ)
@@ -695,8 +707,11 @@ export function Tables() {
               <TableRow className="hover:bg-transparent">
                 {/* ช่อง checkbox เลือกแถว — เอาออกแล้ว (30/09/2026) ลำดับกลับมาเป็นคอลัมน์แรก */}
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
-                <TableHead className="text-muted-foreground w-16 pl-6 text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
+                <TableHead className="text-muted-foreground w-16 pl-6 text-right text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
                 <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("so_code")}</TableHead>
+                {/* สถานะทั้งสองย้ายมาต่อจากเลขที่ใบ (12/10/2026 เหมือนหน้า so) — เห็นได้โดยไม่ต้องเลื่อนแนวนอน */}
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("product_name")}</TableHead>
                 {/* ช่องทางออกอากาศ — ซ่อนไว้ แสดงผู้ขายแทน (เปิดกลับ: เอา comment ออก ทั้งหัวคอลัมน์และเซลล์) */}
@@ -706,12 +721,13 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-20 text-xs leading-tight font-semibold tracking-wide whitespace-normal uppercase">{tcol("shipment_type")}</TableHead>
                 {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
                 <TableHead className="text-muted-foreground w-16 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")}</TableHead>
-                <TableHead className="text-muted-foreground w-28 text-right text-xs font-semibold tracking-wide uppercase">{tcol("amount")}</TableHead>
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
-                {/* คอลัมน์สุดท้ายแล้ว (ช่องปุ่มซ่อนอยู่) — pr-6 ให้ขอบขวาเว้นเท่าขอบซ้ายของคอลัมน์ลำดับ */}
-                <TableHead className="text-muted-foreground w-32 pr-6 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
+                {/* ยอดเงิน 5 คอลัมน์แบบเดียวกับหน้า so (12/10/2026) — เดิมหน้านี้โชว์แค่ยอดรวม (amount) */}
+                {MONEY_COLUMNS.map((column) => (
+                  <TableHead key={column.key} className="text-muted-foreground w-24 text-right text-xs font-semibold tracking-wide whitespace-nowrap uppercase last:pr-6">{column.label}</TableHead>
+                ))}
+                {/* คอลัมน์ยอดเงินอยู่ท้ายตาราง (ช่องปุ่มซ่อนอยู่ สถานะย้ายไปซ้าย) — last:pr-6 ที่คอลัมน์ยอดเงินตัวสุดท้าย ให้ขอบขวาเว้นเท่าขอบซ้ายของคอลัมน์ลำดับ */}
                 {/* ช่องปุ่ม (ดู + แก้ไข) — ซ่อนไว้ทั้งคอลัมน์ (เปิดกลับ: เอา comment ออกทั้งหัวคอลัมน์และเซลล์
-                    + Eye / Pencil / Button ใน import + COLUMN_COUNT กลับเป็น 11 + เอา pr-6 ออกจากคอลัมน์ชำระเงิน) */}
+                    + Eye / Pencil / Button ใน import + COLUMN_COUNT เพิ่ม 1 + เอา last:pr-6 ออกจากคอลัมน์ยอดเงิน) */}
                 {/* <TableHead className="w-24 pr-6 text-right"> <span className="sr-only">{t("edit")}</span> </TableHead> */}
               </TableRow>
             </TableHeader>
@@ -724,7 +740,7 @@ export function Tables() {
                   key={row.id}
                   className="group/row border-border/50 hover:bg-accent/40 transition-colors"
                 >
-                  <TableCell className="pt-1 pb-1 relative pl-6">
+                  <TableCell className="pt-1 pb-1 relative pl-6 text-right tabular-nums">
                     {/* เส้นบอกแถวที่ชี้อยู่ ภาษาเดียวกับเมนูข้างที่เลือกอยู่ */}
                     <span
                       aria-hidden
@@ -740,6 +756,40 @@ export function Tables() {
                     <div className="text-muted-foreground mt-0.5 font-mono text-xs">
                       {formatDateTime(row.po_date)}
                     </div>
+                  </TableCell>
+                  {/* ป้ายสถานะตัดข้อความเมื่อยาวเกินคอลัมน์ ("ลูกค้าได้รับสินค้าแล้ว" กว้างกว่าหัวคอลัมน์
+                      ~50px) ไม่ตัดแล้วตารางจะกว้างขึ้นทั้งตาราง แล้วปุ่มลบหลุดออกนอกกรอบที่เลื่อนได้
+                      ข้อความเต็มอยู่ใน title · span ที่ truncate หดได้เองเพราะ overflow-hidden */}
+                  <TableCell className="pt-1 pb-1 max-w-[112px]">
+                    {row.status ? (
+                      <Badge
+                        variant="secondary"
+                        title={row.status}
+                        className={cn(
+                          "max-w-full gap-1 border-transparent font-medium",
+                          statusStyle?.className ?? NEUTRAL_STYLE
+                        )}
+                      >
+                        {StatusIcon ? <StatusIcon className="size-3 shrink-0" /> : null}
+                        <span className="truncate">{row.status}</span>
+                      </Badge>
+                    ) : null}
+                  </TableCell>
+                  {/* สถานะชำระเงิน + วิธีชำระตัวจางบรรทัดล่าง */}
+                  <TableCell className="pt-1 pb-1">
+                    {row.is_payment ? (
+                      <Badge
+                        variant="secondary"
+                        title={row.is_payment}
+                        className={cn(
+                          "max-w-full border-transparent font-medium",
+                          PAYMENT_STYLE[row.is_payment] ?? NEUTRAL_STYLE
+                        )}
+                      >
+                        <span className="truncate">{row.is_payment}</span>
+                      </Badge>
+                    ) : null}
+                    <div className="text-muted-foreground mt-0.5 text-xs">{row.pay_by}</div>
                   </TableCell>
                   {/* ชื่อผู้สั่ง + เบอร์โทรตัวจางบรรทัดล่าง (170 -> 150 ตอนเพิ่มคอลัมน์ประเภทการจัดส่ง) */}
                   <TableCell className="pt-1 pb-1 max-w-[150px]">
@@ -789,43 +839,28 @@ export function Tables() {
                   <TableCell className="pt-1 pb-1 text-right tabular-nums">
                     {formatNumber(row.qty, 0)}
                   </TableCell>
-                  <TableCell className="pt-1 pb-1 text-right font-medium tabular-nums">
-                    {formatNumber(row.amount, 2)}
-                  </TableCell>
-                  {/* ป้ายสถานะตัดข้อความเมื่อยาวเกินคอลัมน์ ("ลูกค้าได้รับสินค้าแล้ว" กว้างกว่าหัวคอลัมน์
-                      ~50px) ไม่ตัดแล้วตารางจะกว้างขึ้นทั้งตาราง แล้วปุ่มลบหลุดออกนอกกรอบที่เลื่อนได้
-                      ข้อความเต็มอยู่ใน title · span ที่ truncate หดได้เองเพราะ overflow-hidden */}
-                  <TableCell className="pt-1 pb-1 max-w-[112px]">
-                    {row.status ? (
-                      <Badge
-                        variant="secondary"
-                        title={row.status}
-                        className={cn(
-                          "max-w-full gap-1 border-transparent font-medium",
-                          statusStyle?.className ?? NEUTRAL_STYLE
-                        )}
-                      >
-                        {StatusIcon ? <StatusIcon className="size-3 shrink-0" /> : null}
-                        <span className="truncate">{row.status}</span>
-                      </Badge>
-                    ) : null}
-                  </TableCell>
-                  {/* สถานะชำระเงิน + วิธีชำระตัวจางบรรทัดล่าง */}
-                  <TableCell className="pt-1 pb-1 pr-6">
-                    {row.is_payment ? (
-                      <Badge
-                        variant="secondary"
-                        title={row.is_payment}
-                        className={cn(
-                          "max-w-full border-transparent font-medium",
-                          PAYMENT_STYLE[row.is_payment] ?? NEUTRAL_STYLE
-                        )}
-                      >
-                        <span className="truncate">{row.is_payment}</span>
-                      </Badge>
-                    ) : null}
-                    <div className="text-muted-foreground mt-0.5 text-xs">{row.pay_by}</div>
-                  </TableCell>
+                  {/* Amount ตัวหนา — เป็นยอดหลักของแถว ที่เหลือน้ำหนักปกติ */}
+                  {MONEY_COLUMNS.map((column) => (
+                    <TableCell
+                      key={column.key}
+                      className={cn(
+                        "pt-1 pb-1 text-right tabular-nums last:pr-6",
+                        column.key === "amount" && "font-medium"
+                      )}
+                    >
+                      {/* Pay Amount ใส่ป้ายสีทอง (12/10/2026) — โทนเดียวกับการ์ด "สำเร็จ" บนแดชบอร์ด (warning tokens)
+                          ค่าว่างไม่มีป้าย · ป้ายอยู่ในความกว้างคอลัมน์เดิม ตารางไม่กว้างขึ้น */}
+                      {column.key === "pay_amount" ? (
+                        formatNumber(row.pay_amount, 2) !== null ? (
+                          <span className="bg-warning/18 text-warning-ink inline-block rounded-md px-2 py-0.5 font-semibold">
+                            {formatNumber(row.pay_amount, 2)}
+                          </span>
+                        ) : null
+                      ) : (
+                        formatNumber(row[column.key], 2)
+                      )}
+                    </TableCell>
+                  ))}
                   {/* ปุ่มดูข้อมูล + แก้ไข — ซ่อนไว้ทั้งเซลล์ (ดูหมายเหตุที่หัวคอลัมน์)
                       ViewModal / FormModal ด้านล่างยังอยู่ แค่ไม่มีปุ่มเปิด */}
                   {/* <TableCell className="pt-1 pb-1 pr-6 text-right">

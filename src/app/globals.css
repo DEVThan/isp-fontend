@@ -46,6 +46,8 @@
   --color-danger-ink: var(--danger-ink);
   --color-info: var(--info);
   --color-info-ink: var(--info-ink);
+  --color-info-vivid: var(--info-vivid);
+  --color-info-vivid-ink: var(--info-vivid-ink);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --radius-sm: calc(var(--radius) * 0.6);
@@ -111,6 +113,9 @@
   --danger-ink: #b32424;
   --info: #2a78d6;
   --info-ink: #1c5cab;
+  /* ป้ายสถานะ "ออเดอร์ใหม่" — พื้นฟ้าสดทึบ + ตัวหนังสือขาว (ผู้ใช้ขอลอง 12/10/2026 · contrast 2.3:1 ต่ำกว่า 4.5 — กรมท่า #062a4d ได้ 6.3:1) ใช้ค่าเดียวกันทั้งสองโหมด */
+  --info-vivid: #2fb4ff;
+  --info-vivid-ink: #ffffff;
 
   --radius: 0.625rem;
 
@@ -163,6 +168,8 @@
   --danger-ink: #f08a8a;
   --info: #3987e5;
   --info-ink: #7fb2f0;
+  --info-vivid: #2fb4ff;
+  --info-vivid-ink: #ffffff;
 
   --sidebar: #182033;
   --sidebar-foreground: #c3d0e3;
