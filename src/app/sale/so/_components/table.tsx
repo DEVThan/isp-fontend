@@ -64,7 +64,7 @@ const DEFAULT_STATUS = "ออเดอร์ใหม่"
 
 /** คอลัมน์ข้อมูลที่เปิดใช้อยู่ + ช่องปุ่มแก้ไข/ลบ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 15
+const COLUMN_COUNT = 16
 
 /**
  * คอลัมน์ปุ่มที่ตรึงชิดซ้าย (12/10/2026) — sticky อยู่ในกรอบเลื่อนแนวนอนของ <Table>
@@ -362,6 +362,17 @@ export function Tables() {
   }
   for (const name of duplicateVendors) vendorCodes.delete(name)
 
+  /**
+   * ชื่อบริษัทขนส่ง -> path โลโก้ สำหรับคอลัมน์ "ขนส่งโดย" (12/10/2026) — so.shipping_by เก็บเป็นชื่อ ไม่ได้ผูก id กับทะเบียน shipping
+   * จับคู่ด้วยชื่อ (ตัดช่องว่าง ไม่สนตัวพิมพ์) และรหัสของทะเบียนเผื่อแถวที่เก็บรหัสไว้ · ไม่เจอ/ไม่มีรูป = โชว์แค่ชื่อ
+   */
+  const shippingLogos = new Map<string, string>()
+  for (const shipping of options.shippings) {
+    if (!shipping.logo) continue
+    shippingLogos.set(shipping.name.trim().toLowerCase(), shipping.logo)
+    if (shipping.code) shippingLogos.set(shipping.code.trim().toLowerCase(), shipping.logo)
+  }
+
   // ตารางไม่กรองเองแล้ว แถวที่ได้มาคือหน้าที่ API ตัดมาให้ตรงเงื่อนไขอยู่แล้ว
   const visible = list.so
 
@@ -547,7 +558,7 @@ export function Tables() {
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ
             ไม่งั้นตัวหมุนจะจางตามไปด้วย — ใช้พื้นโปร่งของตัวคลุมแทน)
 
-            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 14 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
+            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 16 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
             มากกว่าที่เนื้อหามีให้ (1,102px ที่จอ 1440) · main ใน dashboard-shell เป็น flex item ที่
             min-width เป็น auto จึงยืดตามความกว้างขั้นต่ำของลูก แล้วทั้งหน้าเลื่อนออกนอกจอ 72px
             (วัดได้: document.scrollWidth 1512 > innerWidth 1440 — หน้าอื่นที่คอลัมน์น้อยกว่าไม่เจอ)
@@ -599,6 +610,8 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("vendor_name")}</TableHead>
                 {/* หัวคอลัมน์ยาวกว่าค่าข้างใน ("Pick Up", "Dropship") — ให้ขึ้นบรรทัดใหม่ได้ ไม่งั้นหัวดันคอลัมน์กว้างเกิน */}
                 <TableHead className="text-muted-foreground w-20 text-xs leading-tight font-semibold tracking-wide whitespace-normal uppercase">{tcol("shipment_type")}</TableHead>
+                {/* ขนส่งโดย (so.shipping_by) + โลโก้จากทะเบียนบริษัทขนส่ง — ต่อจากประเภทการจัดส่ง (12/10/2026) */}
+                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("shipping_by")}</TableHead>
                 {/* ตัวเลขชิดขวา หัวคอลัมน์ชิดตาม */}
                 <TableHead className="text-muted-foreground w-16 text-right text-xs font-semibold tracking-wide uppercase">{tcol("qty")}</TableHead>
                 {MONEY_COLUMNS.map((column) => (
@@ -777,6 +790,20 @@ export function Tables() {
                     <div className="text-muted-foreground leading-tight whitespace-normal">
                       {row.product_shipment_type || row.shipment_type || ""}
                     </div>
+                  </TableCell>
+                  {/* ขนส่งโดย — โลโก้ (ถ้าทะเบียนมีรูป) + ชื่อที่เก็บในแถว · ชื่อยาวตัดด้วย truncate ข้อความเต็มอยู่ใน title
+                      BroadcastLogo คืน null เมื่อไม่มีรูป/เปิดไม่ขึ้น ชื่อจึงเลื่อนมาชิดซ้ายเอง */}
+                  <TableCell className="pt-1 pb-1 max-w-[128px]">
+                    {row.shipping_by ? (
+                      <div className="flex items-center gap-1.5">
+                        <BroadcastLogo
+                          src={shippingLogos.get(row.shipping_by.trim().toLowerCase())}
+                          alt={row.shipping_by}
+                          className="size-6"
+                        />
+                        <span className="truncate" title={row.shipping_by}>{row.shipping_by}</span>
+                      </div>
+                    ) : null}
                   </TableCell>
                   <TableCell className="pt-1 pb-1 text-right tabular-nums">
                     {formatNumber(row.qty, 0)}
