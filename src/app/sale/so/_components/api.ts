@@ -329,3 +329,24 @@ export async function previewSoSheet(): Promise<SoSheetPreview | undefined> {
 export async function applySoSheet(): Promise<SoSheetApplyResult | undefined> {
   return post<SoSheetApplyResult>("so-sheet-apply", {})
 }
+
+/** ผลของ /so-sheet-status — เวลาไทย "YYYY-MM-DD HH:MM:SS" ของการ apply ครั้งล่าสุด (null = ยังไม่เคย) */
+export type SoSheetStatus = {
+  last_applied_at: string | null
+  sheet_rows: number
+}
+
+/** POST /api/web/so-sheet-status — อ่านอย่างเดียว · API รุ่นที่ยังไม่มีเส้นนี้ตอบ 404 (ผู้เรียกแค่ไม่โชว์เวลา) */
+export async function getSoSheetStatus(): Promise<SoSheetStatus | undefined> {
+  return post<SoSheetStatus>("so-sheet-status", {})
+}
+
+/**
+ * เวลาใต้ปุ่มอัปเดต -> "DD/MM/YYYY HH:MM" · รับได้ทั้งรูปของ systemd ("Mon 2026-10-12 14:19:06 +07" จาก /so-sync-status)
+ * และรูปของฐานข้อมูล ("2026-10-12 13:44:58" จาก /so-sheet-status) — ทั้งคู่เป็นเวลาไทยอยู่แล้ว จึงไม่แปลงโซน
+ * อ่านไม่ออกคืน null (ผู้เรียกไม่โชว์บรรทัดนั้น)
+ */
+export function formatUpdatedAt(value: string | null | undefined): string | null {
+  const match = /(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})/.exec(value ?? "")
+  return match ? `${match[3]}/${match[2]}/${match[1]} ${match[4]}` : null
+}

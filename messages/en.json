@@ -1116,6 +1116,7 @@
       "senderCodeHint": "From the product's sender codes for the chosen carrier"
     },
     "sync": {
+      "lastUpdated": "Last updated {time}",
       "button": "Update data",
       "buttonRunning": "Updating…",
       "running": "Updating data",
@@ -1127,6 +1128,8 @@
       "timeout": "Timed out waiting — the job may still be running; reload the page later"
     },
     "sheet": {
+      "lastUpdated": "Last updated {time}",
+      "neverUpdated": "Never updated",
       "button": "Update from Google Sheet",
       "title": "Update sales orders from Google Sheet",
       "description": "This clears the whole sales order table, reloads it from the Google Sheet, then pulls the latest orders from the source system.",

@@ -48,6 +48,7 @@
   --color-info-ink: var(--info-ink);
   --color-info-vivid: var(--info-vivid);
   --color-info-vivid-ink: var(--info-vivid-ink);
+  --color-warning-vivid: var(--warning-vivid);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
   --radius-sm: calc(var(--radius) * 0.6);
@@ -116,6 +117,8 @@
   /* ป้ายสถานะ "ออเดอร์ใหม่" — พื้นฟ้าสดทึบ + ตัวหนังสือขาว (ผู้ใช้ขอลอง 12/10/2026 · contrast 2.3:1 ต่ำกว่า 4.5 — กรมท่า #062a4d ได้ 6.3:1) ใช้ค่าเดียวกันทั้งสองโหมด */
   --info-vivid: #2fb4ff;
   --info-vivid-ink: #ffffff;
+  /* ป้ายสถานะ "กำลังจัดส่ง" แบบพื้นทึบตัวหนังสือขาว (12/10/2026) — --warning (#fab219) สว่างเกินสำหรับตัวขาว (1.8:1) จึงใช้ส้มอำพันเข้มขึ้น (2.3:1) */
+  --warning-vivid: #f59300;
 
   --radius: 0.625rem;
 
@@ -170,6 +173,8 @@
   --info-ink: #7fb2f0;
   --info-vivid: #2fb4ff;
   --info-vivid-ink: #ffffff;
+  /* ป้ายสถานะ "กำลังจัดส่ง" แบบพื้นทึบตัวหนังสือขาว (12/10/2026) — --warning (#fab219) สว่างเกินสำหรับตัวขาว (1.8:1) จึงใช้ส้มอำพันเข้มขึ้น (2.3:1) */
+  --warning-vivid: #f59300;
 
   --sidebar: #182033;
   --sidebar-foreground: #c3d0e3;

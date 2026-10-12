@@ -6,6 +6,8 @@ import { useLocale, useTranslations } from "next-intl"
 
 import {
   applySoSheet,
+  formatUpdatedAt,
+  getSoSheetStatus,
   previewSoSheet,
   type SoSheetApplyResult,
   type SoSheetPreview,
@@ -76,6 +78,28 @@ export function SheetButton({ onApplied }: { onApplied: () => void }) {
     }
   }
 
+  /**
+   * เวลาที่ลงจาก sheet ครั้งล่าสุด (/so-sheet-status) โชว์ใต้ปุ่ม — undefined = ยังไม่รู้/ถามไม่ได้ (ไม่โชว์อะไร)
+   * · null = API ตอบว่ายังไม่เคย · ถามตอนเปิดหน้า และอีกครั้งหลัง apply สำเร็จ
+   */
+  const [lastApplied, setLastApplied] = React.useState<string | null | undefined>(undefined)
+  const alive = React.useRef(true)
+  const refreshLastApplied = React.useCallback(() => {
+    getSoSheetStatus()
+      .then((status) => {
+        if (alive.current && status) setLastApplied(formatUpdatedAt(status.last_applied_at))
+      })
+      // API รุ่นที่ยังไม่มีเส้นนี้ (404) หรือ DB ล่ม — ไม่โชว์เวลา ไม่ถือเป็นความผิดพลาดของหน้า
+      .catch(() => {})
+  }, [])
+  React.useEffect(() => {
+    alive.current = true
+    refreshLastApplied()
+    return () => {
+      alive.current = false
+    }
+  }, [refreshLastApplied])
+
   const openDialog = () => {
     setOpen(true)
     void check()
@@ -88,6 +112,7 @@ export function SheetButton({ onApplied }: { onApplied: () => void }) {
       if (!result) throw new Error()
       setPhase({ step: "done", result })
       onApplied()
+      refreshLastApplied()
     } catch (error) {
       setPhase({
         step: "applyError",
@@ -109,14 +134,22 @@ export function SheetButton({ onApplied }: { onApplied: () => void }) {
 
   return (
     <>
-      <Button
-        variant="outline"
-        onClick={openDialog}
-        className="border-success bg-success hover:bg-success/90 dark:border-success dark:bg-success dark:hover:bg-success/90 cursor-pointer gap-1.5 text-white hover:text-white disabled:cursor-not-allowed"
-      >
-        <FileSpreadsheet />
-        {tsheet("button")}
-      </Button>
+      {/* w-full: ช่อง grid ของ SyncButton เป็นตัวกำหนดความกว้าง ให้ยาวเท่าปุ่มข้าง ๆ */}
+      <div className="flex flex-col gap-1 text-right">
+        <Button
+          variant="outline"
+          onClick={openDialog}
+          className="border-success bg-success hover:bg-success/90 dark:border-success dark:bg-success dark:hover:bg-success/90 w-full cursor-pointer gap-1.5 text-white hover:text-white disabled:cursor-not-allowed"
+        >
+          <FileSpreadsheet />
+          {tsheet("button")}
+        </Button>
+        {lastApplied !== undefined ? (
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {lastApplied ? tsheet("lastUpdated", { time: lastApplied }) : tsheet("neverUpdated")}
+          </span>
+        ) : null}
+      </div>
 
       <Dialog
         open={open}

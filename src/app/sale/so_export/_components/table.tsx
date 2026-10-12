@@ -35,7 +35,10 @@ import {
 import { TablePagination } from "@/app/sale/so_export/_components/pagination"
 import {
   NEUTRAL_STYLE,
-  PAYMENT_STYLE,
+  PAY_BY_FALLBACK_ICON,
+  PAY_BY_ICON,
+  PAYMENT_ICON,
+  PAYMENT_TEXT_STYLE,
   STATUS_STYLE,
 } from "@/app/sale/so_export/_components/status_style"
 import { ViewModal } from "@/app/sale/so_export/_components/view_modal"
@@ -77,7 +80,7 @@ const DEFAULT_STATUS = "ออเดอร์ใหม่"
 
 /** คอลัมน์ checkbox + คอลัมน์ข้อมูลที่เปิดใช้อยู่ — ใช้กับ colSpan ตอนไม่มีแถวให้แสดง (ช่องปุ่มดู/แก้ไขซ่อนไว้ จึงไม่นับ)
  *  (เปิด/ปิดคอลัมน์ไหนต้องแก้เลขนี้ตาม ไม่งั้นแถว "ไม่พบข้อมูล" จะกินความกว้างไม่ครบ) */
-const COLUMN_COUNT = 15
+const COLUMN_COUNT = 14
 
 /**
  * คอลัมน์ยอดเงินของแถว so (numeric ทั้งหมด) เรียงตามที่ผู้ใช้สั่ง (05/10/2026)
@@ -683,7 +686,7 @@ export function Tables() {
         {/* relative ไว้ให้ตัวหมุนตอนโหลดวางทับตารางได้ (ห้ามใช้ opacity ที่ตัวครอบ
             ไม่งั้นตัวหมุนจะจางตามไปด้วย — ใช้พื้นโปร่งของตัวคลุมแทน)
 
-            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 15 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
+            w-0 min-w-full + overflow-x-auto: ตารางนี้มี 14 คอลัมน์ ความกว้างขั้นต่ำของมัน (~1,174px)
             มากกว่าที่เนื้อหามีให้ (1,102px ที่จอ 1440) · main ใน dashboard-shell เป็น flex item ที่
             min-width เป็น auto จึงยืดตามความกว้างขั้นต่ำของลูก แล้วทั้งหน้าเลื่อนออกนอกจอ 72px
             (วัดได้: document.scrollWidth 1512 > innerWidth 1440 — หน้าอื่นที่คอลัมน์น้อยกว่าไม่เจอ)
@@ -725,8 +728,11 @@ export function Tables() {
                 <TableHead className="text-muted-foreground w-16 pl-6 text-right text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
                 <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("so_code")}</TableHead>
                 {/* สถานะทั้งสองย้ายมาต่อจากเลขที่ใบ (12/10/2026 เหมือนหน้า so) — เห็นได้โดยไม่ต้องเลื่อนแนวนอน */}
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("status")}</TableHead>
-                <TableHead className="text-muted-foreground w-32 text-xs font-semibold tracking-wide uppercase">{tcol("is_payment")}</TableHead>
+                {/* สถานะออเดอร์ (บน) + สถานะการชำระเงิน (ล่าง) รวมเป็นคอลัมน์เดียว (12/10/2026 ผู้ใช้ขอ) — หัวคอลัมน์สองบรรทัดเรียงตามเซลล์ */}
+                <TableHead className="text-muted-foreground w-44 py-1.5 text-xs leading-tight font-semibold tracking-wide uppercase">
+                  <div>{tcol("status")}</div>
+                  <div>{tcol("is_payment")}</div>
+                </TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("name")}</TableHead>
                 <TableHead className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{tcol("product_name")}</TableHead>
                 {/* ช่องทางออกอากาศ — ซ่อนไว้ แสดงผู้ขายแทน (เปิดกลับ: เอา comment ออก ทั้งหัวคอลัมน์และเซลล์) */}
@@ -752,6 +758,8 @@ export function Tables() {
               {visible.map((row, index) => {
                 const statusStyle = row.status ? STATUS_STYLE[row.status] : undefined
                 const StatusIcon = statusStyle?.icon
+                const PaymentIcon = row.is_payment ? PAYMENT_ICON[row.is_payment] : undefined
+                const PayByIcon = (row.pay_by && PAY_BY_ICON[row.pay_by]) || PAY_BY_FALLBACK_ICON
                 return (
                 <TableRow
                   key={row.id}
@@ -774,10 +782,10 @@ export function Tables() {
                       {formatDateTime(row.po_date)}
                     </div>
                   </TableCell>
-                  {/* ป้ายสถานะตัดข้อความเมื่อยาวเกินคอลัมน์ ("ลูกค้าได้รับสินค้าแล้ว" กว้างกว่าหัวคอลัมน์
-                      ~50px) ไม่ตัดแล้วตารางจะกว้างขึ้นทั้งตาราง แล้วปุ่มลบหลุดออกนอกกรอบที่เลื่อนได้
-                      ข้อความเต็มอยู่ใน title · span ที่ truncate หดได้เองเพราะ overflow-hidden */}
-                  <TableCell className="pt-1 pb-1 max-w-[112px]">
+                  {/* คอลัมน์สถานะรวม: ป้ายสถานะออเดอร์อยู่บน ป้ายการชำระเงินอยู่ล่าง ชิดซ้ายทั้งคู่
+                      คอลัมน์กว้างตามป้ายชำระเงิน (~150px) ป้ายสถานะออเดอร์จึงไม่ต้องตัดข้อความแล้ว (title ยังอยู่) */}
+                  <TableCell className="pt-1 pb-1">
+                    <div className="flex flex-col items-start gap-1">
                     {row.status ? (
                       <Badge
                         variant="secondary"
@@ -791,22 +799,34 @@ export function Tables() {
                         <span className="truncate">{row.status}</span>
                       </Badge>
                     ) : null}
-                  </TableCell>
-                  {/* สถานะชำระเงิน + วิธีชำระตัวจางบรรทัดล่าง */}
-                  <TableCell className="pt-1 pb-1">
-                    {row.is_payment ? (
-                      <Badge
-                        variant="secondary"
-                        title={row.is_payment}
-                        className={cn(
-                          "max-w-full border-transparent font-medium",
-                          PAYMENT_STYLE[row.is_payment] ?? NEUTRAL_STYLE
-                        )}
-                      >
-                        <span className="truncate">{row.is_payment}</span>
-                      </Badge>
+                    {/* สถานะการชำระเงิน — ข้อความ + ไอคอน ไม่มีพื้นป้าย (12/10/2026 ผู้ใช้ขอ · ป้ายเหลือแค่สถานะออเดอร์ข้างบน)
+                        สถานะมีสีตามความหมาย (รอ = เหลืองอำพัน · ชำระแล้ว = เขียว) ตามด้วยวิธีชำระตัวจาง คั่นด้วยจุด
+                        ไอคอน: รอ = นาฬิกาทราย · ชำระแล้ว = ติ๊กถูก · COD ธนบัตร · โอนเงิน ธนาคาร · บัตรเครดิต บัตร */}
+                    {row.is_payment || row.pay_by ? (
+                      <div className="flex items-center gap-1.5 pl-0.5 text-xs whitespace-nowrap">
+                        {row.is_payment ? (
+                          <span
+                            className={cn(
+                              "flex items-center gap-1 font-medium",
+                              PAYMENT_TEXT_STYLE[row.is_payment] ?? "text-muted-foreground"
+                            )}
+                          >
+                            {PaymentIcon ? <PaymentIcon className="size-3 shrink-0" /> : null}
+                            {row.is_payment}
+                          </span>
+                        ) : null}
+                        {row.is_payment && row.pay_by ? (
+                          <span aria-hidden className="text-muted-foreground/60">·</span>
+                        ) : null}
+                        {row.pay_by ? (
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <PayByIcon className="size-3.5 shrink-0" />
+                            {row.pay_by}
+                          </span>
+                        ) : null}
+                      </div>
                     ) : null}
-                    <div className="text-muted-foreground mt-0.5 text-xs">{row.pay_by}</div>
+                    </div>
                   </TableCell>
                   {/* ชื่อผู้สั่ง + เบอร์โทรตัวจางบรรทัดล่าง (170 -> 150 ตอนเพิ่มคอลัมน์ประเภทการจัดส่ง) */}
                   <TableCell className="pt-1 pb-1 max-w-[150px]">

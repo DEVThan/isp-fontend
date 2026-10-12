@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 
 import { ApiError } from "@/app/login/components/api"
 import {
+  formatUpdatedAt,
   getSoSyncStatus,
   SO_SYNC_RUNNING,
   startSoSync,
@@ -18,6 +19,7 @@ import {
   AlertTitle,
 } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 /**
  * sync_button.tsx — ปุ่ม "อัปเดตข้อมูล" ที่หัวตาราง so (05/10/2026) + กล่องแจ้งผล
@@ -57,10 +59,19 @@ export function SyncButton({
   const [running, setRunning] = React.useState(false)
   const [notice, setNotice] = React.useState<Notice | null>(null)
 
+  /** เวลาที่งาน sync รอบล่าสุดจบ (finished_at ของ /so-sync-status) — โชว์ใต้ปุ่ม · null = ยังไม่รู้/อ่านไม่ได้ ไม่โชว์ */
+  const [lastUpdated, setLastUpdated] = React.useState<string | null>(null)
+
   /** ปิดหน้าไปแล้วต้องหยุดถามสถานะ และห้าม setState ต่อ */
   const alive = React.useRef(true)
   React.useEffect(() => {
     alive.current = true
+    // ถามสถานะครั้งเดียวตอนเปิดหน้าเพื่อเอาเวลารอบล่าสุด (รวมรอบที่ timer รายชั่วโมงรันเอง) — ถามไม่ได้ก็แค่ไม่โชว์เวลา
+    getSoSyncStatus()
+      .then((status) => {
+        if (alive.current) setLastUpdated(formatUpdatedAt(status?.finished_at))
+      })
+      .catch(() => {})
     return () => {
       alive.current = false
     }
@@ -108,6 +119,7 @@ export function SyncButton({
         return
       }
       setNotice({ kind: "success", title: tsync("success"), message: final.finished_at ?? undefined })
+      setLastUpdated((current) => formatUpdatedAt(final.finished_at) ?? current)
       // โหลดตารางใหม่แบบเดียวกับหลังแก้ไขเสร็จ — ตัวกรอง/หน้าเดิม
       onSynced()
       setTimeout(() => {
@@ -128,17 +140,27 @@ export function SyncButton({
 
   return (
     <div className="flex w-full flex-col items-end gap-2">
-      <div className="flex flex-wrap justify-end gap-2">
+      {/* แต่ละปุ่มมีบรรทัด "อัปเดตล่าสุด" ของตัวเองอยู่ใต้ปุ่ม (12/10/2026) — items-start ให้ปุ่มเรียงแนวเดียวกันแม้ฝั่งหนึ่งยังไม่มีเวลา */}
+      {/* grid สองช่องกว้างเท่ากัน (1fr) = ปุ่มสองปุ่มยาวเท่ากันตามปุ่มที่ข้อความยาวกว่า (12/10/2026 ผู้ใช้ขอ) · ปุ่มเป็น w-full ของช่อง
+          จอแคบเรียงลงมาช่องเดียว — สองปุ่มวางคู่กันไม่พอ */}
+      <div className={cn("grid items-start gap-2", extra ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
         {extra}
-        <Button
-          variant="outline"
-          onClick={sync}
-          disabled={running}
-          className="border-primary bg-primary hover:bg-primary/90 dark:border-primary dark:bg-primary dark:hover:bg-primary/90 cursor-pointer gap-1.5 text-white hover:text-white disabled:cursor-not-allowed"
-        >
-          {running ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
-          {running ? tsync("buttonRunning") : tsync("button")}
-        </Button>
+        <div className="flex flex-col gap-1 text-right">
+          <Button
+            variant="outline"
+            onClick={sync}
+            disabled={running}
+            className="border-primary bg-primary hover:bg-primary/90 dark:border-primary dark:bg-primary dark:hover:bg-primary/90 w-full cursor-pointer gap-1.5 text-white hover:text-white disabled:cursor-not-allowed"
+          >
+            {running ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+            {running ? tsync("buttonRunning") : tsync("button")}
+          </Button>
+          {lastUpdated ? (
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {tsync("lastUpdated", { time: lastUpdated })}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {notice ? (
