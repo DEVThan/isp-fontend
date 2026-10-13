@@ -84,7 +84,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "description": "Customers, revenue and network health at a glance",
+    "description": "Sales orders, revenue and top sellers, by month and by day",
     "exportReport": "Export report",
     "addCustomer": "Add customer",
     "stats": {
@@ -103,7 +103,7 @@
     },
     "soMonth": {
       "label": "Sales orders this month",
-      "unit": "orders",
+      "unit": "items",
       "lines": "{lines} sales order rows",
       "total": "Total",
       "cancelled": "Cancelled",
@@ -111,17 +111,17 @@
     },
     "revenueMonth": {
       "label": "Revenue this month",
-      "orders": "from {count} orders (excl. cancelled)"
+      "orders": "from {count} items (excl. cancelled)"
     },
     "completedMonth": {
-      "label": "Completed this month",
-      "unit": "orders",
+      "label": "Sales orders completed this month",
+      "unit": "items",
       "amount": "Amount",
       "prevAmount": "last month completed {value}"
     },
     "cancelledMonth": {
-      "label": "Cancelled this month",
-      "unit": "orders",
+      "label": "Sales orders cancelled this month",
+      "unit": "items",
       "amount": "Amount",
       "prevAmount": "last month cancelled {value}"
     },

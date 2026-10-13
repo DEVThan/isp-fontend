@@ -20,18 +20,18 @@ export type SoMonthStats = {
   month: string
   /** วันนี้ "YYYY-MM-DD" (เวลาไทย) */
   today: string
-  /** จำนวนใบ (so_code ไม่ซ้ำ) ที่ po_date อยู่ในเดือนนี้ — รวมใบยกเลิก */
+  /** จำนวนบรรทัด (so_code ซ้ำก็นับรวม — 13/10/2026) ที่ po_date อยู่ในเดือนนี้ — รวมยกเลิก · เท่ากับ lines */
   so_count: number
-  /** ใบที่สถานะยกเลิก (นับรวมอยู่ใน so_count แล้ว) */
+  /** บรรทัดที่สถานะยกเลิก (นับรวมอยู่ใน so_count แล้ว) */
   cancelled: number
   /** จำนวนบรรทัดสินค้า (แถว so) ของเดือนนี้ */
   lines: number
   prev_month: string
   /** ช่วงเทียบของเดือนก่อน = วันที่ 1 ถึงวันนี้ (YYYY-MM-DD) */
   prev_until: string
-  /** จำนวนใบของเดือนก่อน ช่วงวันเดียวกัน */
+  /** จำนวนบรรทัดของเดือนก่อน ช่วงวันเดียวกัน */
   prev_same_period: number
-  /** จำนวนใบของเดือนก่อนทั้งเดือน */
+  /** จำนวนบรรทัดของเดือนก่อนทั้งเดือน */
   prev_month_total: number
 }
 
@@ -41,7 +41,7 @@ export type RevenueMonthStats = {
   today: string
   /** รายได้เดือนนี้ (บาท) */
   revenue: number
-  /** จำนวนใบที่นับรายได้ (ไม่รวมยกเลิก) */
+  /** จำนวนบรรทัดที่นับรายได้ (ไม่รวมยกเลิก · so_code ซ้ำก็นับรวม) */
   so_count: number
   prev_month: string
   prev_until: string
@@ -55,15 +55,15 @@ export type RevenueMonthStats = {
 export type CancelledMonthStats = {
   month: string
   today: string
-  /** จำนวนใบที่ยกเลิกเดือนนี้ */
+  /** จำนวนบรรทัดที่ยกเลิกเดือนนี้ (so_code ซ้ำก็นับรวม) */
   cancelled: number
   /** ผลรวม pay_amount ของบรรทัดที่ยกเลิก (บาท) */
   amount: number
   prev_month: string
   prev_until: string
-  /** จำนวนใบยกเลิกของเดือนก่อน ช่วงวันเดียวกัน */
+  /** จำนวนบรรทัดยกเลิกของเดือนก่อน ช่วงวันเดียวกัน */
   prev_same_period: number
-  /** จำนวนใบยกเลิกของเดือนก่อนทั้งเดือน */
+  /** จำนวนบรรทัดยกเลิกของเดือนก่อนทั้งเดือน */
   prev_month_total: number
   /** ผลรวม pay_amount ที่ยกเลิกของเดือนก่อนทั้งเดือน */
   prev_month_amount: number
@@ -71,7 +71,7 @@ export type CancelledMonthStats = {
 
 /** ผลของ POST /api/web/dashboard-completed-month — ใบสั่งขายสำเร็จ (ลูกค้าได้รับสินค้าแล้ว) ตาม po_date */
 export type CompletedMonthStats = Omit<CancelledMonthStats, "cancelled"> & {
-  /** จำนวนใบที่สำเร็จเดือนนี้ */
+  /** จำนวนบรรทัดที่สำเร็จเดือนนี้ (so_code ซ้ำก็นับรวม) */
   completed: number
 }
 

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 /**
  * so_month_card.tsx — card "ใบสั่งขายเดือนนี้" ของหน้า dashboard (06/10/2026 แทน card "ลูกค้าทั้งหมด" ที่เป็นข้อมูลตัวอย่าง)
  *
- * นับจาก so.po_date ของเดือนปัจจุบัน (เวลาไทย) — นับเป็นใบ (so_code ไม่ซ้ำ) ไม่ใช่บรรทัดสินค้า
+ * นับจาก so.po_date ของเดือนปัจจุบัน (เวลาไทย) — นับทุกบรรทัด so_code ซ้ำก็นับรวม (13/10/2026 เดิมนับ so_code ไม่ซ้ำ)
  * ดึงข้อมูลเอง (client) — หน้า dashboard เปิดได้ทันที และเปลี่ยนภาษา (router.refresh) ไม่ยิง API ซ้ำ
  * หน้าตาอยู่ที่ month_card.tsx (ใช้ร่วมกับ card รายได้)
  */
@@ -70,7 +70,7 @@ export function SoMonthCard() {
       breakdown={
         // typeof: API เก่าที่ยังไม่ส่ง cancelled มา -> ไม่โชว์แถวนี้ (ไม่งั้นได้ NaN)
         stats && typeof stats.cancelled === "number" ? (
-          // รวม = ทุกใบของเดือน (ตัวเลขหลัก) · ยกเลิก = ใบที่สถานะยกเลิก · สุทธิ = รวม − ยกเลิก
+          // รวม = ทุกบรรทัดของเดือน (ตัวเลขหลัก) · ยกเลิก = บรรทัดที่สถานะยกเลิก · สุทธิ = รวม − ยกเลิก
           <div className="flex flex-wrap gap-1.5 text-xs">
             <Chip label={t("total")} value={nf.format(stats.so_count)} className="bg-muted text-foreground" />
             <Chip label={t("cancelled")} value={nf.format(stats.cancelled)} className="bg-danger/12 text-danger-ink" />

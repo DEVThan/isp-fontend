@@ -93,9 +93,10 @@ export function MonthCard({
       <CardContent className="space-y-3 pt-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
-            <p className="text-muted-foreground text-sm">
+            <p className="text-foreground/80 text-sm">
               {label}
-              {data ? <span className="opacity-80"> · {monthLabel(data.month)}</span> : null}
+              {/* ชื่อเดือนอยู่บรรทัดล่างของชื่อ card — ชื่อยาว (ใบสั่งขายที่สำเร็จเดือนนี้) ต่อท้ายกันแล้วตกบรรทัดไม่สวย */}
+              {data ? <span className="text-muted-foreground block text-xs opacity-80">{monthLabel(data.month)}</span> : null}
             </p>
             {data ? (
               <p className="text-2xl font-semibold tabular-nums">
