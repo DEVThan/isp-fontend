@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils"
  * ผู้ใช้ใส่ key ตามวัน/เดือนของข้อมูล — เปลี่ยนช่วงแล้วแท่งที่แตะค้างไว้ล้างเอง
  * ผู้ใช้ต้องให้ Card เป็น flex-col และ CardContent เป็น flex-1 flex-col กราฟถึงจะยืดเต็ม card
  *
- * ส่ง amounts มาด้วย (14/10/2026 ผู้ใช้ขอให้เห็นยอดขายบนกราฟ) = กราฟผสม: แท่งจำนวนใบแกนซ้าย + เส้นยอดขายสี chart-2 แกนขวา
+ * ส่ง amounts มาด้วย (14/10/2026 ผู้ใช้ขอให้เห็นยอดขายบนกราฟ) = กราฟผสม: ความสูงแท่ง = ยอดขาย แกนซ้าย (ผู้ใช้ขอ
+ * "ความสูงของยอดขาย" หลังเห็นแบบแท่งจำนวนใบ) + เส้นจำนวนใบสี chart-2 แกนขวา
  * สองหน่วยต่างกันจึงแยกแกน และมี legend บอกว่าแท่ง/เส้นคืออะไร (สีไม่ได้บอกความหมายตัวเดียว)
  */
 export function CountBars({
@@ -44,9 +45,9 @@ export function CountBars({
   tickLabel?: (index: number) => string
   /** บรรทัดที่สองของป้าย เช่น "ยอดขาย ฿52,139" — ไม่ส่ง = บรรทัดเดียว */
   detail?: (index: number) => string
-  /** ยอดขายต่อแท่ง (บาท) วาดเป็นเส้นแกนขวา — ไม่ส่ง = แท่งอย่างเดียวแบบเดิม */
+  /** ยอดขายต่อแท่ง (บาท) — ส่งมา = แท่งสูงตามยอดขาย และจำนวนใบย้ายไปเป็นเส้นแกนขวา · ไม่ส่ง = แท่งจำนวนใบอย่างเดียวแบบเดิม */
   amounts?: number[]
-  /** ชื่อใน legend ตอนมีเส้นยอดขาย */
+  /** ชื่อใน legend ตอนเป็นกราฟผสม */
   legend?: { count: string; amount: string }
 }) {
   const locale = useLocale()
@@ -73,19 +74,23 @@ export function CountBars({
   }, [picked])
 
   const count = values?.length ?? 0
-  const peak = values?.length ? Math.max(...values) : 0
-  const peakIndex = peak > 0 && values ? values.indexOf(peak) : -1
-  // เพดานแกนให้หาร 4 ลงตัว เส้นกริดจะเป็นจำนวนเต็มเสมอ (นับเป็นใบ) — ช่วงที่ยังไม่มีใบเลยก็ไม่หารศูนย์
-  const scaleMax = Math.max(4, Math.ceil(peak / 4) * 4)
-  const line = values && amounts?.length === values.length ? amounts : null
-  const amountMax = niceMax(line ? Math.max(...line) : 0)
-  // แท่งสุดท้ายที่มีข้อมูล — เส้นยอดขายหยุดตรงนี้ (วัน/ชั่วโมงที่ยังมาไม่ถึงไม่ควรเห็นเส้นดิ่งลง ฿0 เหมือนยอดตก)
+  // เพดานแกนจำนวนใบให้หาร 4 ลงตัว เส้นกริดจะเป็นจำนวนเต็มเสมอ — ช่วงที่ยังไม่มีใบเลยก็ไม่หารศูนย์
+  const countMax = Math.max(4, Math.ceil((values?.length ? Math.max(...values) : 0) / 4) * 4)
+  /** ยอดขาย (มี = กราฟผสม) */
+  const sales = values && amounts?.length === values.length ? amounts : null
+  /** ค่าของแท่ง: ยอดขายถ้ามี ไม่งั้นจำนวนใบ · เส้น: จำนวนใบ (เฉพาะกราฟผสม) */
+  const bars = sales ?? values ?? []
+  const line = sales ? values : null
+  const barMax = sales ? niceMax(Math.max(...sales)) : countMax
+  const barPeak = bars.length ? Math.max(...bars) : 0
+  const peakIndex = barPeak > 0 ? bars.indexOf(barPeak) : -1
+  // แท่งสุดท้ายที่มีข้อมูล — เส้นหยุดตรงนี้ (วัน/ชั่วโมงที่ยังมาไม่ถึงไม่ควรเห็นเส้นดิ่งลง 0 เหมือนยอดตก)
   const lastIndex = values
-    ? Math.max(...values.map((value, index) => (value > 0 || (line?.[index] ?? 0) > 0 ? index : -1)))
+    ? Math.max(...values.map((value, index) => (value > 0 || (sales?.[index] ?? 0) > 0 ? index : -1)))
     : -1
-  const amountPeakIndex = line && Math.max(...line) > 0 ? line.indexOf(Math.max(...line)) : -1
-  /** ความสูงของจุดยอดขาย (% ของกราฟ) */
-  const amountPct = (index: number) => (line ? (line[index] / amountMax) * 100 : 0)
+  /** ความสูงของแท่ง / ของจุดบนเส้น (% ของกราฟ) */
+  const barPct = (index: number) => (bars[index] / barMax) * 100
+  const linePct = (index: number) => (line ? (line[index] / countMax) * 100 : 0)
   /** แท่ง 3 ตัวริมซ้าย/ขวา: ป้ายชิดขอบแทนการกึ่งกลาง ไม่งั้นล้นออกนอกกราฟ */
   const edge = (index: number) =>
     index < 3 ? "left-0" : index > count - 4 ? "right-0" : "left-1/2 -translate-x-1/2"
@@ -134,7 +139,8 @@ export function CountBars({
             key={pct}
             className={cn(
               "absolute -translate-y-1/2 text-[10px] tabular-nums",
-              side === "left" ? "text-muted-foreground right-0" : "text-chart-2 left-0"
+              // สีป้ายแกน = สีซีรีส์ของแกนนั้น (ซ้าย = แท่งยอดขาย chart-1 · ขวา = เส้นจำนวนใบ chart-2) · แท่งจำนวนใบอย่างเดียวคงสีเทา
+              side === "left" ? cn("right-0", sales ? "text-chart-1" : "text-muted-foreground") : "text-chart-2 left-0"
             )}
             style={{ top: `${100 - pct}%` }}
           >
@@ -153,18 +159,18 @@ export function CountBars({
         <div className="text-muted-foreground mb-1 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs">
           <span className="flex items-center gap-1.5">
             <span className="bg-chart-1 size-2.5 rounded-[2px]" />
-            {legend.count}
+            {legend.amount}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="bg-chart-2 relative h-0.5 w-4 rounded-full">
               <span className="bg-chart-2 ring-card absolute top-1/2 left-1/2 size-1.5 -translate-1/2 rounded-full ring-2" />
             </span>
-            {legend.amount}
+            {legend.count}
           </span>
         </div>
       ) : null}
       <div className="flex flex-1">
-        {axis("left", (pct) => (values ? nf.format((scaleMax * pct) / 100) : ""))}
+        {axis("left", (pct) => (!values ? "" : sales ? compact.format((barMax * pct) / 100) : nf.format((countMax * pct) / 100)))}
 
         {/* กล่องที่เลื่อนซ้ายขวา: แท่งละอย่างน้อย 20px ตัวเลขยอดขายเหนือแท่งจะไม่ชนกัน (14/10/2026 ผู้ใช้ขอให้มือถือโชว์ด้วย)
             จอกว้างพอ (desktop) แท่งยืดเต็มเหมือนเดิม ไม่มีแถบเลื่อน · pt-5 = ที่ของตัวเลขเหนือแท่งที่สูงสุด */}
@@ -183,7 +189,7 @@ export function CountBars({
 
                 {values ? (
                   <div ref={barsRef} className="absolute inset-0 flex items-end gap-[2px]">
-                    {/* เส้นยอดขาย: viewBox 0–100 ยืดตามกล่อง จุด x = กลางแท่ง (คลาด gap 2px ไม่ถึงพิกเซล)
+                    {/* เส้นจำนวนใบ: viewBox 0–100 ยืดตามกล่อง จุด x = กลางแท่ง (คลาด gap 2px ไม่ถึงพิกเซล)
                         non-scaling-stroke ให้เส้นหนาเท่าเดิมแม้ยืด · จุดกลมวาดในปุ่มแต่ละแท่งแทน (วงกลมใน SVG ที่ยืดจะเบี้ยว) */}
                     {line ? (
                       <svg
@@ -195,7 +201,7 @@ export function CountBars({
                         <polyline
                           points={line
                             .slice(0, lastIndex + 1)
-                            .map((_, index) => `${((index + 0.5) / line.length) * 100},${100 - amountPct(index)}`)
+                            .map((_, index) => `${((index + 0.5) / line.length) * 100},${100 - linePct(index)}`)
                             .join(" ")}
                           fill="none"
                           className="stroke-chart-2"
@@ -210,9 +216,8 @@ export function CountBars({
                       const isPeak = index === peakIndex
                       const isPicked = index === picked
                       const name = label(index)
-                      /** ตัวเลขเหนือแท่ง: มีเส้นยอดขาย = ยอดขาย (14/10/2026 ผู้ใช้ขอแทนจำนวนใบ) · ไม่มี = จำนวนใบแบบเดิม */
-                      const shown = line ? line[index] : value
-                      const top = line ? index === amountPeakIndex : isPeak
+                      /** ตัวเลขเหนือแท่ง = ค่าของแท่ง: ยอดขาย (กราฟผสม) หรือจำนวนใบ (แบบเดิม) */
+                      const shown = bars[index]
                       return (
                         <button
                           key={index}
@@ -227,19 +232,19 @@ export function CountBars({
                               "w-full rounded-t-[4px] transition-colors",
                               isPeak || isPicked ? "bg-chart-1" : "bg-chart-1/65 group-hover:bg-chart-1"
                             )}
-                            style={{ height: `${(value / scaleMax) * 100}%` }}
+                            style={{ height: `${barPct(index)}%` }}
                           />
-                          {/* จุดยอดขายของแท่งนี้ — ขยายตอน hover/แตะ ให้รู้ว่าเส้นตรงนี้คือแท่งไหน */}
+                          {/* จุดจำนวนใบของแท่งนี้ — ขยายตอน hover/แตะ ให้รู้ว่าเส้นตรงนี้คือแท่งไหน */}
                           {line && index <= lastIndex ? (
                             <span
                               className={cn(
                                 "bg-chart-2 ring-card absolute left-1/2 z-[2] -translate-x-1/2 translate-y-1/2 rounded-full ring-2 transition-transform",
                                 isPicked ? "size-2.5" : "size-1.5 group-hover:size-2.5"
                               )}
-                              style={{ bottom: `${amountPct(index)}%` }}
+                              style={{ bottom: `${linePct(index)}%` }}
                             />
                           ) : null}
-                          {/* ตัวเลขเหนือแท่ง — ไม่ต้อง hover ก็อ่านได้ · ค่า 0 ไม่เขียน · ค่าสูงสุดตัวหนาสีของซีรีส์นั้น
+                          {/* ตัวเลขเหนือแท่ง — ไม่ต้อง hover ก็อ่านได้ · ค่า 0 ไม่เขียน · ค่าสูงสุดตัวหนาสีแท่ง
                               9px ไม่มี padding ข้าง ให้ "435K" พอดีแท่ง 20px · อยู่เหนือเส้น (z-[3] + พื้นสีการ์ด) จุดไม่บังตัวเลขแท่งเตี้ย */}
                           {shown > 0 ? (
                             <span
@@ -247,11 +252,11 @@ export function CountBars({
                                 "bg-card/80 absolute z-[3] mb-0.5 rounded-sm text-[9px] leading-3 whitespace-nowrap tabular-nums",
                                 // แท่งแรก/สุดท้ายชิดขอบ ไม่งั้นครึ่งตัวเลขล้นออกนอกกล่องที่เลื่อนแล้วโดนตัด
                                 index === 0 ? "left-0" : index === count - 1 ? "right-0" : "left-1/2 -translate-x-1/2",
-                                top ? (line ? "text-chart-2 font-semibold" : "text-chart-1 font-semibold") : "text-muted-foreground"
+                                isPeak ? "text-chart-1 font-semibold" : "text-muted-foreground"
                               )}
-                              style={{ bottom: `${(value / scaleMax) * 100}%` }}
+                              style={{ bottom: `${barPct(index)}%` }}
                             >
-                              {line ? short.format(shown) : shown >= 1000 ? compact.format(shown) : nf.format(shown)}
+                              {sales ? short.format(shown) : shown >= 1000 ? compact.format(shown) : nf.format(shown)}
                             </span>
                           ) : null}
                           {/* tooltip ตอน hover หรือแตะเลือก — วางในกราฟ (top-0) ไม่ใช่เหนือกราฟ: กล่องที่เลื่อนได้ตัดของที่ล้นออกนอกกล่อง */}
@@ -320,17 +325,18 @@ export function CountBars({
           )}
         </div>
 
-        {line ? axis("right", (pct) => compact.format((amountMax * pct) / 100)) : null}
+        {line ? axis("right", (pct) => nf.format((countMax * pct) / 100)) : null}
       </div>
     </div>
   )
 }
 
-/** เพดานแกนยอดขายให้หาร 4 ลงตัวเป็นเลขกลม ๆ (1/2/2.5/5 × 10ⁿ ต่อช่อง) — ป้ายแกนจะได้อ่านง่าย เช่น 0 / 25K / 50K / 75K / 100K */
+/** เพดานแกนยอดขายให้หาร 4 ลงตัวเป็นเลขกลม ๆ (1/1.5/2/2.5/3/4/5/6/8 × 10ⁿ ต่อช่อง) — ป้ายแกนอ่านง่าย เช่น 0 / 150K / 300K / 450K / 600K
+ *  ขั้นถี่กว่า 1/2/2.5/5 เพราะแท่งเป็นยอดขายแล้ว: พีค 471K เคยได้เพดาน 800K แท่งสูงแค่ 60% ของกราฟ */
 function niceMax(peak: number) {
   if (peak <= 0) return 4
   const raw = peak / 4
   const pow = 10 ** Math.floor(Math.log10(raw))
-  const step = [1, 2, 2.5, 5, 10].map((f) => f * pow).find((v) => v >= raw) ?? 10 * pow
+  const step = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].map((f) => f * pow).find((v) => v >= raw) ?? 10 * pow
   return step * 4
 }
