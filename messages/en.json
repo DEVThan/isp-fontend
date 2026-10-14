@@ -169,6 +169,8 @@
       "less": "Less",
       "more": "More",
       "unmatched": "No / unmatched province: {value} orders",
+      "scrollUp": "Scroll list up",
+      "scrollDown": "Scroll list down",
       "empty": "No sales in this period",
       "mapLabel": "Map of sales by province",
       "mapError": "Could not load the map"

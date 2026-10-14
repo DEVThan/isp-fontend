@@ -3,7 +3,7 @@
 import * as React from "react"
 import { geoMercator, geoPath } from "d3-geo"
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson"
-import { TriangleAlert } from "lucide-react"
+import { ChevronDown, ChevronUp, TriangleAlert } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 
 import {
@@ -92,6 +92,42 @@ export function ProvinceMapCard() {
   const [channels, setChannels] = React.useState<BroadcastOption[]>([])
   /** จังหวัดที่ชี้อยู่ (คอม) / แตะค้างไว้ (มือถือ) */
   const [hover, setHover] = React.useState<number | null>(null)
+
+  /**
+   * รายการจังหวัด scroll ในกรอบ — ยังเลื่อนขึ้น/ลงได้อีกไหม โชว์ขอบจาง + ปุ่มลูกศรฝั่งนั้น ให้รู้ว่าเลื่อนได้
+   * (14/10/2026 ผู้ใช้ขอ แบบเดียวกับกราฟแท่งใน count_bars) · ใช้ callback ref เพราะ <ol> เพิ่งโผล่หลังโหลดข้อมูลเสร็จ
+   */
+  const listRef = React.useRef<HTMLOListElement | null>(null)
+  const [more, setMore] = React.useState({ up: false, down: false })
+  const checkMore = React.useCallback(() => {
+    const el = listRef.current
+    if (!el) return
+    // เผื่อ 1px — scrollTop บนจอ retina เป็นทศนิยม ชนขอบแล้วอาจขาดอีกเศษเสี้ยว
+    const up = el.scrollTop > 1
+    const down = el.scrollTop + el.clientHeight < el.scrollHeight - 1
+    setMore((prev) => (prev.up === up && prev.down === down ? prev : { up, down }))
+  }, [])
+  const attachList = React.useCallback(
+    (el: HTMLOListElement | null) => {
+      listRef.current = el
+      if (!el) return
+      // จำนวนแถวเปลี่ยน (สลับเดือน/ช่องทาง/ตัวชี้วัด) หรือกรอบเปลี่ยนขนาด ต้องเช็กใหม่ — onScroll อย่างเดียวไม่พอ
+      const observer = new ResizeObserver(checkMore)
+      observer.observe(el)
+      const rows = new MutationObserver(checkMore)
+      rows.observe(el, { childList: true })
+      return () => {
+        observer.disconnect()
+        rows.disconnect()
+      }
+    },
+    [checkMore]
+  )
+  /** ปุ่มลูกศร: เลื่อนทีละ ~ 80% ของความสูงที่เห็น (เหลือแถวเดิมไว้นิดหน่อยให้ต่อเนื่อง) */
+  const scrollList = (dir: -1 | 1) => {
+    const el = listRef.current
+    if (el) el.scrollBy({ top: dir * el.clientHeight * 0.8, behavior: "smooth" })
+  }
   const [picked, setPicked] = React.useState<number | null>(null)
   const active = hover ?? picked
   const [geo, setGeo] = React.useState<Geo | null>(null)
@@ -210,7 +246,6 @@ export function ProvinceMapCard() {
   const top = (stats?.provinces ?? [])
     .filter((row) => value(row) > 0)
     .sort((a, b) => value(b) - value(a))
-    .slice(0, 10)
   const max = value(top[0]) || 1
   const totals = stats ? split(stats) : null
   const genderSum = totals ? GENDERS.reduce((sum, g) => sum + totals[g][metric], 0) || 1 : 1
@@ -419,8 +454,10 @@ export function ProvinceMapCard() {
             ) : null}
           </div>
 
-          {/* ฝั่งขวา: ยอดรวม · สัดส่วนเพศ · 10 อันดับจังหวัด */}
-          <div className="min-w-0">
+          {/* ฝั่งขวา: ยอดรวม · สัดส่วนเพศ · ทุกจังหวัดที่มียอด (14/10/2026 เดิม 10 อันดับ — ผู้ใช้ขอให้แสดงทั้งหมดแล้ว scroll เอา)
+              จอกว้าง: คอลัมน์นี้ยืดเท่าแถวของ grid ซึ่งสูงเท่าแผนที่ — รายการลอย (absolute) เต็มพื้นที่ที่เหลือ
+              จึงไม่ดันแถวให้สูงเกินแผนที่ ก้นรายการตรงกับก้นแผนที่ (ผู้ใช้ขอ) · จอแคบ: ต่อใต้แผนที่ สูงสุด 34rem */}
+          <div className="min-w-0 lg:flex lg:flex-col">
             {stats && totals ? (
               <>
                 <div className="flex flex-wrap gap-x-8 gap-y-2">
@@ -476,40 +513,67 @@ export function ProvinceMapCard() {
                 ) : null}
 
                 {top.length ? (
-                  <ol className="mt-4">
-                    {top.map((row, index) => (
-                      <li
-                        key={row.province_id}
-                        onMouseEnter={() => setHover(row.province_id)}
-                        onMouseLeave={() => setHover(null)}
-                        onClick={() => pick(row.province_id)}
-                        className={cn(
-                          "border-border flex cursor-pointer items-center gap-3 rounded-md border-b px-1 py-2.5 last:border-b-0",
-                          row.province_id === active && "bg-muted"
-                        )}
-                      >
-                        <span className="bg-muted text-muted-foreground grid size-6 shrink-0 place-items-center rounded-full text-xs tabular-nums">
-                          {index + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">{provinceName(row)}</div>
-                          <div className="bg-muted mt-1.5 h-1.5 overflow-hidden rounded-full">
-                            <div
-                              className="bg-chart-1 h-full rounded-full"
-                              style={{ width: `${(value(row) / max) * 100}%` }}
-                            />
+                  <div className="relative mt-4 lg:min-h-64 lg:flex-1">
+                    <ol
+                      ref={attachList}
+                      onScroll={checkMore}
+                      className="max-h-[34rem] overflow-y-auto overscroll-contain pr-1 lg:absolute lg:inset-0 lg:max-h-none"
+                    >
+                      {top.map((row, index) => (
+                        <li
+                          key={row.province_id}
+                          onMouseEnter={() => setHover(row.province_id)}
+                          onMouseLeave={() => setHover(null)}
+                          onClick={() => pick(row.province_id)}
+                          className={cn(
+                            "border-border flex cursor-pointer items-center gap-3 rounded-md border-b px-1 py-2.5 last:border-b-0",
+                            row.province_id === active && "bg-muted"
+                          )}
+                        >
+                          <span className="bg-muted text-muted-foreground grid size-6 shrink-0 place-items-center rounded-full text-xs tabular-nums">
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">{provinceName(row)}</div>
+                            <div className="bg-muted mt-1.5 h-1.5 overflow-hidden rounded-full">
+                              <div
+                                className="bg-chart-1 h-full rounded-full"
+                                style={{ width: `${(value(row) / max) * 100}%` }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                        <div className="shrink-0 text-right tabular-nums">
-                          <div className="text-sm font-semibold">{fmt(value(row))}</div>
-                          <div className="text-muted-foreground text-xs">
-                            {t("genderShort.male")} {nf.format(split(row).male.orders)} · {t("genderShort.female")}{" "}
-                            {nf.format(split(row).female.orders)}
+                          <div className="shrink-0 text-right tabular-nums">
+                            <div className="text-sm font-semibold">{fmt(value(row))}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {t("genderShort.male")} {nf.format(split(row).male.orders)} · {t("genderShort.female")}{" "}
+                              {nf.format(split(row).female.orders)}
+                            </div>
                           </div>
+                        </li>
+                      ))}
+                    </ol>
+                    {/* ขอบจาง + ปุ่มลูกศร ฝั่งที่ยังมีแถวซ่อนอยู่ — ขอบจางไม่รับคลิก (แตะแถวใต้มันได้) ปุ่มรับคลิกเอง */}
+                    {(["up", "down"] as const).map((side) =>
+                      more[side] ? (
+                        <div
+                          key={side}
+                          className={cn(
+                            "from-card pointer-events-none absolute inset-x-0 flex h-12 justify-center to-transparent",
+                            side === "up" ? "top-0 items-start bg-gradient-to-b" : "bottom-0 items-end bg-gradient-to-t"
+                          )}
+                        >
+                          <button
+                            type="button"
+                            aria-label={t(side === "up" ? "scrollUp" : "scrollDown")}
+                            onClick={() => scrollList(side === "up" ? -1 : 1)}
+                            className="bg-card text-muted-foreground ring-border hover:text-foreground pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-full shadow-md ring-1"
+                          >
+                            {side === "up" ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                          </button>
                         </div>
-                      </li>
-                    ))}
-                  </ol>
+                      ) : null
+                    )}
+                  </div>
                 ) : (
                   <p className="text-muted-foreground mt-6 text-sm">{t("empty")}</p>
                 )}
