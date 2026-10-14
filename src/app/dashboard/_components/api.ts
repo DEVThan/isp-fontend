@@ -288,6 +288,8 @@ export type ProvinceStats = {
   /** ช่วงของข้อมูล — มีอย่างใดอย่างหนึ่งตามที่ส่งไป ("YYYY-MM" / "YYYY-MM-DD") */
   month?: string
   date?: string
+  /** true = ทุกวันที่ (ส่ง all ไป) */
+  all?: boolean
   total_orders: number
   total_amount: number
   gender: GenderSplit
@@ -305,6 +307,13 @@ export type ProvinceStats = {
   unmatched: { province: string; orders: number; amount: number; qty: number }[]
 }
 
-/** POST /api/web/dashboard-province — ยอดขายรายจังหวัด · month "YYYY-MM" หรือ date "YYYY-MM-DD" (ไม่ส่ง = เดือนนี้) */
-export const getProvinceStats = (period: { month?: string; date?: string } = {}) =>
+/** POST /api/web/dashboard-province — ยอดขายรายจังหวัด · month "YYYY-MM" หรือ date "YYYY-MM-DD" (ไม่ส่ง = เดือนนี้)
+ *  all = true ทุกวันที่ · channel = ชื่อช่องทางการขาย (เทียบ so.channel ไม่สนตัวพิมพ์) ไม่ส่ง = ทุกช่องทาง */
+export const getProvinceStats = (period: { month?: string; date?: string; all?: boolean; channel?: string } = {}) =>
   fetchStats<ProvinceStats>("dashboard-province", period)
+
+/** ช่องทางการขายจาก /broadcast-get-option — name ตรงกับ so.channel · logo = path รูป (ว่างได้) */
+export type BroadcastOption = { id: number; name: string; logo: string }
+
+/** POST /api/web/broadcast-get-option — ตัวเลือกช่องทางการขายของ card แผนที่ */
+export const getBroadcastOptions = () => fetchStats<BroadcastOption[]>("broadcast-get-option")

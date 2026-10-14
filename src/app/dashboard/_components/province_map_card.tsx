@@ -7,7 +7,9 @@ import { TriangleAlert } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 
 import {
+  getBroadcastOptions,
   getProvinceStats,
+  type BroadcastOption,
   type Gender,
   type GenderSplit,
   type ProvinceRow,
@@ -15,6 +17,8 @@ import {
 } from "@/app/dashboard/_components/api"
 import { DayPicker, toDayKey } from "@/app/dashboard/_components/day_picker"
 import { MonthPicker, toMonthKey } from "@/app/dashboard/_components/month_picker"
+import { BroadcastLogo } from "@/app/broadcast/_components/logo"
+import { SelectOption } from "@/app/sale/so/_components/selectoption"
 import { intlLocale } from "@/i18n/config"
 import { formatTHB } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
@@ -29,7 +33,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
  *
  * ข้อมูล /dashboard-province (รายเดือนหรือรายวัน) · ขอบเขตจังหวัด public/geo/thailand-provinces.geojson (77 จังหวัด,
  * properties.id = province_id ของ API) วาดด้วย d3-geo · ระบายสีเป็นขั้น (quantile) ไม่งั้น กทม. กินทั้งสเกล
- * ตัวเลือก: ช่วง เดือน/วัน · ตัวชี้วัด จำนวนใบ/ยอดขาย · เพศ · เพศจริง/ประมาณจากชื่อ (gender_est ของ API) · ตัวเลขบนแผนที่
+ * ตัวเลือก: ช่วง เดือน/วัน · ตัวชี้วัด จำนวนใบ/ยอดขาย · เพศ · เพศจริง/ประมาณจากชื่อ (gender_est ของ API) · ช่องทางการขาย
+ * (14/10/2026 จาก /broadcast-get-option ส่งชื่อไปเทียบ so.channel) · ตัวเลขบนแผนที่
  * ชี้ (คอม) หรือแตะ (มือถือ — แตะซ้ำปิด) จังหวัด/แถวอันดับ = กล่องรายละเอียดของจังหวัดนั้น
  */
 
@@ -70,7 +75,8 @@ export function ProvinceMapCard() {
   // ตัวเลขบนแผนที่ต้องสั้น: 948,347 → 948K ทุกภาษา (แบบย่อของพม่าเป็นคำยาว ล้นจังหวัดเล็ก)
   const compact = new Intl.NumberFormat("en", { notation: "compact", maximumSignificantDigits: 3 })
 
-  const [scope, setScope] = React.useState<"month" | "day">("month")
+  /** ช่วง: เดือน / วัน / ทั้งหมด (ทุกวันที่ — 14/10/2026 ผู้ใช้ขอ) */
+  const [scope, setScope] = React.useState<"month" | "day" | "all">("month")
   /** เดือน/วันที่เลือก · ว่าง = เดือนนี้/วันนี้ ให้ API ตัดสินตามเวลาไทย */
   const [month, setMonth] = React.useState("")
   const [date, setDate] = React.useState("")
@@ -81,12 +87,22 @@ export function ProvinceMapCard() {
   /** true = gender_est (เพศจริงถ้ามี ไม่งั้นเดาจากชื่อ) · false = customer.gender อย่างเดียว (ส่วนใหญ่ไม่ระบุ) */
   const [est, setEst] = React.useState(true)
   const [labels, setLabels] = React.useState(true)
+  /** ช่องทางการขาย (ชื่อ) · null = ทุกช่องทาง */
+  const [channel, setChannel] = React.useState<string | null>(null)
+  const [channels, setChannels] = React.useState<BroadcastOption[]>([])
   /** จังหวัดที่ชี้อยู่ (คอม) / แตะค้างไว้ (มือถือ) */
   const [hover, setHover] = React.useState<number | null>(null)
   const [picked, setPicked] = React.useState<number | null>(null)
   const active = hover ?? picked
   const [geo, setGeo] = React.useState<Geo | null>(null)
   const [geoFailed, setGeoFailed] = React.useState(false)
+
+  // ตัวเลือกช่องทาง — โหลดครั้งเดียว ล้มก็แค่ไม่มีตัวเลือก (แผนที่ยังใช้ได้)
+  React.useEffect(() => {
+    getBroadcastOptions()
+      .then(setChannels)
+      .catch(() => setChannels([]))
+  }, [])
 
   React.useEffect(() => {
     loadGeo()
@@ -102,7 +118,7 @@ export function ProvinceMapCard() {
     setStats(null)
     setFailed(false)
   }
-  const changeScope = (next: "month" | "day") => {
+  const changeScope = (next: "month" | "day" | "all") => {
     if (next === scope) return
     setScope(next)
     reset()
@@ -115,12 +131,23 @@ export function ProvinceMapCard() {
     setDate(next === toDayKey(new Date()) ? "" : next)
     reset()
   }
+  const changeChannel = (next: string | null) => {
+    setChannel(next)
+    reset()
+  }
 
   React.useEffect(() => {
     let cancelled = false
     // วัน: ต้องส่ง date เสมอ (ไม่ส่ง = API ตีเป็นเดือนนี้) — วันนี้ใช้วันของเครื่อง เขตเวลาเดียวกับผู้ใช้ไทย
-    const period = scope === "month" ? (month ? { month } : {}) : { date: date || toDayKey(new Date()) }
-    getProvinceStats(period)
+    const period =
+      scope === "all"
+        ? { all: true }
+        : scope === "month"
+          ? month
+            ? { month }
+            : {}
+          : { date: date || toDayKey(new Date()) }
+    getProvinceStats(channel ? { ...period, channel } : period)
       .then((next) => {
         if (!cancelled) setStats(next)
       })
@@ -131,7 +158,7 @@ export function ProvinceMapCard() {
     return () => {
       cancelled = true
     }
-  }, [scope, month, date])
+  }, [scope, month, date, channel])
 
   const split = (row: ProvinceRow | ProvinceStats): GenderSplit => (est ? row.gender_est : row.gender)
   const byId = React.useMemo(
@@ -195,7 +222,9 @@ export function ProvinceMapCard() {
   const pick = (id: number) => setPicked((prev) => (prev === id ? null : id))
 
   const periodLabel = stats
-    ? stats.date
+    ? stats.all
+      ? t("scopeAll")
+      : stats.date
       ? new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "long" }).format(new Date(`${stats.date}T00:00`))
       : new Intl.DateTimeFormat(intlLocale(locale), { month: "long", year: "numeric" }).format(
           new Date(`${stats.month}-01T00:00`)
@@ -227,9 +256,11 @@ export function ProvinceMapCard() {
           {segment(scope, changeScope, [
             ["month", t("scopeMonth")],
             ["day", t("scopeDay")],
+            ["all", t("scopeAll")],
           ])}
           {/* ตัวเลือกเดือน/วัน: ค่าเริ่มต้นจากเครื่องผู้ใช้ — โชว์หลังโหลดรอบแรก (stats) เรนเดอร์ฝั่ง server จะได้ไม่ hydrate ไม่ตรง */}
-          {stats || month || date ? (
+          {/* ทั้งหมด = ไม่มีช่วงให้เลือก ซ่อนตัวเลือก */}
+          {scope === "all" ? null : stats || month || date ? (
             scope === "month" ? (
               <MonthPicker value={month || toMonthKey(new Date())} onChange={changeMonth} />
             ) : (
@@ -253,6 +284,21 @@ export function ProvinceMapCard() {
               ["actual", t("actual")],
               ["est", t("estimated")],
             ])}
+          </div>
+          {/* ช่องทางการขาย — ค้นได้ มีโลโก้ · ล้างช่อง = ทุกช่องทาง */}
+          <div className="w-full sm:w-56">
+            <SelectOption
+              id="province-map-channel"
+              options={channels.map((option) => ({
+                value: option.name,
+                label: option.name,
+                icon: <BroadcastLogo src={option.logo} alt={option.name} className="size-5" />,
+              }))}
+              value={channel}
+              onValueChange={changeChannel}
+              placeholder={t("channelAll")}
+              label={t("channel")}
+            />
           </div>
           <Label className="ml-auto flex cursor-pointer items-center gap-2 text-sm font-normal">
             <Checkbox checked={labels} onCheckedChange={(checked) => setLabels(checked === true)} />
