@@ -131,7 +131,43 @@
     },
     "sections": {
       "monthly": "လစဉ် ဒေတာ",
-      "daily": "နေ့စဉ် ဒေတာ"
+      "daily": "နေ့စဉ် ဒေတာ",
+      "province": "ပြည်နယ်အလိုက် ဒေတာ"
+    },
+    "provinceMap": {
+      "title": "ပြည်နယ်အလိုက် အရောင်း",
+      "scopeMonth": "လ",
+      "scopeDay": "နေ့",
+      "metricOrders": "အော်ဒါ",
+      "metricAmount": "အရောင်း",
+      "genderAll": "အားလုံး",
+      "gender": {
+        "male": "ကျား",
+        "female": "မ",
+        "unknown": "မသိ"
+      },
+      "genderShort": {
+        "male": "ကျား",
+        "female": "မ"
+      },
+      "actual": "မှတ်တမ်းအရ",
+      "estimated": "အမည်မှ ခန့်မှန်း",
+      "estHint": "အမည်မှ ခန့်မှန်း = မှတ်တမ်းရှိလျှင် သုံးပြီး မရှိလျှင် ဖောက်သည်အမည်မှ ခန့်မှန်းသည်",
+      "labels": "ဂဏန်း",
+      "total": "စုစုပေါင်း",
+      "sales": "အရောင်း",
+      "provinces": "ပြည်နယ်",
+      "orders": "{value} ခု",
+      "qty": "{value} ခု",
+      "estNote": "ခန့်မှန်းချက်: မှတ်တမ်းအရ {actual} ခု · အမည်မှ {guessed} ခု (ယုံကြည်မှု ≥ {threshold}% တွင် ~{accuracy}% မှန်, ဖောက်သည် {trained} ဦးမှ သင်ယူ)",
+      "estNoteShort": "ခန့်မှန်းချက်: မှတ်တမ်းအရ {actual} ခု · အမည်မှ {guessed} ခု",
+      "hoverHint": "ပြည်နယ်ကို ညွှန်ပြ သို့မဟုတ် နှိပ်ပါ",
+      "less": "နည်း",
+      "more": "များ",
+      "unmatched": "ပြည်နယ်မသိ / မကိုက်ညီ {value} ခု",
+      "empty": "ဤကာလတွင် အရောင်းမရှိပါ",
+      "mapLabel": "ပြည်နယ်အလိုက် အရောင်းမြေပုံ",
+      "mapError": "မြေပုံ ဖွင့်မရပါ"
     },
     "monthPicker": {
       "pickMonth": "လ ရွေးပါ",

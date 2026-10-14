@@ -38,5 +38,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // ข้าม /api/web และ /uploads (proxy ไป Flask), ไฟล์ static และ favicon — ไม่งั้น CSS/JS/รูปโดนเด้งไปด้วย
-  matcher: ["/((?!api|uploads|_next/static|_next/image|favicon.ico).*)"],
+  // /geo = ขอบเขตจังหวัดของแผนที่ dashboard (public/geo/*.geojson) — 14/10/2026
+  matcher: ["/((?!api|uploads|geo/|_next/static|_next/image|favicon.ico).*)"],
 }

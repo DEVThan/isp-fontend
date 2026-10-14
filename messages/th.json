@@ -131,7 +131,43 @@
     },
     "sections": {
       "monthly": "ข้อมูลรายเดือน",
-      "daily": "ข้อมูลรายวัน"
+      "daily": "ข้อมูลรายวัน",
+      "province": "ข้อมูลรายจังหวัด"
+    },
+    "provinceMap": {
+      "title": "ยอดขายรายจังหวัด",
+      "scopeMonth": "เดือน",
+      "scopeDay": "วัน",
+      "metricOrders": "จำนวนใบ",
+      "metricAmount": "ยอดขาย",
+      "genderAll": "ทุกเพศ",
+      "gender": {
+        "male": "ชาย",
+        "female": "หญิง",
+        "unknown": "ไม่ระบุ"
+      },
+      "genderShort": {
+        "male": "ช",
+        "female": "ญ"
+      },
+      "actual": "เพศจริง",
+      "estimated": "ประมาณจากชื่อ",
+      "estHint": "ประมาณจากชื่อ = ใช้เพศจริงถ้ามี ที่ไม่มีเดาจากชื่อลูกค้า",
+      "labels": "ตัวเลข",
+      "total": "ทั้งหมด",
+      "sales": "ยอดขาย",
+      "provinces": "จังหวัด",
+      "orders": "{value} ใบ",
+      "qty": "{value} ชิ้น",
+      "estNote": "ค่าประมาณ: เพศจริง {actual} ใบ · เดาจากชื่อ {guessed} ใบ (แม่น ~{accuracy}% เมื่อมั่นใจ ≥ {threshold}%, เรียนจากลูกค้า {trained} คน)",
+      "estNoteShort": "ค่าประมาณ: เพศจริง {actual} ใบ · เดาจากชื่อ {guessed} ใบ",
+      "hoverHint": "ชี้หรือแตะจังหวัดเพื่อดูยอด",
+      "less": "น้อย",
+      "more": "มาก",
+      "unmatched": "ไม่ระบุจังหวัด / จับคู่ไม่ได้ {value} ใบ",
+      "empty": "ไม่มียอดขายในช่วงนี้",
+      "mapLabel": "แผนที่ยอดขายรายจังหวัด",
+      "mapError": "โหลดแผนที่ไม่สำเร็จ"
     },
     "monthPicker": {
       "pickMonth": "เลือกเดือน",

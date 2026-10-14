@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 /**
  * so_daily_chart.tsx — กราฟ "ใบสั่งขายรายวัน" ของเดือน (08/10/2026) แบบเดียวกับ so_today_chart.tsx แต่แท่งละวัน 1–วันสุดท้าย
  *
- * จำนวนใบ (so_code ไม่ซ้ำ) ต่อวันตาม so.po_date (เวลาไทย) รวมใบยกเลิก — /dashboard-so-daily
+ * จำนวนใบ (นับทุกแถว so — so_code ซ้ำก็นับ ตั้งแต่ 14/10/2026 ให้ตรงกับ card เดือนนี้) ต่อวันตาม so.po_date (เวลาไทย) รวมใบยกเลิก — /dashboard-so-daily
  * เลือกเดือนได้ (month_picker.tsx) — month ว่าง = เดือนนี้ ให้ API ตัดสินตามเวลาไทย
  * ตัวเลือกเดือนโชว์หลังโหลดรอบแรกเสร็จ (ใช้ stats.month) เหตุผลเดียวกับ so_today_chart.tsx
  */

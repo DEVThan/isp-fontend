@@ -121,9 +121,9 @@ export const getCompletedMonthStats = () =>
 export type SoTodayStats = {
   /** วันที่ของข้อมูล "YYYY-MM-DD" — วันนี้ (เวลาไทย) หรือ date ที่ส่งไป */
   today: string
-  /** จำนวนใบทั้งวัน — ไม่ใช่ sum(hours) เพราะใบเดียวอาจมีบรรทัดอยู่หลายชั่วโมง */
+  /** จำนวนแถวทั้งวัน — นับแยกจาก hours (แถวที่ po_date ไม่มีเวลาไม่อยู่ในชั่วโมงไหน) */
   total: number
-  /** จำนวนใบ (so_code ไม่ซ้ำ) ชั่วโมง 00–23 — 24 ช่องเสมอ */
+  /** จำนวนแถว so (so_code ซ้ำก็นับ เหมือน card เดือนนี้ — 14/10/2026) ชั่วโมง 00–23 — 24 ช่องเสมอ */
   hours: number[]
   /** ยอดขาย (บาท) รายชั่วโมง = sum(pay_amount) ไม่นับยกเลิก — 24 ช่อง (เพิ่ม 08/10/2026) */
   amounts: number[]
@@ -226,9 +226,9 @@ export const getTopTypesStats = (date?: string) =>
 export type SoDailyStats = {
   /** เดือนของข้อมูล "YYYY-MM" — เดือนนี้ หรือ month ที่ส่งไป */
   month: string
-  /** จำนวนใบทั้งเดือน — ไม่ใช่ sum(days) เพราะใบเดียวอาจมีบรรทัดอยู่หลายวัน */
+  /** จำนวนแถวทั้งเดือน — นับแยกจาก days (แถวที่วันที่ผิดรูปไม่อยู่ในวันไหน) */
   total: number
-  /** จำนวนใบ (so_code ไม่ซ้ำ) ของวันที่ 1… — ยาวเท่าจำนวนวันของเดือน (28–31) */
+  /** จำนวนแถว so (so_code ซ้ำก็นับ — 14/10/2026) ของวันที่ 1… — ยาวเท่าจำนวนวันของเดือน (28–31) */
   days: number[]
   /** ยอดขาย (บาท) รายวัน = sum(pay_amount) ไม่นับยกเลิก — ยาวเท่า days */
   amounts: number[]
@@ -259,3 +259,52 @@ export type TopItemsMonthStats = Omit<TopItemsStats, "today"> & {
 /** POST /api/web/dashboard-top-items-month — สินค้าขายดี 5 อันดับของเดือน · month "YYYY-MM" (ไม่ส่ง = เดือนนี้) */
 export const getTopItemsMonthStats = (month?: string) =>
   fetchStats<TopItemsMonthStats>("dashboard-top-items-month", month ? { month } : {})
+
+/** เพศของลูกค้า — male/female จาก customer.gender (หรือเดาจากชื่อ ดู gender_est) · unknown = ไม่รู้ */
+export type Gender = "male" | "female" | "unknown"
+
+/** ยอดแยกเพศ — ใบเดียวมีเพศเดียว (customer_id เดียว) สามเพศรวมกันจึงเท่ายอดรวม */
+export type GenderSplit = Record<Gender, { orders: number; amount: number }>
+
+/** ยอดของจังหวัดเดียวใน /dashboard-province */
+export type ProvinceRow = {
+  /** id จังหวัด — ตรงกับ properties.id ใน public/geo/thailand-provinces.geojson */
+  province_id: number
+  province: string
+  province_en: string
+  /** จำนวนแถว so (so_code ซ้ำก็นับ เหมือน card เดือนนี้) รวมยกเลิก */
+  orders: number
+  /** ยอดขาย (บาท) / จำนวนชิ้น — ไม่นับยกเลิก */
+  amount: number
+  qty: number
+  /** แยกตาม customer.gender (ส่วนใหญ่ยังว่าง = unknown) */
+  gender: GenderSplit
+  /** เพศจริงถ้ามี ไม่งั้นประมาณจากชื่อลูกค้า — ค่าประมาณ */
+  gender_est: GenderSplit
+}
+
+/** ผลของ POST /api/web/dashboard-province — ยอดขายรายจังหวัด (แผนที่) ตาม so.po_date */
+export type ProvinceStats = {
+  /** ช่วงของข้อมูล — มีอย่างใดอย่างหนึ่งตามที่ส่งไป ("YYYY-MM" / "YYYY-MM-DD") */
+  month?: string
+  date?: string
+  total_orders: number
+  total_amount: number
+  gender: GenderSplit
+  gender_est: GenderSplit
+  /** ที่มาของ gender_est รายใบ + ความแม่นของตัวเดาชื่อ (controller/web/gender_guess.py) */
+  gender_est_meta: {
+    source: { actual: number; title: number; name: number; unknown: number }
+    model: { accuracy: number | null; coverage: number | null; threshold: number; trained_on: number }
+  }
+  /** จำนวนจังหวัดที่มียอด (เต็ม 77) */
+  province_count: number
+  /** จังหวัดที่มียอด เรียงตามจำนวนใบ */
+  provinces: ProvinceRow[]
+  /** so.province ที่จับคู่จังหวัดไม่ได้ (รวมค่าว่าง) */
+  unmatched: { province: string; orders: number; amount: number; qty: number }[]
+}
+
+/** POST /api/web/dashboard-province — ยอดขายรายจังหวัด · month "YYYY-MM" หรือ date "YYYY-MM-DD" (ไม่ส่ง = เดือนนี้) */
+export const getProvinceStats = (period: { month?: string; date?: string } = {}) =>
+  fetchStats<ProvinceStats>("dashboard-province", period)

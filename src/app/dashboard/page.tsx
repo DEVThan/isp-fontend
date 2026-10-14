@@ -1,9 +1,10 @@
-import { CalendarDays, CalendarRange, Download, Plus, type LucideIcon } from "lucide-react"
+import { CalendarDays, CalendarRange, Download, MapPinned, Plus, type LucideIcon } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 
 import { CancelledMonthCard } from "@/app/dashboard/_components/cancelled_month_card"
 import { CompletedMonthCard } from "@/app/dashboard/_components/completed_month_card"
 import { RevenueMonthCard } from "@/app/dashboard/_components/revenue_month_card"
+import { ProvinceMapCard } from "@/app/dashboard/_components/province_map_card"
 import { SoMonthCard } from "@/app/dashboard/_components/so_month_card"
 import { SoDailyChart } from "@/app/dashboard/_components/so_daily_chart"
 import { SoTodayChart } from "@/app/dashboard/_components/so_today_chart"
@@ -87,6 +88,10 @@ export default async function DashboardPage() {
         {/* ประเภทสินค้าขายดี 5 อันดับ (group so.product_type_name) เลือกวันได้ — ข้อมูลจริง (08/10/2026 แทน "งานแจ้งปัญหาล่าสุด" ตัวอย่าง) */}
         <TopTypesCard />
       </div>
+
+      {/* แผนที่ยอดขายรายจังหวัด (14/10/2026 ยกมาจาก isp-dashbord-old-main) — เลือกเดือน/วันเองใน card จึงแยก section */}
+      <SectionTitle icon={MapPinned}>{t("sections.province")}</SectionTitle>
+      <ProvinceMapCard />
     </>
   )
 }

@@ -131,7 +131,43 @@
     },
     "sections": {
       "monthly": "Monthly",
-      "daily": "Daily"
+      "daily": "Daily",
+      "province": "By province"
+    },
+    "provinceMap": {
+      "title": "Sales by province",
+      "scopeMonth": "Month",
+      "scopeDay": "Day",
+      "metricOrders": "Orders",
+      "metricAmount": "Sales",
+      "genderAll": "All",
+      "gender": {
+        "male": "Male",
+        "female": "Female",
+        "unknown": "Unknown"
+      },
+      "genderShort": {
+        "male": "M",
+        "female": "F"
+      },
+      "actual": "Recorded",
+      "estimated": "Estimated from name",
+      "estHint": "Estimated from name = recorded gender when present, otherwise guessed from the customer's name",
+      "labels": "Numbers",
+      "total": "Total",
+      "sales": "Sales",
+      "provinces": "Provinces",
+      "orders": "{value} orders",
+      "qty": "{value} pcs",
+      "estNote": "Estimate: recorded {actual} orders · guessed from name {guessed} orders (~{accuracy}% accurate at ≥ {threshold}% confidence, trained on {trained} customers)",
+      "estNoteShort": "Estimate: recorded {actual} orders · guessed from name {guessed} orders",
+      "hoverHint": "Hover or tap a province to see its figures",
+      "less": "Less",
+      "more": "More",
+      "unmatched": "No / unmatched province: {value} orders",
+      "empty": "No sales in this period",
+      "mapLabel": "Map of sales by province",
+      "mapError": "Could not load the map"
     },
     "monthPicker": {
       "pickMonth": "Pick a month",
