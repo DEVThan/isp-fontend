@@ -7,6 +7,7 @@ import { ChevronRight } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { BrandLogo } from "@/components/brand-logo"
+import type { Session } from "@/app/login/components/auth"
 import { NavUser } from "@/components/nav-user"
 import {
   Collapsible,
@@ -205,10 +206,13 @@ function NavBranch({ item, pathname }: { item: NavItem; pathname: string }) {
 
 export function AppSidebar({
   groups,
+  user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   /** เมนูที่จะแสดง — dashboard-shell ดึงมาจาก API แล้วส่งเข้ามา */
   groups: NavGroup[]
+  /** ผู้ใช้ที่ล็อกอินอยู่ — dashboard-shell อ่านจาก cookie session แล้วส่งเข้ามา */
+  user: Session | null
 }) {
   const pathname = usePathname()
   const t = useTranslations("nav")
@@ -255,7 +259,7 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

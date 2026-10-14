@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 
-import { getMenus } from "@/app/login/components/auth-actions"
+import { getMenus, getSession } from "@/app/login/components/auth-actions"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import type { NavGroup } from "@/lib/nav"
@@ -33,10 +33,12 @@ export default async function DashboardShell({
    */
   const items = await getMenus()
   const groups: NavGroup[] = items.length > 0 ? [{ items }] : []
+  // ชื่อ + อีเมลของคนที่ล็อกอินอยู่ ไว้แสดงที่ท้าย sidebar (NavUser)
+  const user = await getSession()
 
   return (
     <SidebarProvider defaultOpen={!collapsed}>
-      <AppSidebar groups={groups} />
+      <AppSidebar groups={groups} user={user} />
       <SidebarInset>
         <SiteHeader groups={groups} />
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
