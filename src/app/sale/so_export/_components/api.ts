@@ -35,11 +35,14 @@ const API_BASE_URL =
     ? (process.env.API_BASE_URL ?? "http://localhost:8081/api/web")
     : (process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/web")
 
-/** ขอทีเดียวได้มากสุดเท่าที่ API ยอม (_PER_PAGE_MAX ฝั่ง Flask) */
-export const SO_PER_PAGE_MAX = 100
+/** ขอทีเดียวได้มากสุดเท่าที่ API ยอม (_PER_PAGE_MAX ฝั่ง Flask — 14/10/2026 เป็น 1000) */
+export const SO_PER_PAGE_MAX = 1000
 
-/** จำนวนแถวต่อหน้าที่หน้านี้ใช้ตอนเปิดครั้งแรก */
-export const SO_PAGE_SIZE = 30
+/** pageSize = 0 คือ "ทั้งหมด" — ส่งเป็น per_page "all" (API คืนทุกแถวหน้าเดียว) */
+export const SO_PAGE_SIZE_ALL = 0
+
+/** จำนวนแถวต่อหน้าที่หน้านี้ใช้ตอนเปิดครั้งแรก (14/10/2026 จาก 30 เป็น 50 ตามที่ผู้ใช้ขอ) */
+export const SO_PAGE_SIZE = 50
 
 /** ยิง POST พร้อม body แล้วแกะ envelope มาตรฐานของ /api/web ให้ — ผิดพลาดจะโยน ApiError */
 async function post<T>(path: string, body: unknown): Promise<T | undefined> {
@@ -95,7 +98,14 @@ export type SoQuery = {
   dateTo?: string
   page?: number
   perPage?: number
+  /** เรียงตามหัวตาราง (14/10/2026) — ส่งเฉพาะ getSoExportList · ไฟล์ส่งออกยังเรียงลำดับเดิมเสมอ */
+  sort?: SoSort
+  /** true = เฉพาะแถวที่ so_code ซ้ำกับแถวอื่นในตาราง (14/10/2026 ตัวกรอง "SO ที่ซ้ำกัน") */
+  duplicate?: boolean
 }
+
+/** ค่าที่ so_export-get-list รับใน "sort" (ชุดเดียวกับ so-get-list) — นอกจากนี้ API ตอบ 400 */
+export type SoSort = "" | "so_code_asc" | "so_code_desc"
 
 /** ส่งไปเฉพาะวันที่ครบรูป YYYY-MM-DD — ช่อง type="date" ที่กรอกไม่ครบคืนสตริงว่างมา */
 const dateParam = (value: string | undefined) =>
@@ -123,8 +133,10 @@ export async function getSoExportList(query: SoQuery = {}): Promise<SoList> {
     shipping_by: query.shippingBy ?? "",
     date_from: dateParam(query.dateFrom),
     date_to: dateParam(query.dateTo),
+    duplicate: query.duplicate ?? false,
     page: query.page ?? 1,
-    per_page: query.perPage ?? SO_PAGE_SIZE,
+    per_page: query.perPage === SO_PAGE_SIZE_ALL ? "all" : (query.perPage ?? SO_PAGE_SIZE),
+    sort: query.sort ?? "",
   })
   return {
     // เส้นนี้ยังไม่มีตอนเขียน ไม่รู้ว่าจะตอบคีย์ "so_export" หรือ "so" (แบบ so-get-list) — รับได้ทั้งคู่
@@ -274,6 +286,7 @@ export async function exportSoByTemplate(
     shipping_by: query.shippingBy ?? "",
     date_from: dateParam(query.dateFrom),
     date_to: dateParam(query.dateTo),
+    duplicate: query.duplicate ?? false,
   })
 }
 

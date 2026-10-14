@@ -24,6 +24,7 @@
       "empty": "No matching records",
       "loading": "Loading…",
       "rowsPerPage": "Rows per page",
+      "all": "All",
       "summary": "{from}–{to} of {total}",
       "previous": "Previous",
       "next": "Next"
@@ -1062,6 +1063,15 @@
     "loadError": "Could not load customers"
   },
   "so": {
+    "duplicate": {
+      "label": "Duplicate SO",
+      "only": "Duplicate SO only"
+    },
+    "sort": {
+      "none": "Sort by SO number (now: new orders first, then latest order date)",
+      "so_code_asc": "SO number ascending — click again for descending",
+      "so_code_desc": "SO number descending — click again for the default order"
+    },
     "title": "Sales orders",
     "description": "{count} sales order lines in total",
     "dateFrom": "Created from",

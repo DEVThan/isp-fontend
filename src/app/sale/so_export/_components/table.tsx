@@ -2,6 +2,9 @@
 
 import * as React from "react"
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   CircleCheck,
   // Eye, — ปุ่มดูข้อมูลซ่อนไว้
   FileDown,
@@ -20,6 +23,7 @@ import {
   getSoExportList,
   getSoOptions,
   SO_PAGE_SIZE,
+  type SoSort,
 } from "@/app/sale/so_export/_components/api"
 import { DateRangeFilter } from "@/app/sale/so_export/_components/daterange"
 import { DeleteModal } from "@/app/sale/so_export/_components/delete_modal"
@@ -122,6 +126,10 @@ type Filters = {
   dateTo: string
   page: number
   pageSize: number
+  /** เรียงตามเลขที่ใบสั่งขาย — ว่าง = ลำดับเดิมของ API */
+  sort: SoSort
+  /** true = เฉพาะ SO ที่ซ้ำกัน (so_code มีหลายแถว) */
+  duplicate: boolean
 }
 
 /** ยอดเงิน/จำนวน — numeric มาเป็นข้อความ ("999.0") · ว่าง/ไม่ใช่ตัวเลขไม่โชว์อะไร */
@@ -161,6 +169,8 @@ export function Tables() {
   const tall = useTranslations("common")
   const tr = useTranslations("so_export")
   const tcol = useTranslations("so_export.columns")
+  // คำอธิบายปุ่มเรียงใช้ชุดเดียวกับหน้า so (so.sort.*) ไม่ทำซ้ำใน so_export
+  const tso = useTranslations("so")
 
   const [list, setList] = React.useState<SoList>(EMPTY_LIST)
   const [failed, setFailed] = React.useState(false)
@@ -195,6 +205,8 @@ export function Tables() {
   const [dateTo, setDateTo] = React.useState("")
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(SO_PAGE_SIZE)
+  const [sort, setSort] = React.useState<SoSort>("")
+  const [duplicate, setDuplicate] = React.useState(false)
 
   /**
    * ตัวเลือกของ dropdown ในแถบตัวกรอง — ดึงหลังหน้าแรกโหลดเสร็จ ไม่ใช่พร้อมกันตอนเปิดหน้า
@@ -241,6 +253,8 @@ export function Tables() {
     dateTo,
     page,
     pageSize,
+    sort,
+    duplicate,
   }
 
   /**
@@ -270,6 +284,8 @@ export function Tables() {
           dateTo: next.dateTo,
           page: next.page,
           perPage: next.pageSize,
+          sort: next.sort,
+          duplicate: next.duplicate,
         })
         if (id !== latest.current) return
         setList(result)
@@ -427,6 +443,7 @@ export function Tables() {
         vendorName: filters.vendor ?? "",
         shipmentType: filters.shipmentType ?? "",
         shippingBy: filters.shippingBy ?? "",
+        duplicate: filters.duplicate,
         dateFrom: filters.dateFrom,
         dateTo: filters.dateTo,
       })
@@ -617,6 +634,21 @@ export function Tables() {
             }}
           />
         </div>
+        {/* SO ที่ซ้ำกัน (14/10/2026 ผู้ใช้ขอ · ช่องสุดท้ายต่อจากวันที่สั่งซื้อ) — ทั้งหมด / เฉพาะ so_code ที่มีหลายแถว · ล้างช่อง = ทั้งหมด */}
+        {selectFilter(
+          "filter-duplicate",
+          tso("duplicate.label"),
+          [
+            { value: "all", label: tall("all") },
+            { value: "duplicate", label: tso("duplicate.only") },
+          ],
+          duplicate ? "duplicate" : "all",
+          (next) => {
+            const on = next === "duplicate"
+            setDuplicate(on)
+            return { ...filters, duplicate: on, page: 1 }
+          }
+        )}
       </CardContent>
 
       <CardContent className="px-4 py-0">
@@ -726,7 +758,36 @@ export function Tables() {
                 {/* ช่อง checkbox เลือกแถว — เอาออกแล้ว (30/09/2026) ลำดับกลับมาเป็นคอลัมน์แรก */}
                 {/* ลำดับเป็นเลขสั้น ๆ ตรึงความกว้างไว้ ไม่งั้นตารางเฉลี่ยความกว้างให้เท่าคอลัมน์ข้อความ */}
                 <TableHead className="text-muted-foreground w-16 pl-6 text-right text-xs font-semibold tracking-wide uppercase">{tcol("no")}</TableHead>
-                <TableHead className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase">{tcol("so_code")}</TableHead>
+                {/* ปุ่มเรียงตามเลขที่ใบสั่งขาย (14/10/2026 แบบเดียวกับหน้า so) — กดวน: ลำดับเดิม → น้อยไปมาก → มากไปน้อย → ลำดับเดิม
+                    เรียงที่ API (ทั้งชุด) แล้วกลับไปหน้า 1 · ไฟล์ส่งออกไม่ตามลำดับนี้ (ใช้ลำดับเดิมไล่เลข dropship) */}
+                <TableHead
+                  className="text-muted-foreground w-40 text-xs font-semibold tracking-wide uppercase"
+                  aria-sort={sort === "so_code_asc" ? "ascending" : sort === "so_code_desc" ? "descending" : "none"}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next: SoSort = sort === "" ? "so_code_asc" : sort === "so_code_asc" ? "so_code_desc" : ""
+                      setSort(next)
+                      setPage(1)
+                      load({ ...filters, sort: next, page: 1 })
+                    }}
+                    title={tso(`sort.${sort || "none"}`)}
+                    className={cn(
+                      "hover:text-foreground -ml-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 uppercase transition-colors",
+                      sort && "text-primary"
+                    )}
+                  >
+                    {tcol("so_code")}
+                    {sort === "so_code_asc" ? (
+                      <ArrowUp className="size-3.5" />
+                    ) : sort === "so_code_desc" ? (
+                      <ArrowDown className="size-3.5" />
+                    ) : (
+                      <ArrowUpDown className="size-3.5 opacity-50" />
+                    )}
+                  </button>
+                </TableHead>
                 {/* สถานะทั้งสองย้ายมาต่อจากเลขที่ใบ (12/10/2026 เหมือนหน้า so) — เห็นได้โดยไม่ต้องเลื่อนแนวนอน */}
                 {/* สถานะออเดอร์ (บน) + สถานะการชำระเงิน (ล่าง) รวมเป็นคอลัมน์เดียว (12/10/2026 ผู้ใช้ขอ) — หัวคอลัมน์สองบรรทัดเรียงตามเซลล์ */}
                 <TableHead className="text-muted-foreground w-44 py-1.5 text-xs leading-tight font-semibold tracking-wide uppercase">
