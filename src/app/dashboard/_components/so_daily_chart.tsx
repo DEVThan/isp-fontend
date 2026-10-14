@@ -129,6 +129,8 @@ export function SoDailyChart() {
               ? (index) => tt("amount", { value: formatTHB(stats.amounts[index] ?? 0, locale) })
               : undefined
           }
+          amounts={stats?.amounts}
+          legend={{ count: tt("legendCount"), amount: tt("legendAmount") }}
           ticks={ticks}
         />
       </CardContent>

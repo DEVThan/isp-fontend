@@ -131,6 +131,8 @@ export function SoTodayChart() {
               ? (index) => t("amount", { value: formatTHB(stats.amounts[index] ?? 0, locale) })
               : undefined
           }
+          amounts={stats?.amounts}
+          legend={{ count: t("legendCount"), amount: t("legendAmount") }}
           ticks={[0, 6, 12, 18, 23]}
         />
       </CardContent>

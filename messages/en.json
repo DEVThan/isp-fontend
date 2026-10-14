@@ -83,6 +83,10 @@
     "so_update": "SO update"
   },
   "dashboard": {
+    "chartScroll": {
+      "left": "Scroll chart left",
+      "right": "Scroll chart right"
+    },
     "title": "Dashboard",
     "description": "Sales orders, revenue and top sellers, by month and by day",
     "exportReport": "Export report",
@@ -197,6 +201,8 @@
       "description": "By order time · {total} orders · sales {amount} · peak {peak} at {hour}:00",
       "amount": "Sales {value}",
       "tooltip": "{value} orders",
+      "legendCount": "Orders",
+      "legendAmount": "Sales (THB)",
       "titleDay": "Sales orders by hour",
       "empty": "No sales orders on this day"
     },
