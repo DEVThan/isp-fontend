@@ -264,6 +264,31 @@
     "latestTickets": {
       "title": "Latest tickets",
       "description": "Most recent updates from support"
+    },
+    "salesman": {
+      "titleThisMonth": "Top salespeople this month",
+      "titleMonth": "Top salespeople by month",
+      "titleToday": "Top salespeople today",
+      "titleDay": "Top salespeople",
+      "description": "Total sales {amount} from {orders} items · {active} of {people} salespeople with sales · cancelled excluded",
+      "emptyMonth": "No sales this month",
+      "emptyDay": "No sales on this day",
+      "unknown": "Unassigned",
+      "columns": {
+        "rank": "Rank",
+        "name": "Salesperson",
+        "amount": "Sales",
+        "orders": "Items",
+        "qty": "Pcs",
+        "avg": "Avg/item",
+        "cancelled": "Cancelled",
+        "share": "Sales share"
+      },
+      "all": "ALL",
+      "titleAll": "Top salespeople (all time)",
+      "scrollMore": "Scroll for more",
+      "scrollLeft": "Scroll table left",
+      "scrollRight": "Scroll table right"
     }
   },
   "customers": {

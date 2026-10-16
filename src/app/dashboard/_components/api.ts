@@ -317,3 +317,41 @@ export type BroadcastOption = { id: number; name: string; logo: string }
 
 /** POST /api/web/broadcast-get-option — ตัวเลือกช่องทางการขายของ card แผนที่ */
 export const getBroadcastOptions = () => fetchStats<BroadcastOption[]>("broadcast-get-option")
+
+/** หนึ่งแถวของอันดับพนักงานขาย — จัดกลุ่ม so.sell_by · ตัวเลขทุกช่องไม่นับบรรทัดยกเลิก ยกเว้น cancelled */
+export type SalesmanRow = {
+  /** null = แถวไม่ระบุพนักงาน หรือพนักงานที่ไม่มีบรรทัดในช่วงนี้ (16/10/2026 API คืนทุกชื่อที่เคยมีใน so) */
+  rank: number | null
+  /** ชื่อพนักงาน (so.sell_by ข้อความ) — "" = บรรทัดที่ไม่ระบุพนักงาน */
+  sell_by: string
+  /** จำนวนแถว so (so_code ซ้ำก็นับรวม) */
+  orders: number
+  /** แถวที่ยกเลิก (ไม่รวมใน orders) */
+  cancelled: number
+  qty: number
+  /** ยอดขาย sum(pay_amount) (บาท) */
+  amount: number
+  /** ยอดเฉลี่ยต่อแถว */
+  avg_amount: number
+  /** % ของ total_amount */
+  share: number
+}
+
+/** ผลของ POST /api/web/dashboard-salesman-daily / -month — ทุกพนักงานในช่วง เรียงยอดขายมากไปน้อย */
+export type SalesmanStats = {
+  /** พนักงานทุกคนที่เคยมีใน so (ไม่นับแถวไม่ระบุพนักงาน) */
+  salesman_count: number
+  /** พนักงานที่มีบรรทัดในช่วงนี้ — ไม่มีใน API รุ่นเก่า */
+  active_count?: number
+  total_orders: number
+  total_amount: number
+  salesmen: SalesmanRow[]
+}
+
+/** POST /api/web/dashboard-salesman-daily — อันดับพนักงานขายของวัน · date "YYYY-MM-DD" (ไม่ส่ง = วันนี้) */
+export const getSalesmanDailyStats = (date?: string) =>
+  fetchStats<SalesmanStats & { today: string }>("dashboard-salesman-daily", date ? { date } : {})
+
+/** POST /api/web/dashboard-salesman-month — อันดับพนักงานขายของเดือน · month "YYYY-MM" (ไม่ส่ง = เดือนนี้) */
+export const getSalesmanMonthStats = (month?: string) =>
+  fetchStats<SalesmanStats & { month: string }>("dashboard-salesman-month", month ? { month } : {})

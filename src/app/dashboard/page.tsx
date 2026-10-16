@@ -5,6 +5,7 @@ import { CancelledMonthCard } from "@/app/dashboard/_components/cancelled_month_
 import { CompletedMonthCard } from "@/app/dashboard/_components/completed_month_card"
 import { RevenueMonthCard } from "@/app/dashboard/_components/revenue_month_card"
 import { ProvinceMapCard } from "@/app/dashboard/_components/province_map_card"
+import { SalesmanRankCard } from "@/app/dashboard/_components/salesman_rank_card"
 import { SoMonthCard } from "@/app/dashboard/_components/so_month_card"
 import { SoDailyChart } from "@/app/dashboard/_components/so_daily_chart"
 import { SoTodayChart } from "@/app/dashboard/_components/so_today_chart"
@@ -66,6 +67,9 @@ export default async function DashboardPage() {
         <TopItemsMonthCard />
       </div>
 
+      {/* อันดับพนักงานขายของเดือน (so.sell_by เรียงยอดขาย) ทุกคน เลื่อนดูในตัว card — 16/10/2026 */}
+      <SalesmanRankCard period="month" />
+
       <SectionTitle icon={CalendarDays}>{t("sections.daily")}</SectionTitle>
 
       <div className="grid gap-4 lg:grid-cols-3 [&>*]:min-w-0">
@@ -88,6 +92,9 @@ export default async function DashboardPage() {
         {/* ประเภทสินค้าขายดี 5 อันดับ (group so.product_type_name) เลือกวันได้ — ข้อมูลจริง (08/10/2026 แทน "งานแจ้งปัญหาล่าสุด" ตัวอย่าง) */}
         <TopTypesCard />
       </div>
+
+      {/* อันดับพนักงานขายของวัน (เลือกวันได้) — 16/10/2026 */}
+      <SalesmanRankCard period="day" />
 
       {/* แผนที่ยอดขายรายจังหวัด (14/10/2026 ยกมาจาก isp-dashbord-old-main) — เลือกเดือน/วันเองใน card จึงแยก section */}
       <SectionTitle icon={MapPinned}>{t("sections.province")}</SectionTitle>
